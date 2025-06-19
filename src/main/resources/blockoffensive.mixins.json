@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.phasetranscrystal.blockoffensive.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "blockoffensive.refmap.json",
+  "mixins": [
+    "C4KitsItemEntityMixin"
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

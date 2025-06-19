@@ -1,0 +1,7 @@
+{
+  "parent": "blockoffensive:block/c4_model",
+  "textures": {
+    "c4": "blockoffensive:block/c4",
+    "timer": "blockoffensive:block/c4_timer_empty"
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "beep": {
+    "subtitle": "sounds.blockoffensive.c4.beep",
+    "sounds": [
+      "blockoffensive:c4_beep"
+    ]
+  },
+  "planting": {
+    "subtitle": "sounds.blockoffensive.c4.plating",
+    "sounds": [
+      "blockoffensive:c4_planting"
+    ]
+  },
+  "planted": {
+    "subtitle": "sounds.blockoffensive.c4.planted",
+    "sounds": [
+      "blockoffensive:c4_planted"
+    ]
+  },
+  "defused": {
+    "subtitle": "sounds.blockoffensive.c4.defused",
+    "sounds": [
+      "blockoffensive:c4_defused"
+    ]
+  },
+  "buttons_click": {
+    "subtitle": "sounds.blockoffensive.buttons.click",
+    "sounds": [
+      "blockoffensive:click1",
+      "blockoffensive:click2",
+      "blockoffensive:click3",
+      "blockoffensive:click4"
+    ]
+  },
+  "voice_ct_win": {
+    "subtitle": "sounds.blockoffensive.voice.ct_win",
+    "sounds": [
+      "blockoffensive:voice_ct_win"
+    ]
+  },
+    "voice_t_win": {
+        "subtitle": "sounds.blockoffensive.voice.t_win",
+        "sounds": [
+        "blockoffensive:voice_t_win"
+        ]
+    },
+  "flash": {
+    "subtitle": "sounds.blockoffensive.effect.flash",
+    "sounds": [
+      "blockoffensive:flash"
+    ]
+  },
+  "boom": {
+    "subtitle": "sounds.blockoffensive.throwable.boom",
+    "sounds": [
+      "blockoffensive:boom"
+    ]
+  }
+}
