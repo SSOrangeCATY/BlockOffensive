@@ -1,5 +1,6 @@
 package com.phasetranscrystal.blockoffensive;
 
+import com.phasetranscrystal.blockoffensive.command.VoteCommand;
 import com.phasetranscrystal.blockoffensive.entity.BOEntityRegister;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.net.CSGameSettingsS2CPacket;
@@ -12,9 +13,13 @@ import com.phasetranscrystal.blockoffensive.net.mvp.MvpHUDCloseS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.mvp.MvpMessageS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.shop.ShopStatesS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
+import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -37,6 +42,7 @@ public class BlockOffensive {
     {
         IEventBus modEventBus = context.getModEventBus();
         modEventBus.addListener(this::commonSetup);
+        MinecraftForge.EVENT_BUS.register(this);
         BOItemRegister.ITEMS.register(modEventBus);
         BOItemRegister.TABS.register(modEventBus);
         BOEntityRegister.ENTITY_TYPES.register(modEventBus);
@@ -44,6 +50,11 @@ public class BlockOffensive {
 
         context.registerConfig(ModConfig.Type.CLIENT, BOConfig.clientSpec);
         context.registerConfig(ModConfig.Type.COMMON, BOConfig.commonSpec);
+    }
+
+    @SubscribeEvent
+    public void onRegisterCommands(RegisterCommandsEvent event) {
+        VoteCommand.onRegisterCommands(event);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {

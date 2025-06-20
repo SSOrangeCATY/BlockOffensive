@@ -12,7 +12,6 @@ import com.phasetranscrystal.fpsmatch.core.shop.ShopAction;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.client.resource.GunDisplayInstance;
-import icyllis.modernui.R;
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.animation.ValueAnimator;
 import icyllis.modernui.core.Context;
@@ -23,9 +22,7 @@ import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.mc.MinecraftSurfaceView;
 import icyllis.modernui.mc.ScreenCallback;
-import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DataSet;
-import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.LayoutInflater;
 import icyllis.modernui.view.View;
@@ -46,11 +43,9 @@ import static icyllis.modernui.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 public class CSGameShopScreen extends Fragment implements ScreenCallback{
     public static final Map<ItemType, List<GunButtonLayout>> shopButtons = new HashMap<>();
     public static final String BACKGROUND = "ui/cs/background.png";
-    public static final int DISABLE_TEXTURE_COLOR = RenderUtil.color(65,65,65);
     public static final int DISABLE_TEXT_COLOR = RenderUtil.color(100,100,100);
     private static final String[] TOP_NAME_KEYS = new String[]{"blockoffensive.shop.title.equipment","blockoffensive.shop.title.pistol","blockoffensive.shop.title.mid_rank","blockoffensive.shop.title.rifle","blockoffensive.shop.title.throwable"};
     public static boolean refreshFlag = false;
-    public boolean debug = false;
     private static CSGameShopScreen INSTANCE;
 
     public CSGameShopScreen(){
@@ -107,25 +102,25 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             shopWindow = new LinearLayout(this.getContext());
             for (int i = 0; i < 5; i++) {
                 TypeBarLayout typeBar = new TypeBarLayout(this.getContext(),i);
-                shopWindow.addView(typeBar, new LinearLayout.LayoutParams(dp((TypeBarLayout.getGunButtonWeight(i) + 30) * scale), -1));
+                shopWindow.addView(typeBar, new LinearLayout.LayoutParams((int) ((TypeBarLayout.getGunButtonWeight(i) + 30) * scale), -1));
                 typeBarLayouts.add(typeBar);
             }
-            content.addView(shopWindow, new LinearLayout.LayoutParams(dp(950 * scale), dp(550* scale)));
+            content.addView(shopWindow, new LinearLayout.LayoutParams((int) (950 * scale), (int) (550* scale)));
 
             LayoutParams shopWindowParams = new LayoutParams(
-                    dp(950 * scale),
-                    dp(550 * scale));
-            shopWindowParams.setMargins(0, dp(210 * scale), 0, 0);
+                    (int) (950 * scale),
+                    (int) (550 * scale));
+            shopWindowParams.setMargins(0, (int) (210 * scale), 0, 0);
             shopWindowParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
             LayoutParams shopWindowBackGroundParams = new LayoutParams(
-                    dp(950 * scale),
-                    dp(550 * scale));
-            shopWindowBackGroundParams.setMargins(0, dp(208 * scale), 0, 0);
+                    (int) (950 * scale),
+                    (int) (550 * scale));
+            shopWindowBackGroundParams.setMargins(0, (int) (208 * scale), 0, 0);
             shopWindowBackGroundParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
             // HEAD BAR START
             headBar = new RelativeLayout(getContext());
-            LayoutParams titleBarParams = new LayoutParams(dp(scale *950), dp(scale*38));
-            titleBarParams.setMargins(0,dp(scale * 190), 0, 0);
+            LayoutParams titleBarParams = new LayoutParams((int) (scale *950), (int) (scale*38));
+            titleBarParams.setMargins(0, (int) (scale * 190), 0, 0);
             titleBarParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
 
             ImageView titleBarBackground = new ImageView(getContext());
@@ -141,7 +136,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             moneyParams.setMargins((int) (25* scale),0,0,0);
             moneyText.setLayoutParams(moneyParams);
             moneyText.setTextColor(FPSMClient.getGlobalData().equalsTeam("ct") ? RenderUtil.color(150,200,250) : RenderUtil.color(234, 192, 85));
-            moneyText.setTextSize(18);
+            moneyText.setTextSize(18 * scale);
 
             cooldownText = new TextView(getContext());
             LayoutParams cooldownParams = new LayoutParams(
@@ -150,18 +145,18 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             cooldownParams.addRule(RelativeLayout.CENTER_IN_PARENT);
             cooldownText.setText(I18n.get("blockoffensive.shop.title.cooldown",CSClientData.shopCloseTime));
             cooldownText.setLayoutParams(cooldownParams);
-            cooldownText.setTextSize(18);
+            cooldownText.setTextSize(18 * scale);
 
             nextRoundMinMoneyText = new TextView(getContext());
-            LayoutParams minmoneyText = new LayoutParams(
+            LayoutParams minMoneyText = new LayoutParams(
                     WRAP_CONTENT,
                     WRAP_CONTENT);
-            minmoneyText.addRule(RelativeLayout.CENTER_IN_PARENT);
-            minmoneyText.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+            minMoneyText.addRule(RelativeLayout.CENTER_IN_PARENT);
+            minMoneyText.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
             nextRoundMinMoneyText.setText(I18n.get("blockoffensive.shop.title.min.money", CSClientData.getNextRoundMinMoney()));
-            minmoneyText.setMargins(0,0, (int) (20* scale),0);
-            nextRoundMinMoneyText.setLayoutParams(minmoneyText);
-            nextRoundMinMoneyText.setTextSize(15);
+            minMoneyText.setMargins(0,0, (int) (20* scale),0);
+            nextRoundMinMoneyText.setLayoutParams(minMoneyText);
+            nextRoundMinMoneyText.setTextSize(15 * scale);
             headBar.addView(moneyText);
             headBar.addView(cooldownText);
             headBar.addView(nextRoundMinMoneyText);
@@ -177,50 +172,50 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             scale = calculateScaleFactor(width, height);
 
             LayoutParams shopWindowParams = new LayoutParams(
-                        dp(950 * scale),
-                        dp(550 * scale));
-            shopWindowParams.setMargins(0,dp(210 * scale), 0, 0);
+                    (int) (950 * scale),
+                    (int) (550 * scale));
+            shopWindowParams.setMargins(0, (int) (210 * scale), 0, 0);
             shopWindowParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
 
             LayoutParams shopWindowBackGroundParams = new LayoutParams(
-                    dp(950 * scale),
-                    dp(550 * scale));
-            shopWindowBackGroundParams.setMargins(0, dp(208 * scale), 0, 0);
+                    (int) (950 * scale),
+                    (int) (550 * scale));
+            shopWindowBackGroundParams.setMargins(0, (int) (208 * scale), 0, 0);
             shopWindowBackGroundParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
 
             this.content.setLayoutParams(shopWindowParams);
             this.background.setLayoutParams(shopWindowBackGroundParams);
 
-            LayoutParams titleBarParams = new LayoutParams(dp(scale*950), dp(scale*38));
-            titleBarParams.setMargins(0, dp(scale * 170), 0, 0);
+            LayoutParams titleBarParams = new LayoutParams((int) (scale*950), (int) (scale*38));
+            titleBarParams.setMargins(0, (int) (scale * 170), 0, 0);
             titleBarParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
             this.headBar.setLayoutParams(titleBarParams);
 
-            LayoutParams minmoneyText = new LayoutParams(
+            LayoutParams minMoneyText = new LayoutParams(
                     WRAP_CONTENT,
                     WRAP_CONTENT);
-            minmoneyText.addRule(RelativeLayout.CENTER_IN_PARENT);
-            minmoneyText.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-            minmoneyText.setMargins(0,0, (int) (20 * scale),0);
-                nextRoundMinMoneyText.setLayoutParams(minmoneyText);
-                nextRoundMinMoneyText.setTextSize(15 * scale);
+            minMoneyText.addRule(RelativeLayout.CENTER_IN_PARENT);
+            minMoneyText.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+            minMoneyText.setMargins(0,0, (int) (20 * scale),0);
+            nextRoundMinMoneyText.setLayoutParams(minMoneyText);
+            nextRoundMinMoneyText.setTextSize(dp(15 * scale));
 
-                LayoutParams moneyParams = new LayoutParams(
-                        WRAP_CONTENT,
-                        WRAP_CONTENT);
-                moneyParams.addRule(RelativeLayout.CENTER_IN_PARENT);
-                moneyParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-                moneyParams.setMargins((int) (25 * scale),0,0,0);
-                moneyText.setLayoutParams(moneyParams);
-                moneyText.setTextSize(18 * scale);
+            LayoutParams moneyParams = new LayoutParams(
+                    WRAP_CONTENT,
+                    WRAP_CONTENT);
+            moneyParams.addRule(RelativeLayout.CENTER_IN_PARENT);
+            moneyParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+            moneyParams.setMargins((int) (25 * scale),0,0,0);
+            moneyText.setLayoutParams(moneyParams);
+            moneyText.setTextSize(dp(18 * scale));
 
-                shopWindow.setLayoutParams(new LinearLayout.LayoutParams(dp(950 * scale), dp(550* scale)));
+            shopWindow.setLayoutParams(new LinearLayout.LayoutParams((int) (950 * scale), (int) (550* scale)));
 
-                cooldownText.setTextSize(18* scale);
+            cooldownText.setTextSize(dp(18* scale));
 
-                typeBarLayouts.forEach(typeBarLayout -> typeBarLayout.setScale(scale));
+            typeBarLayouts.forEach(typeBarLayout -> typeBarLayout.setScale(scale));
 
-                shopButtons.forEach((type,gunButtons)-> gunButtons.forEach(gunButtonLayout -> gunButtonLayout.setScale(scale)));
+            shopButtons.forEach((type,gunButtons)-> gunButtons.forEach(gunButtonLayout -> gunButtonLayout.setScale(scale)));
         }
         @Override
         public void draw(@NotNull Canvas canvas) {
@@ -264,9 +259,9 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             title.setTextSize(21);
             title.setGravity(Gravity.CENTER);
 
-            titleBar.addView(numTab, new LayoutParams(dp(25), -1));
-            titleBar.addView(title, new LayoutParams(dp((getGunButtonWeight(i) - 25)), -1));
-            addView(titleBar, new LayoutParams(-1, dp(44)));
+            titleBar.addView(numTab, new LayoutParams((25), -1));
+            titleBar.addView(title, new LayoutParams(((getGunButtonWeight(i) - 25)), -1));
+            addView(titleBar, new LayoutParams(-1, (44)));
             List<GunButtonLayout> buttons = new ArrayList<>();
             for (int j = 0; j < 5; j++) {
                 var shop = new LinearLayout(getContext());
@@ -277,10 +272,10 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
                 guns.add(gun);
 
                 shop.setGravity(Gravity.CENTER);
-                shop.addView(gun, new LayoutParams(dp(getGunButtonWeight(i)), dp(90)));
+                shop.addView(gun, new LayoutParams((getGunButtonWeight(i)), (90)));
                 shops.add(shop);
 
-                addView(shop, new LayoutParams(-1, dp(98)));
+                addView(shop, new LayoutParams(-1, (98)));
             }
             // 添加按钮到全局管理 具体缩放逻辑由窗口直接代理
             shopButtons.put(ItemType.values()[i], buttons);
@@ -294,51 +289,30 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             };
         }
 
-            private void setScale(float scale) {
-                numTab.setTextSize(15 * scale);
-                numTab.setPadding((int) (15 * scale), (int) (10 * scale), 0, 0);
-                numTab.setLayoutParams(new LayoutParams(dp(25 * scale), -1));
+        private void setScale(float scale) {
+            numTab.setTextSize(dp(15 * scale));
+            numTab.setPadding((int) (15 * scale), (int) (10 * scale), 0, 0);
+            numTab.setLayoutParams(new LayoutParams((int) (25 * scale), -1));
 
-                title.setLayoutParams(new LayoutParams(dp((getGunButtonWeight(i) - 25) * scale), -1));
-                title.setTextSize(21 * scale);
+            title.setLayoutParams(new LayoutParams((int) ((getGunButtonWeight(i) - 25) * scale), -1));
+            title.setTextSize(dp(21 * scale));
 
-                titleBar.setLayoutParams(new LayoutParams(-1, dp(44 * scale)));
+            titleBar.setLayoutParams(new LayoutParams(-1, (int) (44 * scale)));
 
-                guns.forEach((gun)-> gun.setLayoutParams(new LayoutParams(dp(getGunButtonWeight(i) * scale), dp(90 * scale))));
+            guns.forEach((gun)-> gun.setLayoutParams(new LayoutParams((int) (getGunButtonWeight(i) * scale), (int) (90 * scale))));
 
-                shops.forEach((shop)-> shop.setLayoutParams(new LayoutParams(-1, dp(98 * scale))));
+            shops.forEach((shop)-> shop.setLayoutParams(new LayoutParams(-1, (int) (98 * scale))));
 
-                this.setLayoutParams(new LayoutParams(dp((TypeBarLayout.getGunButtonWeight(i) + 30) * scale), -1));
+            this.setLayoutParams(new LayoutParams((int) ((TypeBarLayout.getGunButtonWeight(i) + 30) * scale), -1));
 
-            }
+        }
 
     }
 
-
-
-        public static class GunButtonLayout extends RelativeLayout {
-        public static final ColorStateList CT_TINT_LIST = new ColorStateList(
-                new int[][]{
-                        new int[]{-R.attr.state_enabled},
-                        StateSet.get(StateSet.VIEW_STATE_ENABLED)},
-                new int[]{
-                        DISABLE_TEXTURE_COLOR,
-                        RenderUtil.color(150,200,250)
-                });
-
-            public static final ColorStateList T_TINT_LIST = new ColorStateList(
-                    new int[][]{
-                            new int[]{-R.attr.state_enabled},
-                            StateSet.get(StateSet.VIEW_STATE_ENABLED)},
-                    new int[]{
-                            DISABLE_TEXTURE_COLOR,
-                            RenderUtil.color(234, 192, 85)
-                    });
-
-
+    public static class GunButtonLayout extends RelativeLayout {
         public final ItemType type;
         public final int index;
-        public final ShapeDrawable backgroud;
+        public final ShapeDrawable background;
         public final RelativeLayout returnGoodsLayout;
         public final ValueAnimator backgroundAnimeFadeIn;
         public final ValueAnimator backgroundAnimeFadeOut;
@@ -346,7 +320,6 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
         public final TextView itemNameText;
         public final TextView costText;
         public final TextView returnGoodsText;
-        public boolean shouldRenderGunIcon = false;
         public MinecraftSurfaceView minecraftSurfaceView;
         public ShopSlotRenderer shopSlotRenderer;
 
@@ -358,12 +331,12 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             setGravity(Gravity.CENTER);
             setLayoutParams(new LayoutParams(-1, -1));
 
-            this.backgroud = new ShapeDrawable();
-            backgroud.setShape(ShapeDrawable.RECTANGLE);
-            backgroud.setColor(RenderUtil.color(42, 42, 42));
-            backgroud.setCornerRadius(3);
-            backgroud.setAlpha(200);
-            setBackground(backgroud);
+            this.background = new ShapeDrawable();
+            background.setShape(ShapeDrawable.RECTANGLE);
+            background.setColor(RenderUtil.color(42, 42, 42));
+            background.setCornerRadius(3);
+            background.setAlpha(200);
+            setBackground(background);
 
             minecraftSurfaceView = new MinecraftSurfaceView(getContext());
             ClientShopSlot currentSlot = getSlot();
@@ -445,7 +418,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             backgroundAnimeFadeIn.setInterpolator(TimeInterpolator.SINE);
             backgroundAnimeFadeIn.addUpdateListener(animation -> {
                 int color = (int) animation.getAnimatedValue();
-                this.backgroud.setColor(RenderUtil.color(color,color,color));
+                this.background.setColor(RenderUtil.color(color,color,color));
             });
 
             backgroundAnimeFadeOut = ValueAnimator.ofInt(72, 42);
@@ -453,7 +426,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             backgroundAnimeFadeOut.setInterpolator(TimeInterpolator.SINE);
             backgroundAnimeFadeOut.addUpdateListener(animation -> {
                 int color = (int) animation.getAnimatedValue();
-                this.backgroud.setColor(RenderUtil.color(color,color,color));
+                this.background.setColor(RenderUtil.color(color,color,color));
             });
 
             setOnClickListener((v) -> {
@@ -463,7 +436,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
         }
 
         public void setStats(boolean enable){
-            backgroud.setStroke(enable ? 1:0,RenderUtil.color(255,255,255));
+            background.setStroke(enable ? 1:0,RenderUtil.color(255,255,255));
             this.returnGoodsLayout.setEnabled(enable);
         }
 
@@ -481,9 +454,9 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             }
 
             if(currentSlot.boughtCount() > 0){
-                backgroud.setStroke(1,RenderUtil.color(255,255,255));
+                background.setStroke(1,RenderUtil.color(255,255,255));
             }else{
-                backgroud.setStroke(0,RenderUtil.color(255,255,255));
+                background.setStroke(0,RenderUtil.color(255,255,255));
             }
 
             returnGoodsLayout.setEnabled(currentSlot.canReturn());
@@ -540,7 +513,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             numParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
             numParams.setMargins((int) (5 * scale), (int) (5*scale),0,0);
             numText.setLayoutParams(numParams);
-            numText.setTextSize(13*scale);
+            numText.setTextSize(dp(13*scale));
 
             LayoutParams itemNameParams = new LayoutParams(
                     WRAP_CONTENT,
@@ -549,7 +522,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             itemNameParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
             itemNameParams.setMargins(0 ,(int) (5*scale),(int) (5 * scale),0);
             itemNameText.setLayoutParams(itemNameParams);
-            itemNameText.setTextSize(13*scale);
+            itemNameText.setTextSize(dp(13*scale));
 
             LayoutParams returnGoodsParams = new LayoutParams(
                     WRAP_CONTENT,
@@ -558,7 +531,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             returnGoodsParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
             returnGoodsParams.setMargins((int) (5* scale), (int) (12*scale),0,0);
             returnGoodsText.setLayoutParams(returnGoodsParams);
-            returnGoodsText.setTextSize(15*scale);
+            returnGoodsText.setTextSize(dp(15*scale));
 
             LayoutParams costParams = new LayoutParams(
                     WRAP_CONTENT,
@@ -567,8 +540,8 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             costParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
             costParams.setMargins(0,0, (int) (5*scale), (int) (5*scale));
             costText.setLayoutParams(costParams);
-            costText.setTextSize(12*scale);
-            this.setLayoutParams(new LinearLayout.LayoutParams(dp(TypeBarLayout.getGunButtonWeight(this.type.ordinal()) * scale), dp(90 * scale)));
+            costText.setTextSize(dp(12*scale));
+            this.setLayoutParams(new LinearLayout.LayoutParams((int) (TypeBarLayout.getGunButtonWeight(this.type.ordinal()) * scale), (int) (90 * scale)));
         }
         @Override
         public void draw(@NotNull Canvas canvas) {

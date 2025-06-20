@@ -92,6 +92,79 @@ import java.util.function.Consumer;
  */
 @Mod.EventBusSubscriber(modid = BlockOffensive.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , ShopMap<CSGameMap> , GiveStartKitsMap<CSGameMap>, IConfigureMap<CSGameMap> , EndTeleportMap<CSGameMap>{
+    /**
+     * Codec序列化配置（用于地图数据保存/加载）
+     * <p> 地图名称、区域数据、出生点、商店配置等全量数据
+     */
+    public static final Codec<CSGameMap> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            // 基础地图数据
+            Codec.STRING.fieldOf("mapName").forGetter(CSGameMap::getMapName),
+            AreaData.CODEC.fieldOf("mapArea").forGetter(CSGameMap::getMapArea),
+            ResourceLocation.CODEC.fieldOf("serverLevel").forGetter(map -> map.getServerLevel().dimension().location()),
+
+            // 队伍出生点数据
+            new UnboundedMapCodec<>(
+                    Codec.STRING,
+                    SpawnPointData.CODEC.listOf()
+            ).fieldOf("spawnpoints").forGetter(map->map.getMapTeams().getAllSpawnPoints()),
+
+            // 商店数据 - 使用字符串到FPSMShop的映射
+            Codec.unboundedMap(Codec.STRING, FPSMShop.withCodec(ItemType.class)).fieldOf("shops")
+                    .forGetter(map -> map.shop),
+
+            // 初始装备数据
+            new UnboundedMapCodec<>(
+                    Codec.STRING,
+                    ItemStack.CODEC.listOf()
+            ).fieldOf("startKits").forGetter(map -> map.startKits),
+
+            // 炸弹区域数据
+            AreaData.CODEC.listOf().fieldOf("bombAreas")
+                    .forGetter(map -> map.bombAreaData),
+
+            // 爆破队伍
+            Codec.STRING.fieldOf("blastTeam")
+                    .forGetter(map -> map.blastTeam),
+
+            // 比赛结束传送点
+            SpawnPointData.CODEC.optionalFieldOf("matchEndPoint")
+                    .forGetter(map -> Optional.ofNullable(map.matchEndTeleportPoint))
+
+    ).apply(instance, (mapName, mapArea, serverLevel, spawnPoints, shops, startKits, bombAreas, blastTeam, matchEndPoint) -> {
+        // 创建新的CSGameMap实例
+        CSGameMap gameMap = new CSGameMap(
+                FPSMCore.getInstance().getServer().getLevel(ResourceKey.create(Registries.DIMENSION,serverLevel)),
+                mapName,
+                mapArea
+        );
+
+        // 设置出生点数据
+        gameMap.getMapTeams().putAllSpawnPoints(spawnPoints);
+
+        // 设置商店数据
+        for (Map.Entry<String,FPSMShop<ItemType>> shop : gameMap.shop.entrySet()){
+            shop.getValue().setDefaultShopData(shops.get(shop.getKey()).getDefaultShopDataMap());
+        }
+
+        // 设置初始装备
+        Map<String, ArrayList<ItemStack>> data = new HashMap<>();
+        startKits.forEach((t,l)->{
+            ArrayList<ItemStack> list = new ArrayList<>(l);
+            data.put(t,list);
+        });
+        gameMap.setStartKits(data);
+
+        // 设置炸弹区域
+        gameMap.bombAreaData.addAll(bombAreas);
+
+        // 设置爆破队伍
+        gameMap.blastTeam = blastTeam;
+
+        // 设置比赛结束传送点
+        matchEndPoint.ifPresent(point -> gameMap.matchEndTeleportPoint = point);
+
+        return gameMap;
+    }));
     private static final Vector3f T_COLOR = new Vector3f(1, 0.75f, 0.25f);
     private static final Vector3f CT_COLOR = new Vector3f(0.25f, 0.55f, 1);
     private static final Map<String, BiConsumer<CSGameMap,ServerPlayer>> COMMANDS = registerCommands();
@@ -107,10 +180,13 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private final Setting<Integer> roundTimeLimit = this.addSetting("roundTimeLimit",2300);
     private final Setting<Integer> startMoney = this.addSetting("startMoney",800);
     private final Setting<Integer> closeShopTime = this.addSetting("closeShopTime",200);
-
     private final Setting<Boolean> useMusicApi = this.addSetting("useMusicApi",false);
-
     private final Setting<Boolean> useProfileApi = this.addSetting("useProfileApi",false);
+    private final List<AreaData> bombAreaData = new ArrayList<>();
+    private final Map<String, FPSMShop<ItemType>> shop = new HashMap<>();
+    private final Map<String,List<ItemStack>> startKits = new HashMap<>();
+    private final BaseTeam ctTeam;
+    private final BaseTeam tTeam;
     private int currentPauseTime = 0;
     private int currentRoundTime = 0;
     private boolean isError = false;
@@ -121,10 +197,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private boolean isShopLocked = false;
     private int isBlasting = 0; // 是否放置炸弹 0 = 未放置 | 1 = 已放置 | 2 = 已拆除
     private boolean isExploded = false; // 炸弹是否爆炸
-    private final List<AreaData> bombAreaData = new ArrayList<>();
     private String blastTeam;
-    private final Map<String, FPSMShop<ItemType>> shop = new HashMap<>();
-    private final Map<String,List<ItemStack>> startKits = new HashMap<>();
     private boolean isOvertime = false;
     private int overCount = 0;
     private boolean isWaitingOverTimeVote = false;
@@ -132,8 +205,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private SpawnPointData matchEndTeleportPoint = null;
     private int autoStartTimer = 0;
     private boolean autoStartFirstMessageFlag = false;
-    private final BaseTeam ctTeam;
-    private final BaseTeam tTeam;
 
     /**
      * 构造函数：创建CS地图实例
@@ -150,6 +221,178 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.tTeam = this.addTeam("t",5);
         this.tTeam.setColor(T_COLOR);
         this.setBlastTeam(this.tTeam);
+    }
+
+    @SubscribeEvent
+    public static void onChat(ServerChatEvent event){
+        BaseMap map = FPSMCore.getInstance().getMapByPlayer(event.getPlayer());
+        if(map instanceof CSGameMap csGameMap){
+            String[] m = event.getMessage().getString().split("\\.");
+            if(m.length > 1){
+                csGameMap.handleChatCommand(m[1],event.getPlayer());
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerLoggedOutEvent(PlayerEvent.PlayerLoggedOutEvent event){
+        if(event.getEntity() instanceof ServerPlayer player){
+            BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
+            if(map instanceof CSGameMap){
+                dropC4(player);
+                player.getInventory().clearContent();
+            }
+        }
+    }
+
+    private static void dropC4(ServerPlayer player) {
+        int im = player.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof CompositionC4, -1, player.inventoryMenu.getCraftSlots());
+        if (im > 0) {
+            player.drop(new ItemStack(BOItemRegister.C4.get(), 1), false, false).setGlowingTag(true);
+            player.getInventory().setChanged();
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerPickupItem(PlayerEvent.ItemPickupEvent event){
+        if(event.getEntity().level().isClientSide) return;
+        BaseMap map = FPSMCore.getInstance().getMapByPlayer(event.getEntity());
+        if (map instanceof ShopMap<?> shopMap) {
+            shopMap.getShop(event.getEntity()).ifPresent(shop -> {
+                ShopData<?> shopData = shop.getPlayerShopData(event.getEntity().getUUID());
+                Pair<? extends Enum<?>, ShopSlot> pair = shopData.checkItemStackIsInData(event.getStack());
+                if(pair != null){
+                    ShopSlot slot = pair.getSecond();
+                    slot.lock(event.getStack().getCount());
+                    shop.syncShopData((ServerPlayer) event.getEntity(),pair.getFirst().name(),slot);
+                }});
+        }
+
+        if(map != null){
+            FPSMUtil.sortPlayerInventory(event.getEntity());
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerDropItem(ItemTossEvent event){
+        if(event.getEntity().level().isClientSide) return;
+        ItemStack itemStack = event.getEntity().getItem();
+        BaseMap map = FPSMCore.getInstance().getMapByPlayer(event.getPlayer());
+        if(itemStack.getItem() instanceof CompositionC4){
+            event.getEntity().setGlowingTag(true);
+        }
+
+        if(itemStack.getItem() instanceof BombDisposalKit){
+            event.setCanceled(true);
+            event.getPlayer().displayClientMessage(Component.translatable("blockoffensive.item.bomb_disposal_kit.drop.message").withStyle(ChatFormatting.RED),true);
+            event.getPlayer().getInventory().add(new ItemStack(BOItemRegister.BOMB_DISPOSAL_KIT.get(),1));
+        }
+
+        //商店逻辑
+        if (map instanceof ShopMap<?> shopMap){
+            shopMap.getShop(event.getPlayer()).ifPresent(shop -> {
+                ShopData<?> shopData = shop.getPlayerShopData(event.getEntity().getUUID());
+                Pair<? extends Enum<?>, ShopSlot> pair = shopData.checkItemStackIsInData(itemStack);
+                if(pair != null){
+                    ShopSlot slot = pair.getSecond();
+                    if(pair.getFirst() != ItemType.THROWABLE){
+                        slot.unlock(itemStack.getCount());
+                        shop.syncShopData((ServerPlayer) event.getPlayer(),pair.getFirst().name(),slot);
+                    }
+                }
+            });
+        }
+
+        DropType type = DropType.getItemDropType(itemStack);
+        if(map instanceof CSGameMap && !event.isCanceled() && type != DropType.MISC){
+            FPSMCore.playerDropMatchItem((ServerPlayer) event.getPlayer(),itemStack);
+            event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerKilledByGun(EntityKillByGunEvent event){
+        if(event.getLogicalSide() == LogicalSide.SERVER){
+            if (event.getKilledEntity() instanceof ServerPlayer player) {
+                BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
+                if (map instanceof CSGameMap cs && map.checkGameHasPlayer(player)) {
+                    if(event.getAttacker() instanceof ServerPlayer attacker){
+                        BaseMap fromMap = FPSMCore.getInstance().getMapByPlayer(player);
+                        if (fromMap instanceof CSGameMap csGameMap && csGameMap.equals(map)) {
+                            BaseTeam killerTeam = map.getMapTeams().getTeamByPlayer(attacker).orElse(null);
+                            BaseTeam deadTeam = map.getMapTeams().getTeamByPlayer(player).orElse(null);
+                            if(killerTeam == null || deadTeam == null) return;
+                            if (killerTeam.getFixedName().equals(deadTeam.getFixedName())){
+                                cs.removePlayerMoney(attacker.getUUID(),300);
+                                attacker.displayClientMessage(Component.translatable("blockoffensive.kill.message.teammate",300),false);
+                            }else{
+                                int reward = cs.gerRewardByGunId(event.getGunId());
+                                cs.addPlayerMoney(attacker.getUUID(),reward);
+                                attacker.displayClientMessage(Component.translatable("blockoffensive.kill.message.enemy",reward),false);
+                            }
+
+                            if(attacker.getMainHandItem().getItem() instanceof IGun) {
+                                csGameMap.getMapTeams().getTeamByPlayer(attacker).ifPresent(team->{
+                                    if(event.isHeadShot()){
+                                        team.getPlayerData(attacker.getUUID()).ifPresent(PlayerData::addHeadshotKill);
+                                    }
+                                });
+
+                                com.phasetranscrystal.blockoffensive.data.DeathMessage deathMessage = new DeathMessage.Builder(attacker, player, attacker.getMainHandItem()).setHeadShot(event.isHeadShot()).build();
+                                DeathMessageS2CPacket killMessageS2CPacket = new DeathMessageS2CPacket(deathMessage);
+                                csGameMap.sendPacketToAllPlayer(killMessageS2CPacket);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 玩家死亡事件处理
+     * @see #handlePlayerDeath(ServerPlayer,Entity) 处理死亡逻辑
+     */
+    @SubscribeEvent
+    public static void onPlayerDeathEvent(LivingDeathEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
+            if (map instanceof CSGameMap csGameMap) {
+                csGameMap.handlePlayerDeath(player,event.getSource().getEntity());
+                csGameMap.sendPacketToJoinedPlayer(player,new FPSMatchRespawnS2CPacket(),true);
+                event.setCanceled(true);
+            }
+        }
+    }
+
+    public static Map<String, BiConsumer<CSGameMap,ServerPlayer>> registerCommands(){
+        Map<String, BiConsumer<CSGameMap,ServerPlayer>> commands = new HashMap<>();
+        commands.put("p", CSGameMap::setPauseState);
+        commands.put("pause", CSGameMap::setPauseState);
+        commands.put("unpause", CSGameMap::startUnpauseVote);
+        commands.put("up", CSGameMap::startUnpauseVote);
+        commands.put("agree", CSGameMap::handleAgreeCommand);
+        commands.put("a", CSGameMap::handleAgreeCommand);
+        commands.put("disagree", CSGameMap::handleDisagreeCommand);
+        commands.put("da", CSGameMap::handleDisagreeCommand);
+        return commands;
+    }
+
+    public static Map<String, Consumer<CSGameMap>> registerVoteAction(){
+        Map<String, Consumer<CSGameMap>> commands = new HashMap<>();
+        commands.put("overtime", CSGameMap::startOvertime);
+        commands.put("unpause", CSGameMap::setUnPauseState);
+        commands.put("reset", CSGameMap::resetGame);
+        commands.put("start", CSGameMap::startGame);
+        return commands;
+    }
+
+    public static void write(FPSMDataManager manager){
+        FPSMCore.getInstance().getMapByClass(CSGameMap.class)
+                .forEach((map -> {
+                    map.saveConfig();
+                    manager.saveData(map,map.getMapName());
+                }));
     }
 
     /**
@@ -983,6 +1226,18 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         return this.startKits;
     }
 
+    @Override
+    public void setStartKits(Map<String, ArrayList<ItemStack>> kits) {
+        kits.forEach((s, list) -> list.forEach((itemStack) -> {
+            if(itemStack.getItem() instanceof IGun iGun){
+                FPSMUtil.fixGunItem(itemStack, iGun);
+            }
+        }));
+
+        this.startKits.clear();
+        this.startKits.putAll(kits);
+    }
+
     public void setPauseState(ServerPlayer player){
         if(!this.isStart) return;
         this.getMapTeams().getTeamByPlayer(player).ifPresent(team->{
@@ -1028,7 +1283,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             this.sendAllPlayerMessage(Component.translatable("blockoffensive.map.vote.disagree",serverPlayer.getDisplayName()).withStyle(ChatFormatting.RED),false);
         }
     }
-
 
     public void sendAllPlayerMessage(Component message,boolean actionBar){
         this.getMapTeams().getJoinedPlayers().forEach(data -> {
@@ -1093,6 +1347,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         });
         return a.get();
     }
+
     @Override
     public ArrayList<ItemStack> getKits(BaseTeam team) {
         return (ArrayList<ItemStack>) this.startKits.getOrDefault(team.getFixedName(),new ArrayList<>());
@@ -1113,28 +1368,18 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     @Override
-    public void setStartKits(Map<String, ArrayList<ItemStack>> kits) {
-        kits.forEach((s, list) -> list.forEach((itemStack) -> {
-            if(itemStack.getItem() instanceof IGun iGun){
-                FPSMUtil.fixGunItem(itemStack, iGun);
-            }
-        }));
-
-        this.startKits.clear();
-        this.startKits.putAll(kits);
-    }
-
-
-    @Override
     public void setAllTeamKits(ItemStack itemStack) {
         this.startKits.values().forEach((v) -> v.add(itemStack));
     }
+
     public void addBombArea(AreaData area){
         this.bombAreaData.add(area);
     }
+
     public List<AreaData> getBombAreaData() {
         return bombAreaData;
     }
+
     public void setBlasting(BlastBombEntity c4) {
         if(c4 == null) {
             isBlasting = 0;
@@ -1152,9 +1397,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             isBlasting = 1;
         }
     }
-    public void setExploded(boolean exploded) {
-        isExploded = exploded;
-    }
 
     public int isBlasting() {
         return isBlasting;
@@ -1162,6 +1404,10 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     public boolean isExploded() {
         return isExploded;
+    }
+
+    public void setExploded(boolean exploded) {
+        isExploded = exploded;
     }
 
     public int getClientTime(){
@@ -1240,150 +1486,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     public void setMatchEndTeleportPoint(SpawnPointData matchEndTeleportPoint) {
         this.matchEndTeleportPoint = matchEndTeleportPoint;
-    }
-
-
-    @SubscribeEvent
-    public static void onChat(ServerChatEvent event){
-        BaseMap map = FPSMCore.getInstance().getMapByPlayer(event.getPlayer());
-        if(map instanceof CSGameMap csGameMap){
-            String[] m = event.getMessage().getString().split("\\.");
-            if(m.length > 1){
-                csGameMap.handleChatCommand(m[1],event.getPlayer());
-            }
-        }
-    }
-
-    @SubscribeEvent
-    public static void onPlayerLoggedOutEvent(PlayerEvent.PlayerLoggedOutEvent event){
-        if(event.getEntity() instanceof ServerPlayer player){
-            BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-            if(map instanceof CSGameMap){
-                dropC4(player);
-                player.getInventory().clearContent();
-            }
-        }
-    }
-
-    private static void dropC4(ServerPlayer player) {
-        int im = player.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof CompositionC4, -1, player.inventoryMenu.getCraftSlots());
-        if (im > 0) {
-            player.drop(new ItemStack(BOItemRegister.C4.get(), 1), false, false).setGlowingTag(true);
-            player.getInventory().setChanged();
-        }
-    }
-
-    @SubscribeEvent
-    public static void onPlayerPickupItem(PlayerEvent.ItemPickupEvent event){
-        if(event.getEntity().level().isClientSide) return;
-        BaseMap map = FPSMCore.getInstance().getMapByPlayer(event.getEntity());
-        if (map instanceof ShopMap<?> shopMap) {
-            shopMap.getShop(event.getEntity()).ifPresent(shop -> {
-                ShopData<?> shopData = shop.getPlayerShopData(event.getEntity().getUUID());
-                Pair<? extends Enum<?>, ShopSlot> pair = shopData.checkItemStackIsInData(event.getStack());
-                if(pair != null){
-                    ShopSlot slot = pair.getSecond();
-                    slot.lock(event.getStack().getCount());
-                    shop.syncShopData((ServerPlayer) event.getEntity(),pair.getFirst().name(),slot);
-            }});
-        }
-
-        if(map != null){
-            FPSMUtil.sortPlayerInventory(event.getEntity());
-        }
-    }
-
-    @SubscribeEvent
-    public static void onPlayerDropItem(ItemTossEvent event){
-        if(event.getEntity().level().isClientSide) return;
-        ItemStack itemStack = event.getEntity().getItem();
-        BaseMap map = FPSMCore.getInstance().getMapByPlayer(event.getPlayer());
-        if(itemStack.getItem() instanceof CompositionC4){
-            event.getEntity().setGlowingTag(true);
-        }
-
-        if(itemStack.getItem() instanceof BombDisposalKit){
-            event.setCanceled(true);
-            event.getPlayer().displayClientMessage(Component.translatable("blockoffensive.item.bomb_disposal_kit.drop.message").withStyle(ChatFormatting.RED),true);
-            event.getPlayer().getInventory().add(new ItemStack(BOItemRegister.BOMB_DISPOSAL_KIT.get(),1));
-        }
-
-        //商店逻辑
-        if (map instanceof ShopMap<?> shopMap){
-            shopMap.getShop(event.getPlayer()).ifPresent(shop -> {
-                ShopData<?> shopData = shop.getPlayerShopData(event.getEntity().getUUID());
-                Pair<? extends Enum<?>, ShopSlot> pair = shopData.checkItemStackIsInData(itemStack);
-                if(pair != null){
-                    ShopSlot slot = pair.getSecond();
-                    if(pair.getFirst() != ItemType.THROWABLE){
-                        slot.unlock(itemStack.getCount());
-                        shop.syncShopData((ServerPlayer) event.getPlayer(),pair.getFirst().name(),slot);
-                    }
-                }
-            });
-        }
-
-        DropType type = DropType.getItemDropType(itemStack);
-        if(map instanceof CSGameMap && !event.isCanceled() && type != DropType.MISC){
-            FPSMCore.playerDropMatchItem((ServerPlayer) event.getPlayer(),itemStack);
-            event.setCanceled(true);
-        }
-    }
-
-
-    @SubscribeEvent
-    public static void onPlayerKilledByGun(EntityKillByGunEvent event){
-        if(event.getLogicalSide() == LogicalSide.SERVER){
-            if (event.getKilledEntity() instanceof ServerPlayer player) {
-                BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-                if (map instanceof CSGameMap cs && map.checkGameHasPlayer(player)) {
-                    if(event.getAttacker() instanceof ServerPlayer attacker){
-                        BaseMap fromMap = FPSMCore.getInstance().getMapByPlayer(player);
-                        if (fromMap instanceof CSGameMap csGameMap && csGameMap.equals(map)) {
-                            BaseTeam killerTeam = map.getMapTeams().getTeamByPlayer(attacker).orElse(null);
-                            BaseTeam deadTeam = map.getMapTeams().getTeamByPlayer(player).orElse(null);
-                            if(killerTeam == null || deadTeam == null) return;
-                            if (killerTeam.getFixedName().equals(deadTeam.getFixedName())){
-                                cs.removePlayerMoney(attacker.getUUID(),300);
-                                attacker.displayClientMessage(Component.translatable("blockoffensive.kill.message.teammate",300),false);
-                            }else{
-                                int reward = cs.gerRewardByGunId(event.getGunId());
-                                cs.addPlayerMoney(attacker.getUUID(),reward);
-                                attacker.displayClientMessage(Component.translatable("blockoffensive.kill.message.enemy",reward),false);
-                            }
-
-                            if(attacker.getMainHandItem().getItem() instanceof IGun) {
-                                csGameMap.getMapTeams().getTeamByPlayer(attacker).ifPresent(team->{
-                                    if(event.isHeadShot()){
-                                        team.getPlayerData(attacker.getUUID()).ifPresent(PlayerData::addHeadshotKill);
-                                    }
-                                });
-
-                                com.phasetranscrystal.blockoffensive.data.DeathMessage deathMessage = new DeathMessage.Builder(attacker, player, attacker.getMainHandItem()).setHeadShot(event.isHeadShot()).build();
-                                DeathMessageS2CPacket killMessageS2CPacket = new DeathMessageS2CPacket(deathMessage);
-                                csGameMap.sendPacketToAllPlayer(killMessageS2CPacket);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * 玩家死亡事件处理
-     * @see #handlePlayerDeath(ServerPlayer,Entity) 处理死亡逻辑
-     */
-    @SubscribeEvent
-    public static void onPlayerDeathEvent(LivingDeathEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-            if (map instanceof CSGameMap csGameMap) {
-                csGameMap.handlePlayerDeath(player,event.getSource().getEntity());
-                csGameMap.sendPacketToJoinedPlayer(player,new FPSMatchRespawnS2CPacket(),true);
-                event.setCanceled(true);
-            }
-        }
     }
 
     public void handlePlayerDeath(ServerPlayer player, @Nullable Entity fromEntity) {
@@ -1479,98 +1581,12 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         return this;
     }
 
-    /**
-     * Codec序列化配置（用于地图数据保存/加载）
-     * <p> 地图名称、区域数据、出生点、商店配置等全量数据
-     */
-    public static final Codec<CSGameMap> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-        // 基础地图数据
-        Codec.STRING.fieldOf("mapName").forGetter(CSGameMap::getMapName),
-        AreaData.CODEC.fieldOf("mapArea").forGetter(CSGameMap::getMapArea),
-        ResourceLocation.CODEC.fieldOf("serverLevel").forGetter(map -> map.getServerLevel().dimension().location()),
-
-        // 队伍出生点数据
-        new UnboundedMapCodec<>(
-                Codec.STRING,
-                SpawnPointData.CODEC.listOf()
-        ).fieldOf("spawnpoints").forGetter(map->map.getMapTeams().getAllSpawnPoints()),
-
-        // 商店数据 - 使用字符串到FPSMShop的映射
-        Codec.unboundedMap(Codec.STRING, FPSMShop.withCodec(ItemType.class)).fieldOf("shops")
-            .forGetter(map -> map.shop),
-            
-        // 初始装备数据
-        new UnboundedMapCodec<>(
-                    Codec.STRING,
-                    ItemStack.CODEC.listOf()
-            ).fieldOf("startKits").forGetter(map -> map.startKits),
-            
-        // 炸弹区域数据
-            AreaData.CODEC.listOf().fieldOf("bombAreas")
-            .forGetter(map -> map.bombAreaData),
-
-        // 爆破队伍
-        Codec.STRING.fieldOf("blastTeam")
-            .forGetter(map -> map.blastTeam),
-            
-        // 比赛结束传送点
-        SpawnPointData.CODEC.optionalFieldOf("matchEndPoint")
-            .forGetter(map -> Optional.ofNullable(map.matchEndTeleportPoint))
-            
-    ).apply(instance, (mapName, mapArea, serverLevel, spawnPoints, shops, startKits, bombAreas, blastTeam, matchEndPoint) -> {
-        // 创建新的CSGameMap实例
-        CSGameMap gameMap = new CSGameMap(
-            FPSMCore.getInstance().getServer().getLevel(ResourceKey.create(Registries.DIMENSION,serverLevel)),
-            mapName,
-            mapArea
-        );
-
-        // 设置出生点数据
-        gameMap.getMapTeams().putAllSpawnPoints(spawnPoints);
-
-        // 设置商店数据
-        for (Map.Entry<String,FPSMShop<ItemType>> shop : gameMap.shop.entrySet()){
-            shop.getValue().setDefaultShopData(shops.get(shop.getKey()).getDefaultShopDataMap());
-        }
-        
-        // 设置初始装备
-        Map<String, ArrayList<ItemStack>> data = new HashMap<>();
-        startKits.forEach((t,l)->{
-            ArrayList<ItemStack> list = new ArrayList<>(l);
-            data.put(t,list);
-        });
-        gameMap.setStartKits(data);
-        
-        // 设置炸弹区域
-        gameMap.bombAreaData.addAll(bombAreas);
-
-        // 设置爆破队伍
-        gameMap.blastTeam = blastTeam;
-        
-        // 设置比赛结束传送点
-        matchEndPoint.ifPresent(point -> gameMap.matchEndTeleportPoint = point);
-        
-        return gameMap;
-    }));
-
     public @NotNull BaseTeam getTTeam(){
         return this.tTeam;
     }
+
     public @NotNull BaseTeam getCTTeam(){
         return this.ctTeam;
-    }
-
-    public static Map<String, BiConsumer<CSGameMap,ServerPlayer>> registerCommands(){
-        Map<String, BiConsumer<CSGameMap,ServerPlayer>> commands = new HashMap<>();
-        commands.put("p", CSGameMap::setPauseState);
-        commands.put("pause", CSGameMap::setPauseState);
-        commands.put("unpause", CSGameMap::startUnpauseVote);
-        commands.put("up", CSGameMap::startUnpauseVote);
-        commands.put("agree", CSGameMap::handleAgreeCommand);
-        commands.put("a", CSGameMap::handleAgreeCommand);
-        commands.put("disagree", CSGameMap::handleDisagreeCommand);
-        commands.put("da", CSGameMap::handleDisagreeCommand);
-        return commands;
     }
 
     private void handleResetCommand(ServerPlayer serverPlayer) {
@@ -1662,15 +1678,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         }
     }
 
-    public static Map<String, Consumer<CSGameMap>> registerVoteAction(){
-        Map<String, Consumer<CSGameMap>> commands = new HashMap<>();
-        commands.put("overtime", CSGameMap::startOvertime);
-        commands.put("unpause", CSGameMap::setUnPauseState);
-        commands.put("reset", CSGameMap::resetGame);
-        commands.put("start", CSGameMap::startGame);
-        return commands;
-    }
-
     @Override
     public Collection<Setting<?>> settings() {
         return settings;
@@ -1684,14 +1691,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     public void read() {
         FPSMCore.getInstance().registerMap(this.getGameType(),this);
-    }
-
-    public static void write(FPSMDataManager manager){
-            FPSMCore.getInstance().getMapByClass(CSGameMap.class)
-                    .forEach((map -> {
-                        map.saveConfig();
-                        manager.saveData(map,map.getMapName());
-                    }));
     }
 
     public int gerRewardByGunId(ResourceLocation gunId){

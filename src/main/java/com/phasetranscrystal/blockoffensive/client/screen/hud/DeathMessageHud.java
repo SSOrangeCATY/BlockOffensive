@@ -27,7 +27,7 @@ public class DeathMessageHud implements IGuiOverlay {
     private final Map<String, ResourceLocation> specialKillIcons = new HashMap<>();
     public DeathMessageHud() {
         minecraft = Minecraft.getInstance();
-        
+
         // 注册特殊击杀图标
         registerSpecialKillIcon("headshot", new ResourceLocation(BlockOffensive.MODID, "textures/ui/cs/message/headshot.png"));
         registerSpecialKillIcon("throw_wall", new ResourceLocation(BlockOffensive.MODID, "textures/ui/cs/message/throw_wall.png"));
@@ -83,16 +83,16 @@ public class DeathMessageHud implements IGuiOverlay {
     public void addKillMessage(DeathMessage message) {
         synchronized(queueLock) {
             long currentTime = System.currentTimeMillis();
-            
+
             // 移除过期消息
-            messageQueue.removeIf(messageData -> 
-                currentTime - messageData.displayStartTime >= BOConfig.client.messageShowTime.get() * 1000);
-            
+            messageQueue.removeIf(messageData ->
+                    currentTime - messageData.displayStartTime >= BOConfig.client.messageShowTime.get() * 1000);
+
             // 如果队列已满，移除最旧的消息
             if (messageQueue.size() >= BOConfig.client.maxShowCount.get()) {
                 messageQueue.removeFirst();
             }
-            
+
             // 添加新消息
             messageQueue.add(new MessageData(message, currentTime));
         }
@@ -184,7 +184,7 @@ public class DeathMessageHud implements IGuiOverlay {
         renderIcon(guiGraphics, specialKillIcons.get(iconKey), currentX, y + 2, 12, 12);
         return currentX + 14; // 统一图标间距
     }
-    
+
     private void renderIcon(GuiGraphics guiGraphics, ResourceLocation icon, int x, int y, int width, int height) {
         guiGraphics.blit(icon, x, y, 0, 0, width, height, width, height);
     }
