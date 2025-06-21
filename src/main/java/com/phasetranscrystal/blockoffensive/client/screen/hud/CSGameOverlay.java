@@ -15,8 +15,6 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -26,8 +24,7 @@ import java.util.UUID;
 
 import static com.phasetranscrystal.fpsmatch.util.RenderUtil.color;
 
-public class CSGameOverlay implements IGuiOverlay {
-    private static final ResourceLocation GUI_BARS_LOCATION = new ResourceLocation("textures/gui/bars.png");
+public class CSGameOverlay {
     public static int textCTWinnerRoundsColor = color(182, 210, 240);
     public static int textTWinnerRoundsColor = color(253,217,141);
     public static int noColor = color(0,0,0,0);
@@ -46,10 +43,7 @@ public class CSGameOverlay implements IGuiOverlay {
     private final Map<UUID,String> cachedName = new HashMap<>();
     private int nextColorIndex = 0;
 
-    // 60*24 30*50
-    @Override
-    public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
-        if (FPSMClient.getGlobalData().equalsMap("fpsm_none")) return;
+    public void render(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
         Font font = Minecraft.getInstance().font;
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;

@@ -32,9 +32,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
-public class CSGameHud implements IHudRenderer {
 
-    public static final CSGameHud INSTANCE = new CSGameHud();
+public class CSGameHud implements IHudRenderer {
+    private static final CSGameHud INSTANCE = new CSGameHud();
+    private final CSMvpHud mvpHud = new CSMvpHud();
+    private final CSDeathMessageHud deathMessageHud = new CSDeathMessageHud();
+    private final CSGameOverlay gameOverlay = new CSGameOverlay();
     private static final ResourceLocation SEMI = new ResourceLocation("tacz", "textures/hud/fire_mode_semi.png");
     private static final ResourceLocation AUTO = new ResourceLocation("tacz", "textures/hud/fire_mode_auto.png");
     private static final ResourceLocation BURST = new ResourceLocation("tacz", "textures/hud/fire_mode_burst.png");
@@ -44,10 +47,27 @@ public class CSGameHud implements IHudRenderer {
     private final Animation[] slotAnimations = new Animation[9]; // 扩展到7个槽位
     private KillAnimator killAnimator = new EnderKillAnimator();
     private boolean isStarted = false;
+
+    public static CSGameHud getInstance(){
+        return INSTANCE;
+    }
+
     public CSGameHud(){
         for (int i = 0; i < 9; i++) {
             slotAnimations[i] = new Animation();
         }
+    }
+
+    public CSDeathMessageHud getDeathMessageHud() {
+        return deathMessageHud;
+    }
+
+    public CSGameOverlay getGameOverlay() {
+        return gameOverlay;
+    }
+
+    public CSMvpHud getMvpHud() {
+        return mvpHud;
     }
 
     public void setKillAnimator(KillAnimator killAnimator) {
@@ -69,12 +89,20 @@ public class CSGameHud implements IHudRenderer {
         isStarted = false;
     }
 
+    public void reset(){
+        mvpHud.resetAnimation();
+        stopKillAnim();
+        deathMessageHud.reset();
+    }
 
     @Override
     public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         Minecraft mc = Minecraft.getInstance();
+        gameOverlay.render(guiGraphics, screenWidth, screenHeight);
+        deathMessageHud.render(guiGraphics);
         renderInfoLine(mc,gui, guiGraphics, screenWidth, screenHeight);
         renderItemBar(mc,gui, guiGraphics, screenWidth, screenHeight);
+        mvpHud.render(guiGraphics, screenWidth, screenHeight);
     }
 
 

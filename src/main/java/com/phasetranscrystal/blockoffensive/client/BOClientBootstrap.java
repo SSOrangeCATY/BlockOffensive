@@ -16,7 +16,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -35,17 +34,9 @@ public class BOClientBootstrap {
         // 注册键位
         event.register(OpenShopKey.OPEN_SHOP_KEY);
         event.register(DismantleBombKey.DISMANTLE_BOMB_KEY);
-
         // cs: hud | overlay | tab
         TabManager.getInstance().registerRenderer(new CSGameTabRenderer());
-        FPSMGameHudManager.INSTANCE.registerHud("cs", CSGameHud.INSTANCE);
-    }
-
-    @SubscribeEvent
-    public static void onRegisterGuiOverlaysEvent(RegisterGuiOverlaysEvent event) {
-        event.registerBelowAll("fpsm_cs_scores_bar", new CSGameOverlay());
-        event.registerBelowAll("fpsm_death_message", DeathMessageHud.INSTANCE);
-        event.registerBelow(VanillaGuiOverlay.CHAT_PANEL.id(),"mvp_hud", MVPHud.INSTANCE);
+        FPSMGameHudManager.INSTANCE.registerHud("cs", CSGameHud.getInstance());
     }
 
     @SubscribeEvent

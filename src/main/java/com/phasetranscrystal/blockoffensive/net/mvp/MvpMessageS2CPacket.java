@@ -1,6 +1,7 @@
 package com.phasetranscrystal.blockoffensive.net.mvp;
 
-import com.phasetranscrystal.blockoffensive.client.screen.hud.MVPHud;
+import com.phasetranscrystal.blockoffensive.client.screen.hud.CSGameHud;
+import com.phasetranscrystal.blockoffensive.client.screen.hud.CSMvpHud;
 
 import com.phasetranscrystal.blockoffensive.data.MvpReason;
 import net.minecraft.network.FriendlyByteBuf;
@@ -34,7 +35,7 @@ public class MvpMessageS2CPacket {
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(()-> MVPHud.INSTANCE.triggerAnimation(this.mvpReason));
+        ctx.get().enqueueWork(()-> CSGameHud.getInstance().getMvpHud().triggerAnimation(this.mvpReason));
         ctx.get().setPacketHandled(true);
     }
 }

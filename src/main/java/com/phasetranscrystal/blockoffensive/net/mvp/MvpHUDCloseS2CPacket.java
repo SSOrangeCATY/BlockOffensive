@@ -1,6 +1,7 @@
 package com.phasetranscrystal.blockoffensive.net.mvp;
 
-import com.phasetranscrystal.blockoffensive.client.screen.hud.MVPHud;
+import com.phasetranscrystal.blockoffensive.client.screen.hud.CSGameHud;
+import com.phasetranscrystal.blockoffensive.client.screen.hud.CSMvpHud;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -17,7 +18,7 @@ public class MvpHUDCloseS2CPacket {
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(MVPHud.INSTANCE::triggerCloseAnimation);
+        ctx.get().enqueueWork(CSGameHud.getInstance().getMvpHud()::triggerCloseAnimation);
         ctx.get().setPacketHandled(true);
     }
 }

@@ -9,25 +9,18 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-import net.minecraftforge.fml.common.Mod;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
-@Mod.EventBusSubscriber(modid = BlockOffensive.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
-public class DeathMessageHud implements IGuiOverlay {
-    public static final DeathMessageHud INSTANCE = new DeathMessageHud();
+public class CSDeathMessageHud{
     private final Object queueLock = new Object();
     private final LinkedList<MessageData> messageQueue = new LinkedList<>();
     public final Minecraft minecraft;
     private final Map<String, ResourceLocation> specialKillIcons = new HashMap<>();
-    public DeathMessageHud() {
+    public CSDeathMessageHud() {
         minecraft = Minecraft.getInstance();
-
         // 注册特殊击杀图标
         registerSpecialKillIcon("headshot", new ResourceLocation(BlockOffensive.MODID, "textures/ui/cs/message/headshot.png"));
         registerSpecialKillIcon("throw_wall", new ResourceLocation(BlockOffensive.MODID, "textures/ui/cs/message/throw_wall.png"));
@@ -45,8 +38,7 @@ public class DeathMessageHud implements IGuiOverlay {
         registerSpecialKillIcon("hand", new ResourceLocation(BlockOffensive.MODID, "textures/ui/cs/message/hand.png"));
     }
 
-    @Override
-    public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+    public void render(GuiGraphics guiGraphics) {
         if (BOConfig.client.hudEnabled.get() && !messageQueue.isEmpty()) {
             if (minecraft.player != null) {
                 renderKillTips(guiGraphics);
@@ -222,6 +214,10 @@ public class DeathMessageHud implements IGuiOverlay {
         width += minecraft.font.width(message.getDead());
 
         return width;
+    }
+
+    public void reset(){
+        messageQueue.clear();
     }
 
     public record MessageData(DeathMessage message, long displayStartTime) {

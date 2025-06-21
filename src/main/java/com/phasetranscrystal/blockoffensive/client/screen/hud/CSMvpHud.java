@@ -15,14 +15,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.scores.PlayerTeam;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.UUID;
 
-public class MVPHud implements IGuiOverlay {
+public class CSMvpHud {
     private static final Comparator<PlayerInfo> PLAYER_COMPARATOR = Comparator.<PlayerInfo>comparingInt((p_253306_) -> {
         return p_253306_.getGameMode() == GameType.SPECTATOR ? 1 : 0;
     }).thenComparing((p_269613_) -> {
@@ -30,7 +28,6 @@ public class MVPHud implements IGuiOverlay {
     }).thenComparing((p_253305_) -> {
         return p_253305_.getProfile().getName();
     }, String::compareToIgnoreCase);
-    public static final MVPHud INSTANCE = new MVPHud();
     private static final Minecraft minecraft = Minecraft.getInstance();
     private static final Font font = minecraft.font;
     private static final int ROUND_BANNER_DURATION = 300;
@@ -88,13 +85,11 @@ public class MVPHud implements IGuiOverlay {
         }
     }
 
-
     public long getMvpInfoStartTime() {
         return mvpInfoStartTime;
     }
 
-    @Override
-    public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+    public void render(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
         if (isClosing) {
             renderCloseAnimation(guiGraphics, screenWidth, screenHeight);
             return;
@@ -129,11 +124,9 @@ public class MVPHud implements IGuiOverlay {
                                           float scaleFactor, int screenWidth, int screenHeight, long currentTime) {
         int scaledWidth = (int)(ROUND_BANNER_WIDTH * scaleFactor);
         int scaledHeight = (int)(ROUND_BANNER_HEIGHT * scaleFactor);
-        int yPos = (int)(190 * ((float)screenHeight / BASE_HEIGHT));
         int animatedWidth = (int)(scaledWidth * bannerProgress);
         int x = (screenWidth - animatedWidth) / 2;
-        int y = yPos;
-
+        int y = (int)(190 * ((float)screenHeight / BASE_HEIGHT));
         // 颜色过渡逻辑
         int bgColor = 0xFFFFFFFF;
         if (colorTransitionStartTime != -1) {
@@ -373,7 +366,7 @@ public class MVPHud implements IGuiOverlay {
     // 新增手动触发关闭动画方法
     public void triggerCloseAnimation() {
         if (!animationPlaying) return;
-        CSGameHud.INSTANCE.stopKillAnim();
+        CSGameHud.getInstance().stopKillAnim();
         isClosing = true;
         closeAnimationStartTime = System.currentTimeMillis();
     }

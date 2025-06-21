@@ -1,7 +1,7 @@
 package com.phasetranscrystal.blockoffensive.net;
 
+import com.phasetranscrystal.blockoffensive.client.screen.hud.CSDeathMessageHud;
 import com.phasetranscrystal.blockoffensive.client.screen.hud.CSGameHud;
-import com.phasetranscrystal.blockoffensive.client.screen.hud.DeathMessageHud;
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
@@ -57,11 +57,11 @@ public class DeathMessageS2CPacket {
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            DeathMessageHud.INSTANCE.addKillMessage(deathMessage);
+            CSGameHud.getInstance().getDeathMessageHud().addKillMessage(deathMessage);
             boolean isLocalPlayer = Minecraft.getInstance().player != null &&
                     deathMessage.getKillerUUID().equals(Minecraft.getInstance().player.getUUID());
             if(isLocalPlayer) {
-                CSGameHud.INSTANCE.addKill();
+                CSGameHud.getInstance().addKill();
             }
         });
         ctx.get().setPacketHandled(true);

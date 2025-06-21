@@ -1,14 +1,10 @@
 package com.phasetranscrystal.blockoffensive.client.data;
 
 import com.phasetranscrystal.blockoffensive.client.screen.hud.CSGameHud;
-import com.phasetranscrystal.blockoffensive.client.screen.hud.MVPHud;
-import com.phasetranscrystal.fpsmatch.FPSMConfig;
+import com.phasetranscrystal.blockoffensive.client.screen.hud.CSMvpHud;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.chat.Component;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -35,9 +31,8 @@ public class CSClientData {
     }
 
     public static void reset() {
-        MVPHud.INSTANCE.resetAnimation();
         currentMapSupportShop = true;
-        CSGameHud.INSTANCE.stopKillAnim();
+        CSGameHud.getInstance().reset();
         cTWinnerRounds = 0;
         tWinnerRounds = 0;
         time = 0;
