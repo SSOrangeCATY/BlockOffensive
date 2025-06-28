@@ -72,6 +72,6 @@ side="BOTH"
 [[dependencies."${mod_id}"]]
 modId="fpsmatch"
 mandatory=true
-versionRange="[1.2.2.6,)"
+versionRange="${fpsm_version_range}"
 ordering="NONE"
 side="BOTH"
