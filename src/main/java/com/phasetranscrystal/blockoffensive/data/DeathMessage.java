@@ -1,6 +1,8 @@
 package com.phasetranscrystal.blockoffensive.data;
 
+import com.phasetranscrystal.blockoffensive.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.common.effect.FPSMEffectRegister;
+import com.phasetranscrystal.fpsmatch.impl.FPSMImpl;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.client.resource.index.ClientGunIndex;
@@ -9,6 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.UUID;
 
@@ -24,6 +27,7 @@ public class DeathMessage {
     private final boolean isThroughSmoke;
     private final boolean isThroughWall;
     private final boolean isNoScope;
+    private final ResourceLocation itemRL;
     
     private DeathMessage(Builder builder) {
         this.killer = builder.killer;
@@ -31,6 +35,7 @@ public class DeathMessage {
         this.dead = builder.dead;
         this.deadUUID = builder.deadUUID;
         this.weapon = builder.weapon;
+        this.itemRL = ForgeRegistries.ITEMS.getKey(this.weapon.getItem());
         this.arg = builder.arg;
         this.isHeadShot = builder.isHeadShot;
         this.isBlinded = builder.isBlinded;
@@ -38,7 +43,7 @@ public class DeathMessage {
         this.isThroughWall = builder.isThroughWall;
         this.isNoScope = builder.isNoScope;
     }
-    
+
     public static class Builder {
         private final Component killer;
         private final UUID killerUUID;
@@ -116,13 +121,15 @@ public class DeathMessage {
     public boolean isThroughSmoke() { return isThroughSmoke; }
     public boolean isThroughWall() { return isThroughWall; }
     public boolean isNoScope() { return isNoScope; }
-    
+    public ResourceLocation getItemRL() { return itemRL; }
     public ResourceLocation getWeaponIcon() {
         Item item = weapon.getItem();
         if (item instanceof IGun iGun) {
             ResourceLocation gunId = iGun.getGunId(weapon);
             ClientGunIndex gunIndex = TimelessAPI.getClientGunIndex(gunId).orElse(null);
             return gunIndex != null ? gunIndex.getDefaultDisplay().getHUDTexture() : null;
+        }else if(FPSMImpl.findEquipmentMod()){
+            return LrtacticalCompat.getTexture(weapon);
         }
         return null;
     }

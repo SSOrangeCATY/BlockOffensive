@@ -60,7 +60,7 @@ public class DeathMessageS2CPacket {
             CSGameHud.getInstance().getDeathMessageHud().addKillMessage(deathMessage);
             boolean isLocalPlayer = Minecraft.getInstance().player != null &&
                     deathMessage.getKillerUUID().equals(Minecraft.getInstance().player.getUUID());
-            if(isLocalPlayer) {
+            if(isLocalPlayer && !deathMessage.getDeadUUID().equals(Minecraft.getInstance().player.getUUID())) {
                 CSGameHud.getInstance().addKill();
             }
         });

@@ -5,6 +5,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.mojang.serialization.codecs.UnboundedMapCodec;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
+import com.phasetranscrystal.blockoffensive.compat.LrtacticalCompat;
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import com.phasetranscrystal.blockoffensive.data.MvpReason;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
@@ -33,12 +34,14 @@ import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
+import com.phasetranscrystal.fpsmatch.core.entity.BaseProjectileEntity;
 import com.phasetranscrystal.fpsmatch.core.entity.BlastBombEntity;
 import com.phasetranscrystal.fpsmatch.core.event.GameWinnerEvent;
 import com.phasetranscrystal.fpsmatch.core.map.*;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
+import com.phasetranscrystal.fpsmatch.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import com.tacz.guns.api.event.common.EntityKillByGunEvent;
@@ -56,11 +59,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
@@ -185,6 +191,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private final List<AreaData> bombAreaData = new ArrayList<>();
     private final Map<String, FPSMShop<ItemType>> shop = new HashMap<>();
     private final Map<String,List<ItemStack>> startKits = new HashMap<>();
+    private final List<UUID> cachedPlayerDeathMessages = new ArrayList<>();
     private final BaseTeam ctTeam;
     private final BaseTeam tTeam;
     private int currentPauseTime = 0;
@@ -338,8 +345,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                                     }
                                 });
 
-                                com.phasetranscrystal.blockoffensive.data.DeathMessage deathMessage = new DeathMessage.Builder(attacker, player, attacker.getMainHandItem()).setHeadShot(event.isHeadShot()).build();
+                                DeathMessage deathMessage = new DeathMessage.Builder(attacker, player, attacker.getMainHandItem()).setHeadShot(event.isHeadShot()).build();
                                 DeathMessageS2CPacket killMessageS2CPacket = new DeathMessageS2CPacket(deathMessage);
+                                csGameMap.addCachedDeathMessage(player.getUUID());
                                 csGameMap.sendPacketToAllPlayer(killMessageS2CPacket);
                             }
                         }
@@ -358,6 +366,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         if (event.getEntity() instanceof ServerPlayer player) {
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
             if (map instanceof CSGameMap csGameMap) {
+                csGameMap.handlePlayerDeathMessage(player,event.getSource());
                 csGameMap.handlePlayerDeath(player,event.getSource().getEntity());
                 csGameMap.sendPacketToJoinedPlayer(player,new FPSMatchRespawnS2CPacket(),true);
                 event.setCanceled(true);
@@ -393,6 +402,18 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                     map.saveConfig();
                     manager.saveData(map,map.getMapName());
                 }));
+    }
+
+    public void addCachedDeathMessage(UUID uuid){
+        if(!hasCachedDeathMessage(uuid)) this.cachedPlayerDeathMessages.add(uuid);
+    }
+
+    public void resetCachedDeathMessage(){
+        this.cachedPlayerDeathMessages.clear();
+    }
+
+    public boolean hasCachedDeathMessage(UUID uuid){
+        return this.cachedPlayerDeathMessages.contains(uuid);
     }
 
     /**
@@ -1103,9 +1124,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     @Override
     public void cleanupMap() {
         super.cleanupMap();
+        this.resetCachedDeathMessage();
         AreaData areaData = this.getMapArea();
         ServerLevel serverLevel = this.getServerLevel();
-
         serverLevel.getEntitiesOfClass(Entity.class,areaData.getAABB()).forEach(entity -> {
             if(entity instanceof ItemEntity itemEntity){
                 itemEntity.discard();
@@ -1488,17 +1509,36 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.matchEndTeleportPoint = matchEndTeleportPoint;
     }
 
+    public void handlePlayerDeathMessage(ServerPlayer player, DamageSource source) {
+        if (this.hasCachedDeathMessage(player.getUUID())) {
+            return;
+        }
+
+        if (!(source.getEntity() instanceof Player attacker)) {
+            return;
+        }
+
+        ItemStack itemStack;
+
+        if (source.getDirectEntity() instanceof ThrowableItemProjectile projectile) {
+            itemStack = projectile.getItem();
+        }else{
+            itemStack = attacker.getMainHandItem();
+        }
+
+        DeathMessage message = new DeathMessage.Builder(attacker, player, itemStack).build();
+        DeathMessageS2CPacket killMessageS2CPacket = new DeathMessageS2CPacket(message);
+
+        this.addCachedDeathMessage(player.getUUID());
+        this.sendPacketToAllPlayer(killMessageS2CPacket);
+    }
+
     public void handlePlayerDeath(ServerPlayer player, @Nullable Entity fromEntity) {
         ServerPlayer from;
         if (fromEntity instanceof ServerPlayer fromPlayer) {
             BaseMap fromMap = FPSMCore.getInstance().getMapByPlayer(fromPlayer);
             if (fromMap != null && fromMap.equals(this)) {
                 from = fromPlayer;
-                DeathMessage message;
-                if(fromPlayer.getMainHandItem().isEmpty()){
-                    message = new DeathMessage.Builder(player,fromPlayer, ItemStack.EMPTY).setArg("hand").build();
-                    this.sendPacketToAllPlayer(new DeathMessageS2CPacket(message));
-                }
             } else {
                 from = null;
             }

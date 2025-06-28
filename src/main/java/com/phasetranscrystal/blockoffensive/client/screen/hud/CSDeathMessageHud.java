@@ -4,11 +4,15 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
+import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
+import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Items;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -19,6 +23,7 @@ public class CSDeathMessageHud{
     private final LinkedList<MessageData> messageQueue = new LinkedList<>();
     public final Minecraft minecraft;
     private final Map<String, ResourceLocation> specialKillIcons = new HashMap<>();
+    private final Map<ResourceLocation, String> itemToIcon = new HashMap<>();
     public CSDeathMessageHud() {
         minecraft = Minecraft.getInstance();
         // 注册特殊击杀图标
@@ -36,6 +41,14 @@ public class CSDeathMessageHud{
         registerSpecialKillIcon("flash_bomb", new ResourceLocation(BlockOffensive.MODID, "textures/ui/cs/message/flash_bomb.png"));
         registerSpecialKillIcon("smoke_shell", new ResourceLocation(BlockOffensive.MODID, "textures/ui/cs/message/smoke_shell.png"));
         registerSpecialKillIcon("hand", new ResourceLocation(BlockOffensive.MODID, "textures/ui/cs/message/hand.png"));
+
+        registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(Items.AIR),"hand");
+        registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(FPSMItemRegister.CT_INCENDIARY_GRENADE.get()),"ct_incendiary_grenade");
+        registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(FPSMItemRegister.T_INCENDIARY_GRENADE.get()),"t_incendiary_grenade");
+        registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(FPSMItemRegister.GRENADE.get()),"grenade");
+        registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(FPSMItemRegister.FLASH_BOMB.get()),"flash_bomb");
+        registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(FPSMItemRegister.SMOKE_SHELL.get()),"smoke_shell");
+        registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(BOItemRegister.C4.get()),"explode");
     }
 
     public void render(GuiGraphics guiGraphics) {
@@ -108,6 +121,10 @@ public class CSDeathMessageHud{
         specialKillIcons.put(id, texture);
     }
 
+    public void registerSpecialKillIcon(ResourceLocation item, String id) {
+        itemToIcon.put(item, id);
+    }
+
     private void renderKillMessage(GuiGraphics guiGraphics, DeathMessage message, int x, int y) {
         PoseStack poseStack = guiGraphics.pose();
         Font font = minecraft.font;
@@ -156,9 +173,13 @@ public class CSDeathMessageHud{
         }
 
         // 特殊击杀图标（统一处理）
-        if (!message.getArg().isEmpty() && specialKillIcons.containsKey(message.getArg())) {
-            renderIcon(guiGraphics, specialKillIcons.get(message.getArg()), currentX, y + 2, 12, 12);
-            currentX += 14;
+        String icon = this.itemToIcon.getOrDefault(message.getItemRL(),null);
+        if(icon != null){
+            weaponIcon = this.specialKillIcons.getOrDefault(icon,null);
+            if(weaponIcon != null) {
+                renderIcon(guiGraphics, weaponIcon, currentX, y + 2, 12, 12);
+                currentX += 14;
+            }
         }
 
         // 其他图标（爆头/穿烟等）
@@ -200,10 +221,12 @@ public class CSDeathMessageHud{
         }
 
         // 特殊击杀图标
-        if (!message.getArg().isEmpty() && specialKillIcons.containsKey(message.getArg())) {
-            width += 14;
+        String icon = this.itemToIcon.getOrDefault(message.getItemRL(),null);
+        if(icon != null){
+            if(this.specialKillIcons.getOrDefault(icon,null) != null) {
+                width += 14;
+            }
         }
-
         // 其他图标
         if (message.isHeadShot()) width += 14;
         if (message.isThroughSmoke()) width += 14;
