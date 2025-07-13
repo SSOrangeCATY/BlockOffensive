@@ -1,8 +1,11 @@
 package com.phasetranscrystal.blockoffensive.sound;
 
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
+import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -16,5 +19,4 @@ public class BOSoundRegister {
     public static RegistryObject<SoundEvent> click = SOUNDS.register("buttons_click", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(BlockOffensive.MODID, "buttons_click")));
     public static RegistryObject<SoundEvent> voice_t_win = SOUNDS.register("voice_ct_win", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(BlockOffensive.MODID, "voice_ct_win")));
     public static RegistryObject<SoundEvent> voice_ct_win = SOUNDS.register("voice_t_win", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(BlockOffensive.MODID, "voice_t_win")));
-
 }
