@@ -1,6 +1,7 @@
 package com.phasetranscrystal.blockoffensive.item;
 
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
+import com.phasetranscrystal.blockoffensive.item.test.TestItem;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
@@ -15,6 +16,9 @@ public class BOItemRegister {
 
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, BlockOffensive.MODID);
     public static final RegistryObject<Item> C4 = ITEMS.register("c4", () -> new CompositionC4(new Item.Properties()));
+    public static final RegistryObject<Item> BULLETPROOF_ARMOR = ITEMS.register("bulletproof_armor", () -> new BulletproofArmor(new Item.Properties(),false));
+    public static final RegistryObject<Item> BULLETPROOF_WITH_HELMET = ITEMS.register("bulletproof_with_helmet", () -> new BulletproofArmor(new Item.Properties(),true));
+    public static final RegistryObject<Item> OPEN_TEST_SHOP = ITEMS.register("open_test_shop", () -> new TestItem(new Item.Properties()));
     public static final RegistryObject<BombDisposalKit> BOMB_DISPOSAL_KIT = ITEMS.register("bomb_disposal_kit",
             () -> new BombDisposalKit(new Item.Properties()));
 
