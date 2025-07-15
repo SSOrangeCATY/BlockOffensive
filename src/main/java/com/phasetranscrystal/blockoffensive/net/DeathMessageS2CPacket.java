@@ -22,6 +22,13 @@ public class DeathMessageS2CPacket {
     public static void encode(DeathMessageS2CPacket packet, FriendlyByteBuf buf) {
         buf.writeComponent(packet.deathMessage.getKiller());
         buf.writeUUID(packet.deathMessage.getKillerUUID());
+        if(packet.deathMessage.getAssist() != null) {
+            buf.writeComponent(packet.deathMessage.getAssist());
+            buf.writeUUID(packet.deathMessage.getAssistUUID());
+        }else{
+            buf.writeComponent(packet.deathMessage.getKiller());
+            buf.writeUUID(packet.deathMessage.getKillerUUID());
+        }
         buf.writeComponent(packet.deathMessage.getDead());
         buf.writeUUID(packet.deathMessage.getDeadUUID());
         buf.writeItem(packet.deathMessage.getWeapon());
@@ -39,6 +46,8 @@ public class DeathMessageS2CPacket {
     public static DeathMessageS2CPacket decode(FriendlyByteBuf buf) {
         Component killer = buf.readComponent();
         UUID killerUUID = buf.readUUID();
+        Component assist = buf.readComponent();
+        UUID assistUUID = buf.readUUID();
         Component dead = buf.readComponent();
         UUID deadUUID = buf.readUUID();
         ItemStack weapon = buf.readItem();
@@ -46,6 +55,7 @@ public class DeathMessageS2CPacket {
         byte flags = buf.readByte();
         
         return new DeathMessageS2CPacket(new DeathMessage.Builder(killer, killerUUID, dead, deadUUID, weapon)
+            .setAssist(assist, assistUUID)
             .setArg(arg)
             .setHeadShot((flags & 1) != 0)
             .setBlinded((flags & 2) != 0)

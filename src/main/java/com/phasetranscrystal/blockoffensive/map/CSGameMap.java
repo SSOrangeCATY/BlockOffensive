@@ -41,7 +41,6 @@ import com.phasetranscrystal.fpsmatch.core.map.*;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
-import com.phasetranscrystal.fpsmatch.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import com.tacz.guns.api.event.common.EntityKillByGunEvent;
@@ -345,8 +344,22 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                                     }
                                 });
 
-                                DeathMessage deathMessage = new DeathMessage.Builder(attacker, player, attacker.getMainHandItem()).setHeadShot(event.isHeadShot()).build();
-                                DeathMessageS2CPacket killMessageS2CPacket = new DeathMessageS2CPacket(deathMessage);
+                                DeathMessage.Builder builder = new DeathMessage.Builder(attacker, player, attacker.getMainHandItem()).setHeadShot(event.isHeadShot());
+                                Map<UUID, Float> hurtDataMap = cs.getMapTeams().getDamageMap().get(player.getUUID());
+                                if (hurtDataMap != null && !hurtDataMap.isEmpty()) {
+                                    hurtDataMap.entrySet().stream()
+                                            .filter(entry -> entry.getValue() > player.getMaxHealth() / 4)
+                                            .sorted(Map.Entry.<UUID, Float>comparingByValue().reversed())
+                                            .limit(1)
+                                            .findAny()
+                                            .flatMap(entry -> cs.getMapTeams().getTeamByPlayer(entry.getKey())
+                                                    .flatMap(team -> team.getPlayerData(entry.getKey()))).ifPresent(playerData -> {
+                                                        if (!attacker.getUUID().equals(playerData.getOwner())){
+                                                            builder.setAssist(playerData.name(), playerData.getOwner());
+                                                        }
+                                            });
+                                }
+                                DeathMessageS2CPacket killMessageS2CPacket = new DeathMessageS2CPacket(builder.build());
                                 csGameMap.addCachedDeathMessage(player.getUUID());
                                 csGameMap.sendPacketToAllPlayer(killMessageS2CPacket);
                             }
@@ -1526,8 +1539,22 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             itemStack = attacker.getMainHandItem();
         }
 
-        DeathMessage message = new DeathMessage.Builder(attacker, player, itemStack).build();
-        DeathMessageS2CPacket killMessageS2CPacket = new DeathMessageS2CPacket(message);
+        DeathMessage.Builder builder = new DeathMessage.Builder(attacker, player, itemStack);
+        Map<UUID, Float> hurtDataMap = this.getMapTeams().getDamageMap().get(player.getUUID());
+        if (hurtDataMap != null && !hurtDataMap.isEmpty()) {
+            hurtDataMap.entrySet().stream()
+                    .filter(entry -> entry.getValue() > player.getMaxHealth() / 4)
+                    .sorted(Map.Entry.<UUID, Float>comparingByValue().reversed())
+                    .limit(1)
+                    .findAny()
+                    .flatMap(entry -> this.getMapTeams().getTeamByPlayer(entry.getKey())
+                            .flatMap(team -> team.getPlayerData(entry.getKey()))).ifPresent(playerData -> {
+                        if (!attacker.getUUID().equals(playerData.getOwner())){
+                            builder.setAssist(playerData.name(), playerData.getOwner());
+                        }
+                    });
+        }
+        DeathMessageS2CPacket killMessageS2CPacket = new DeathMessageS2CPacket(builder.build());
 
         this.addCachedDeathMessage(player.getUUID());
         this.sendPacketToAllPlayer(killMessageS2CPacket);
@@ -1583,22 +1610,20 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
             Map<UUID, Float> hurtDataMap = teams.getDamageMap().get(player.getUUID());
             if (hurtDataMap != null && !hurtDataMap.isEmpty()) {
-
-                List<Map.Entry<UUID, Float>> sortedDamageEntries = hurtDataMap.entrySet().stream()
-                        .filter(entry -> entry.getValue() > 4)
+                hurtDataMap.entrySet().stream()
+                        .filter(entry -> entry.getValue() > player.getMaxHealth() / 4)
                         .sorted(Map.Entry.<UUID, Float>comparingByValue().reversed())
-                        .limit(2)
-                        .toList();
+                        .limit(1)
+                        .findAny().ifPresent(assist->{
+                            UUID assistId = assist.getKey();
+                            teams.getTeamByPlayer(assistId)
+                                    .flatMap(assistPlayerTeam -> assistPlayerTeam.getPlayerData(assistId))
+                                    .ifPresent(assistData -> {
+                                        if (from != null && from.getUUID().equals(assistId)) return;
+                                        assistData.addAssist();
+                                    });
+                        });
 
-                for (Map.Entry<UUID, Float> sortedDamageEntry : sortedDamageEntries) {
-                    UUID assistId = sortedDamageEntry.getKey();
-                    teams.getTeamByPlayer(assistId)
-                            .flatMap(assistPlayerTeam -> assistPlayerTeam.getPlayerData(assistId))
-                            .ifPresent(assistData -> {
-                                if (from != null && from.getUUID().equals(assistId)) return;
-                                assistData.addAssist();
-                            });
-                }
             }
 
             if(from == null) return;

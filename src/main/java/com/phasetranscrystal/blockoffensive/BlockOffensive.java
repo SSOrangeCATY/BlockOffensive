@@ -13,8 +13,8 @@ import com.phasetranscrystal.blockoffensive.net.mvp.MvpHUDCloseS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.mvp.MvpMessageS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.shop.ShopStatesS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
-import com.phasetranscrystal.fpsmatch.common.command.FPSMCommand;
 import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
+import com.rosymaple.hitindication.HitIndication;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -47,7 +47,6 @@ public class BlockOffensive {
         BOItemRegister.TABS.register(modEventBus);
         BOEntityRegister.ENTITY_TYPES.register(modEventBus);
         BOSoundRegister.SOUNDS.register(modEventBus);
-
         context.registerConfig(ModConfig.Type.CLIENT, BOConfig.clientSpec);
         context.registerConfig(ModConfig.Type.COMMON, BOConfig.commonSpec);
     }

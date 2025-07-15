@@ -3,6 +3,7 @@ package com.phasetranscrystal.blockoffensive.client.screen.hud;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
+import com.phasetranscrystal.blockoffensive.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
@@ -10,13 +11,16 @@ import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Items;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.UUID;
 
 public class CSDeathMessageHud{
     private final Object queueLock = new Object();
@@ -49,6 +53,10 @@ public class CSDeathMessageHud{
         registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(FPSMItemRegister.FLASH_BOMB.get()),"flash_bomb");
         registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(FPSMItemRegister.SMOKE_SHELL.get()),"smoke_shell");
         registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(BOItemRegister.C4.get()),"explode");
+
+        if(ModList.get().isLoaded("csgrenades")){
+            CounterStrikeGrenadesCompat.registerKillIcon(itemToIcon);
+        }
     }
 
     public void render(GuiGraphics guiGraphics) {
@@ -128,8 +136,8 @@ public class CSDeathMessageHud{
     private void renderKillMessage(GuiGraphics guiGraphics, DeathMessage message, int x, int y) {
         PoseStack poseStack = guiGraphics.pose();
         Font font = minecraft.font;
-        boolean isLocalPlayer = minecraft.player != null &&
-                message.getKillerUUID().equals(minecraft.player.getUUID());
+        UUID local = minecraft.player.getUUID();
+        boolean isLocalPlayer = message.getKillerUUID().equals(local) || message.getAssistUUID().equals(local);
 
         // 背景尺寸计算
         int width = calculateMessageWidth(message);
@@ -214,7 +222,13 @@ public class CSDeathMessageHud{
 
         // 击杀者名字 + 间距
         width += minecraft.font.width(message.getKiller()) + 2;
+        MutableComponent component = message.getKiller().copy();
+        if(!message.getAssistUUID().equals(message.getKillerUUID())){
+            component.append(" + ");
+            component.append(message.getAssist());
+        };
 
+        width += minecraft.font.width(component) + 2;
         // 武器图标
         if (message.getWeaponIcon() != null) {
             width += (int)(117 * (14.0f / 44.0f)) + 2; // 武器宽度 + 间距2px

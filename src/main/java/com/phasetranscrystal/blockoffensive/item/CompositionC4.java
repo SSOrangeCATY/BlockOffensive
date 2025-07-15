@@ -43,25 +43,24 @@ public class CompositionC4 extends Item implements BlastBombItem {
 	@Override
 	public void initializeClient(Consumer<IClientItemExtensions> consumer) {
 		consumer.accept(new IClientItemExtensions() {
-			private static final HumanoidModel.ArmPose EXAMPLE_POSE = HumanoidModel.ArmPose.create("EXAMPLE", true, (model, entity, arm) -> {
-				float rotationAngle = (float) Math.toRadians(30);  // 将角度设置为 30 度（可以根据需要调整）
-				// 右臂旋转
-				if (arm == HumanoidArm.RIGHT) {
-					model.rightArm.xRot = -rotationAngle;  // 右臂旋转向中间
-					model.rightArm.yRot = -rotationAngle; // 右臂绕 Y 轴旋转
-				}
-				// 左臂旋转
-				else {
-					model.leftArm.xRot = -rotationAngle;  // 左臂旋转向中间
-					model.leftArm.yRot = rotationAngle;   // 左臂绕 Y 轴旋转（相反方向）
-				}
-			});
 
 			@Override
 			public HumanoidModel.ArmPose getArmPose(LivingEntity entityLiving, InteractionHand hand, ItemStack itemStack) {
 				if (!itemStack.isEmpty()) {
 					if (entityLiving.getUsedItemHand() == hand && entityLiving.getUseItemRemainingTicks() > 0) {
-						return EXAMPLE_POSE;
+						return HumanoidModel.ArmPose.create("EXAMPLE", true, (model, entity, arm) -> {
+							float rotationAngle = (float) Math.toRadians(30);  // 将角度设置为 30 度（可以根据需要调整）
+							// 右臂旋转
+							if (arm == HumanoidArm.RIGHT) {
+								model.rightArm.xRot = -rotationAngle;  // 右臂旋转向中间
+								model.rightArm.yRot = -rotationAngle; // 右臂绕 Y 轴旋转
+							}
+							// 左臂旋转
+							else {
+								model.leftArm.xRot = -rotationAngle;  // 左臂旋转向中间
+								model.leftArm.yRot = rotationAngle;   // 左臂绕 Y 轴旋转（相反方向）
+							}
+						});
 					}
 				}
 				return HumanoidModel.ArmPose.EMPTY;

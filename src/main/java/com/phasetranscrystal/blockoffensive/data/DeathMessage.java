@@ -18,6 +18,8 @@ import java.util.UUID;
 public class DeathMessage {
     private final Component killer;
     private final UUID killerUUID;
+    private final Component assist;
+    private final UUID assistUUID;
     private final Component dead;
     private final UUID deadUUID;
     private final ItemStack weapon;
@@ -32,6 +34,8 @@ public class DeathMessage {
     private DeathMessage(Builder builder) {
         this.killer = builder.killer;
         this.killerUUID = builder.killerUUID;
+        this.assist = builder.assist;
+        this.assistUUID = builder.assistUUID;
         this.dead = builder.dead;
         this.deadUUID = builder.deadUUID;
         this.weapon = builder.weapon;
@@ -47,6 +51,8 @@ public class DeathMessage {
     public static class Builder {
         private final Component killer;
         private final UUID killerUUID;
+        private Component assist = null;
+        private UUID assistUUID = null;
         private final Component dead;
         private final UUID deadUUID;
         private final ItemStack weapon;
@@ -72,6 +78,18 @@ public class DeathMessage {
             this.dead = dead;
             this.deadUUID = deadUUID;
             this.weapon = weapon;
+        }
+
+        public Builder setAssist(Component assist, UUID assistUUID){
+            this.assist = assist;
+            this.assistUUID = assistUUID;
+            return this;
+        }
+
+        public Builder setAssist(Player assist){
+            this.assist = assist.getDisplayName();
+            this.assistUUID = assist.getUUID();
+            return this;
         }
         
         public Builder setArg(String arg) {
@@ -122,6 +140,15 @@ public class DeathMessage {
     public boolean isThroughWall() { return isThroughWall; }
     public boolean isNoScope() { return isNoScope; }
     public ResourceLocation getItemRL() { return itemRL; }
+
+    public Component getAssist() {
+        return assist;
+    }
+
+    public UUID getAssistUUID() {
+        return assistUUID;
+    }
+
     public ResourceLocation getWeaponIcon() {
         Item item = weapon.getItem();
         if (item instanceof IGun iGun) {

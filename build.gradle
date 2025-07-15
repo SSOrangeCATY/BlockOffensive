@@ -83,17 +83,14 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
     mavenLocal()
-
     maven {
         name 'Curse Maven'
         url "https://www.cursemaven.com"
     }
-
     maven {
         name 'IzzelAliz Maven'
         url 'https://maven.izzel.io/releases/'
     }
-
     maven {
         name = "spigotmc-repo"
         url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
@@ -102,7 +99,10 @@ repositories {
         name = "sonatype"
         url = "https://oss.sonatype.org/content/groups/public/"
     }
-
+    maven {
+        name = "Modrinth"
+        url = "https://api.modrinth.com/maven"
+    }
 }
 
 dependencies {
@@ -132,6 +132,10 @@ dependencies {
     implementation fg.deobf("com.phasetranscrystal:fpsmatch:${fpsm_version}"){
         transitive = false
     }
+
+    implementation fg.deobf("maven.modrinth:counterstrikegrenade:${cs_grenade_version}")
+    runtimeOnly fg.deobf("maven.modrinth:kotlin-for-forge:${kotlin_forge_version}")
+    implementation fg.deobf("maven.modrinth:hit-indication:${hit_indication_version}")
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
