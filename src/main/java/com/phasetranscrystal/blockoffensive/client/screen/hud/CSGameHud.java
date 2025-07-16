@@ -1,6 +1,7 @@
 package com.phasetranscrystal.blockoffensive.client.screen.hud;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import com.phasetranscrystal.blockoffensive.client.screen.hud.animation.EnderKillAnimator;
 import com.phasetranscrystal.blockoffensive.client.screen.hud.animation.KillAnimator;
 import com.phasetranscrystal.blockoffensive.compat.HitIndicationCompat;
@@ -34,6 +35,8 @@ import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.fml.ModList;
+
+import static com.phasetranscrystal.blockoffensive.client.screen.hud.CSGameTabRenderer.GUI_ICONS_LOCATION;
 
 public class CSGameHud implements IHudRenderer {
     private static final CSGameHud INSTANCE = new CSGameHud();
@@ -131,7 +134,6 @@ public class CSGameHud implements IHudRenderer {
             guiGraphics.fill(centerX + x, y, centerX + x + 1, y + lineHeight, color);
         }
 
-        // TODO renderArmorBar(mc,gui, guiGraphics, screenWidth, screenHeight);
         renderHealthBar(mc,gui, guiGraphics, centerX,lineWidth,y);
         if (mc.player != null) {
             Inventory inv = mc.player.getInventory();
@@ -162,6 +164,8 @@ public class CSGameHud implements IHudRenderer {
             int healthBarHeight = 3;
             int healthBarFillWidth = (int) (healthPercent * tempWidth);
 
+            renderArmorBar(mc,gui, guiGraphics, healthTextX, healthTextY);
+
             guiGraphics.pose().pushPose();
             guiGraphics.pose().translate(healthTextX + (float) tempWidth / 2 - (float) font.width(healthText), healthTextY,0);
             guiGraphics.pose().scale(2,2,0);
@@ -174,8 +178,16 @@ public class CSGameHud implements IHudRenderer {
         }
     }
 
-    public void renderArmorBar(Minecraft mc, ForgeGui gui, GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
-        //TODO WIP
+    public void renderArmorBar(Minecraft mc, ForgeGui gui, GuiGraphics guiGraphics, int healthTextX, int healthTextY) {
+        if(CSClientData.bpAttributeDurability == 0) return;
+        Font font = mc.font;
+        String text = String.valueOf(CSClientData.bpAttributeDurability);
+        int width = font.width(text);
+        guiGraphics.blit(GUI_ICONS_LOCATION, healthTextX - 9, healthTextY, CSClientData.bpAttributeHasHelmet ? 34 : 25, 9, 9, 9);
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(healthTextX - width + 1, healthTextY + 6,0);
+        guiGraphics.drawString(font, text, 0, 0, 0xFFFFFFFF, false);
+        guiGraphics.pose().popPose();
     }
 
     private void renderGunInfo(Minecraft mc, ForgeGui gui, GuiGraphics guiGraphics, int screenWidth, int screenHeight, ItemStack stack, IGun iGun,int centerX, int lineWidth, int y) {

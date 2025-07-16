@@ -1,6 +1,7 @@
 package com.phasetranscrystal.blockoffensive.item;
 
 import com.phasetranscrystal.blockoffensive.attributes.BulletproofArmorAttribute;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -19,7 +20,7 @@ public class BulletproofArmor extends Item {
     @Override
     public @NotNull InteractionResultHolder<ItemStack> use(Level pLevel, @NotNull Player pPlayer, @NotNull InteractionHand pUsedHand) {
         if(!pLevel.isClientSide){
-            BulletproofArmorAttribute.addPlayer(pPlayer,new BulletproofArmorAttribute(hasHelmet));
+            BulletproofArmorAttribute.addPlayer((ServerPlayer) pPlayer,new BulletproofArmorAttribute(hasHelmet));
             ItemStack itemstack = pPlayer.getItemInHand(pUsedHand);
             if (!pPlayer.isCreative()) {
                 itemstack.shrink(1);

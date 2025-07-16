@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 
 public class CSGameTabRenderer implements TabRenderer {
-    private static final ResourceLocation GUI_ICONS_LOCATION = new ResourceLocation("textures/gui/icons.png");
+    public static final ResourceLocation GUI_ICONS_LOCATION = new ResourceLocation("textures/gui/icons.png");
     private final Minecraft minecraft = Minecraft.getInstance();
 
     @Override

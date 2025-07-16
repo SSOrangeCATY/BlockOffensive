@@ -6,6 +6,7 @@ import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.net.CSGameSettingsS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.CSTabRemovalS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.DeathMessageS2CPacket;
+import com.phasetranscrystal.blockoffensive.net.attribute.BulletproofArmorAttributeS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombActionC2SPacket;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombActionS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombDemolitionProgressS2CPacket;
@@ -66,5 +67,6 @@ public class BlockOffensive {
         PACKET_REGISTER.registerPacket(CSGameSettingsS2CPacket.class);
         PACKET_REGISTER.registerPacket(CSTabRemovalS2CPacket.class);
         PACKET_REGISTER.registerPacket(DeathMessageS2CPacket.class);
+        PACKET_REGISTER.registerPacket(BulletproofArmorAttributeS2CPacket.class);
     }
 }

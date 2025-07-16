@@ -26,6 +26,9 @@ public class CSClientData {
     public static int nextRoundMoney = 0;
     public static float dismantleBombProgress = 0;
 
+    public static boolean bpAttributeHasHelmet = false;
+    public static int bpAttributeDurability = 0;
+
     public static int getMoney(){
         return FPSMClient.getGlobalData().getPlayerMoney(Minecraft.getInstance().player.getUUID());
     }
