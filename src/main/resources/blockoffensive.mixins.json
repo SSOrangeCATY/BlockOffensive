@@ -9,6 +9,7 @@
     "StepSoundMixin"
   ],
   "client": [
+    "PlayerRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

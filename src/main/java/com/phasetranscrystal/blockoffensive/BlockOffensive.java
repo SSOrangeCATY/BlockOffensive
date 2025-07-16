@@ -3,9 +3,7 @@ package com.phasetranscrystal.blockoffensive;
 import com.phasetranscrystal.blockoffensive.command.VoteCommand;
 import com.phasetranscrystal.blockoffensive.entity.BOEntityRegister;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
-import com.phasetranscrystal.blockoffensive.net.CSGameSettingsS2CPacket;
-import com.phasetranscrystal.blockoffensive.net.CSTabRemovalS2CPacket;
-import com.phasetranscrystal.blockoffensive.net.DeathMessageS2CPacket;
+import com.phasetranscrystal.blockoffensive.net.*;
 import com.phasetranscrystal.blockoffensive.net.attribute.BulletproofArmorAttributeS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombActionC2SPacket;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombActionS2CPacket;
@@ -15,7 +13,6 @@ import com.phasetranscrystal.blockoffensive.net.mvp.MvpMessageS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.shop.ShopStatesS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
 import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
-import com.rosymaple.hitindication.HitIndication;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -30,7 +27,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 @Mod(BlockOffensive.MODID)
 public class BlockOffensive {
     public static final String MODID = "blockoffensive";
-    private static final String PROTOCOL_VERSION = "1.0.0";
+    private static final String PROTOCOL_VERSION = "1.1.0";
     private static final NetworkPacketRegister PACKET_REGISTER = new NetworkPacketRegister(new ResourceLocation(MODID, "main"),PROTOCOL_VERSION);
     public static final SimpleChannel INSTANCE = PACKET_REGISTER.getChannel();
 
@@ -68,5 +65,7 @@ public class BlockOffensive {
         PACKET_REGISTER.registerPacket(CSTabRemovalS2CPacket.class);
         PACKET_REGISTER.registerPacket(DeathMessageS2CPacket.class);
         PACKET_REGISTER.registerPacket(BulletproofArmorAttributeS2CPacket.class);
+        PACKET_REGISTER.registerPacket(PxDeathCompatS2CPacket.class);
+        PACKET_REGISTER.registerPacket(PxResetCompatS2CPacket.class);
     }
 }

@@ -161,9 +161,15 @@ public class CSDeathMessageHud{
             currentX += 14; // 图标12px + 间距2px
         }
 
+        MutableComponent component = message.getKiller().copy();
+        if(!message.getAssistUUID().equals(message.getKillerUUID())){
+            component.append(" + ");
+            component.append(message.getAssist());
+        };
+
         // 击杀者名字
-        guiGraphics.drawString(font, message.getKiller(), currentX, y + 4, -1, true);
-        currentX += font.width(message.getKiller()) + 2; // 间距调整为2px
+        guiGraphics.drawString(font, component, currentX, y + 4, -1, true);
+        currentX += font.width(component) + 2; // 间距调整为2px
 
         // 武器图标
         ResourceLocation weaponIcon = message.getWeaponIcon();
