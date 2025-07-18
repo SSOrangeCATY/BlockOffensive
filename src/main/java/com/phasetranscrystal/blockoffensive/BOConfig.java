@@ -25,8 +25,26 @@ public class BOConfig {
     public static class Common {
         public final ForgeConfigSpec.BooleanValue showLogin;
 
+        public final ForgeConfigSpec.DoubleValue teammateMuffledStepVolume;
+        public final ForgeConfigSpec.DoubleValue teammateStepVolume;
+        public final ForgeConfigSpec.DoubleValue enemyMuffledStepVolume;
+        public final ForgeConfigSpec.DoubleValue enemyStepVolume;
+
         private Common(ForgeConfigSpec.Builder builder) {
-            showLogin = builder.comment("Show Login Message").define("showLoginMessage",true);
+            builder.push("login");
+            {
+                showLogin = builder.comment("Show Login Message").define("showLoginMessage", true);
+            }
+            builder.pop();
+
+            builder.push("step sound");
+            {
+                teammateMuffledStepVolume = builder.comment("Teammate Muffled Step Volume").defineInRange("teammateMuffledStepVolume", 0.05D, 0, 10);
+                teammateStepVolume = builder.comment("Teammate Step Volume").defineInRange("teammateStepVolume", 0.15D, 0, 10);
+                enemyMuffledStepVolume = builder.comment("Enemy Muffled Step Volume").defineInRange("enemyMuffledStepVolume", 0.4D, 0, 10);
+                enemyStepVolume = builder.comment("Enemy Step Volume").defineInRange("enemyStepVolume", 1.2D, 0, 10);
+            }
+            builder.pop();
         }
     }
     public static final Client client;

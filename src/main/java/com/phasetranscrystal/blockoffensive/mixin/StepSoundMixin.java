@@ -1,5 +1,6 @@
 package com.phasetranscrystal.blockoffensive.mixin;
 
+import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.map.CSGameMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
@@ -83,8 +84,9 @@ public abstract class StepSoundMixin extends LivingEntity {
     protected void blockoffensive$playStepSound(SoundType soundtype, BaseTeam joined, boolean isMuffled) {
         List<ServerPlayer> players = Objects.requireNonNull(this.level().getServer()).getPlayerList().getPlayers();
         Holder<SoundEvent> sound = BuiltInRegistries.SOUND_EVENT.wrapAsHolder(soundtype.getStepSound());
-        var teammate = new ClientboundSoundPacket(sound, this.getSoundSource() ,this.getX(), this.getY(), this.getZ(),soundtype.getVolume() * (isMuffled ? 0.05F : 0.15F), soundtype.getPitch(),this.level().getRandom().nextLong());
-        var enemy = new ClientboundSoundPacket(sound, this.getSoundSource() ,this.getX(), this.getY(), this.getZ(),soundtype.getVolume() * (isMuffled ? 0.6F : 1.8F), soundtype.getPitch(),this.level().getRandom().nextLong());
+        BOConfig.Common config = BOConfig.common;
+        var teammate = new ClientboundSoundPacket(sound, this.getSoundSource() ,this.getX(), this.getY(), this.getZ(), (float) (soundtype.getVolume() * (isMuffled ? config.teammateMuffledStepVolume.get() : config.teammateStepVolume.get())), soundtype.getPitch(),this.level().getRandom().nextLong());
+        var enemy = new ClientboundSoundPacket(sound, this.getSoundSource() ,this.getX(), this.getY(), this.getZ(), (float) (soundtype.getVolume() * (isMuffled ? config.enemyMuffledStepVolume.get() : config.enemyStepVolume.get())), soundtype.getPitch(),this.level().getRandom().nextLong());
 
         for (ServerPlayer player : players) {
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
