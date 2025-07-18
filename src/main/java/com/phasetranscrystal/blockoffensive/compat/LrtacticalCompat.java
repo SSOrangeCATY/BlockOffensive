@@ -1,9 +1,12 @@
 package com.phasetranscrystal.blockoffensive.compat;
 
+import com.phasetranscrystal.fpsmatch.impl.FPSMImpl;
 import me.xjqsh.lrtactical.api.LrTacticalAPI;
 import me.xjqsh.lrtactical.api.item.IMeleeWeapon;
+import me.xjqsh.lrtactical.api.item.IThrowable;
 import me.xjqsh.lrtactical.client.resource.display.MeleeDisplayInstance;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -23,5 +26,9 @@ public class LrtacticalCompat {
             return display.getTexture();
         }
         return null;
+    }
+
+    public static boolean itemCheck(Item item){
+        return item instanceof IMeleeWeapon || item instanceof IThrowable;
     }
 }

@@ -2,6 +2,8 @@ package com.phasetranscrystal.blockoffensive.client;
 
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
+import com.phasetranscrystal.blockoffensive.compat.CounterStrikeGrenadesCompat;
+import com.phasetranscrystal.blockoffensive.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.event.FPSMClientResetEvent;
@@ -16,6 +18,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = BlockOffensive.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
@@ -57,7 +60,9 @@ public class BoClientEvent {
         if (player != null) {
             Item main = player.getMainHandItem().getItem();
             Item off = player.getOffhandItem().getItem();
-            return itemCheck(main) || itemCheck(off) || (FPSMImpl.findEquipmentMod() && (lrtacticalItemCheck(main) || lrtacticalItemCheck(off)));
+            return itemCheck(main) || itemCheck(off)
+                    || (FPSMImpl.findEquipmentMod() && (LrtacticalCompat.itemCheck(main) || LrtacticalCompat.itemCheck(off))
+                    || (ModList.get().isLoaded("csgrenades") && (CounterStrikeGrenadesCompat.itemCheck(main) || CounterStrikeGrenadesCompat.itemCheck(off))));
         }
         return false;
     }
@@ -66,14 +71,5 @@ public class BoClientEvent {
         return item instanceof IGun || item instanceof IThrowEntityAble;
     }
 
-    private static boolean lrtacticalItemCheck(Item item){
-        if(!FPSMImpl.findEquipmentMod()) return false;
-
-        try {
-            return item instanceof me.xjqsh.lrtactical.api.item.IMeleeWeapon || item instanceof me.xjqsh.lrtactical.api.item.IThrowable;
-        } catch (Exception var3) {
-            return false;
-        }
-    }
 
 }

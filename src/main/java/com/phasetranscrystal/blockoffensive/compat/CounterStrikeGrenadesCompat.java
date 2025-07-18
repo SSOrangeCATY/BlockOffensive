@@ -1,6 +1,7 @@
 package com.phasetranscrystal.blockoffensive.compat;
 
 
+import club.pisquad.minecraft.csgrenades.item.CounterStrikeGrenadeItem;
 import club.pisquad.minecraft.csgrenades.registery.ModDamageType;
 import club.pisquad.minecraft.csgrenades.registery.ModItems;
 import net.minecraft.resources.ResourceLocation;
@@ -43,5 +44,8 @@ public class CounterStrikeGrenadesCompat {
         return new ItemStack(item);
     }
 
+    public static boolean itemCheck(Item item){
+        return item instanceof CounterStrikeGrenadeItem;
+    }
 
 }
