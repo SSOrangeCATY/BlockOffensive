@@ -7,6 +7,7 @@ import com.phasetranscrystal.blockoffensive.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
+import com.phasetranscrystal.fpsmatch.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -54,7 +55,7 @@ public class CSDeathMessageHud{
         registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(FPSMItemRegister.SMOKE_SHELL.get()),"smoke_shell");
         registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(BOItemRegister.C4.get()),"explode");
 
-        if(ModList.get().isLoaded("csgrenades")){
+        if(FPSMImpl.findCounterStrikeGrenadesMod()){
             CounterStrikeGrenadesCompat.registerKillIcon(itemToIcon);
         }
     }

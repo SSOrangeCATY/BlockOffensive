@@ -6,7 +6,7 @@ import com.phasetranscrystal.fpsmatch.core.shop.functional.ListenerModule;
 
 public class BulletproofArmorWithHelmetListenerModule implements ListenerModule {
     @Override
-    public void handle(ShopSlotChangeEvent event) {
+    public void onChange(ShopSlotChangeEvent event) {
         if (event.flag >= 1) {
             BulletproofArmorAttribute.addPlayer(event.player,new BulletproofArmorAttribute(true));
         }else{

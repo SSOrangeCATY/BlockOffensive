@@ -14,7 +14,7 @@
 |-------------------------------------------------------|----------|
 | Minecraft                                             | 1.20.1   |
 | Forge                                                 | 47.3.11  |
-| [FPSMatch](https://github.com/SSOrangeCATY/FPSMacth/) | 1.2.2.6  |
+| [FPSMatch](https://github.com/SSOrangeCATY/FPSMacth/) | 1.2.3.7  |
 | ModernUI                                              | 3.11.1.6 |
 
 ### ℹ️交流群 : 

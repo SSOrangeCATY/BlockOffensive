@@ -38,6 +38,7 @@ import com.phasetranscrystal.fpsmatch.core.map.*;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
+import com.phasetranscrystal.fpsmatch.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import com.tacz.guns.api.event.common.EntityKillByGunEvent;
@@ -1506,7 +1507,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     public void handlePlayerDeathMessage(ServerPlayer player, DamageSource source) {
-        boolean isCSGrenadesModLoaded = ModList.get().isLoaded("csgrenades");
         Player attacker;
         if(source.getEntity() instanceof Player p){
             attacker = p;
@@ -1527,7 +1527,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         if (source.getDirectEntity() instanceof ThrowableItemProjectile projectile) {
             itemStack = projectile.getItem();
         }else{
-            if(isCSGrenadesModLoaded){
+            if(FPSMImpl.findCounterStrikeGrenadesMod()){
                 itemStack = CounterStrikeGrenadesCompat.getItemFromDamageSource(source);
                 if(itemStack.isEmpty()){
                     itemStack = attacker.getMainHandItem();
