@@ -4,7 +4,6 @@ import com.phasetranscrystal.blockoffensive.compat.PhysicsModCompat;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
-import java.util.UUID;
 import java.util.function.Supplier;
 
 public class PxResetCompatS2CPacket {
@@ -16,7 +15,7 @@ public class PxResetCompatS2CPacket {
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(PhysicsModCompat::clearRagdoll);
+        ctx.get().enqueueWork(PhysicsModCompat::reset);
         ctx.get().setPacketHandled(true);
     }
 }

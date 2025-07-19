@@ -376,7 +376,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
             if (map instanceof CSGameMap csGameMap) {
                 if(ModList.get().isLoaded("physicsmod")){
-                    csGameMap.sendPacketToJoinedPlayer(player,new PxDeathCompatS2CPacket(player.getUUID()),true);
+                    csGameMap.sendPacketToJoinedPlayer(player,new PxDeathCompatS2CPacket(),true);
                 }
                 csGameMap.handlePlayerDeathMessage(player,event.getSource());
                 csGameMap.handlePlayerDeath(player,event.getSource().getEntity());
@@ -1129,18 +1129,12 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         if(ModList.get().isLoaded("physicsmod")){
             this.sendPacketToAllPlayer(new PxResetCompatS2CPacket());
         }
-        serverLevel.getEntitiesOfClass(Entity.class,areaData.getAABB()).forEach(entity -> {
-            if(entity instanceof ItemEntity itemEntity){
-                itemEntity.discard();
+        for (Entity entity : serverLevel.getEntitiesOfClass(Entity.class,areaData.getAABB())){
+            if(entity instanceof ItemEntity || entity instanceof CompositionC4Entity || entity instanceof MatchDropEntity)
+            {
+                entity.discard();
             }
-            if(entity instanceof CompositionC4Entity c4){
-                c4.discard();
-            }
-
-            if(entity instanceof MatchDropEntity matchDropEntity){
-                matchDropEntity.discard();
-            }
-        });
+        }
         AtomicInteger atomicInteger = new AtomicInteger(0);
         int ctScore = this.getCTTeam().getScores();
         int tScore = this.getTTeam().getScores();
