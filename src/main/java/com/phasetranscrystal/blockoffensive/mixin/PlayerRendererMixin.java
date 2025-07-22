@@ -29,15 +29,15 @@ public abstract class PlayerRendererMixin extends LivingEntityRenderer<AbstractC
     
     @Inject(method = "setModelProperties(Lnet/minecraft/client/player/AbstractClientPlayer;)V", at = @At("HEAD"), cancellable = true)
     private void setModelProperties(AbstractClientPlayer player, CallbackInfo ci) {
-        PlayerModel<AbstractClientPlayer> playermodel = this.getModel();
         if(FPSMClient.getGlobalData().getPlayerTabData(player.getUUID()).isPresent()){
+            PlayerModel<AbstractClientPlayer> playermodel = this.getModel();
             playermodel.setAllVisible(true);
-            playermodel.hat.visible = player.isModelPartShown(PlayerModelPart.HAT);
-            playermodel.jacket.visible = player.isModelPartShown(PlayerModelPart.JACKET);
-            playermodel.leftPants.visible = player.isModelPartShown(PlayerModelPart.LEFT_PANTS_LEG);
-            playermodel.rightPants.visible = player.isModelPartShown(PlayerModelPart.RIGHT_PANTS_LEG);
-            playermodel.leftSleeve.visible = player.isModelPartShown(PlayerModelPart.LEFT_SLEEVE);
-            playermodel.rightSleeve.visible = player.isModelPartShown(PlayerModelPart.RIGHT_SLEEVE);
+            playermodel.hat.visible = true;
+            playermodel.jacket.visible = true;
+            playermodel.leftPants.visible = true;
+            playermodel.rightPants.visible = true;
+            playermodel.leftSleeve.visible = true;
+            playermodel.rightSleeve.visible = true;
             playermodel.crouching = player.isCrouching();
             HumanoidModel.ArmPose humanoidmodel$armpose = blockoffensive$getArmPose(player, InteractionHand.MAIN_HAND);
             HumanoidModel.ArmPose humanoidmodel$armpose1 = blockoffensive$getArmPose(player, InteractionHand.OFF_HAND);
