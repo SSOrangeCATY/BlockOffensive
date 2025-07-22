@@ -29,7 +29,7 @@ public abstract class PlayerRendererMixin extends LivingEntityRenderer<AbstractC
     
     @Inject(method = "setModelProperties(Lnet/minecraft/client/player/AbstractClientPlayer;)V", at = @At("HEAD"), cancellable = true)
     private void setModelProperties(AbstractClientPlayer player, CallbackInfo ci) {
-        if(FPSMClient.getGlobalData().getPlayerTabData(player.getUUID()).isPresent()){
+        if(player.isSpectator() && FPSMClient.getGlobalData().getPlayerTabData(player.getUUID()).isPresent()){
             PlayerModel<AbstractClientPlayer> playermodel = this.getModel();
             playermodel.setAllVisible(true);
             playermodel.hat.visible = true;
