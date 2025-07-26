@@ -101,7 +101,14 @@ public class CSGameHud implements IHudRenderer {
     }
 
     @Override
-    public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+    public void onSpectatorRender(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+        gameOverlay.render(guiGraphics, screenWidth, screenHeight);
+        deathMessageHud.render(guiGraphics);
+        mvpHud.render(guiGraphics, screenWidth, screenHeight);
+    }
+
+    @Override
+    public void onPlayerRender(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         Minecraft mc = Minecraft.getInstance();
         if(ModList.get().isLoaded("hitindication")){
             HitIndicationCompat.Renderer.render(gui.getMinecraft().getWindow(),guiGraphics);
@@ -112,6 +119,7 @@ public class CSGameHud implements IHudRenderer {
         renderItemBar(mc,gui, guiGraphics, screenWidth, screenHeight);
         mvpHud.render(guiGraphics, screenWidth, screenHeight);
     }
+
 
 
     public void renderInfoLine(Minecraft mc, ForgeGui gui, GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
