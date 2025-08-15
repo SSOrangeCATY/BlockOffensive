@@ -83,7 +83,7 @@ public class CompositionC4 extends Item implements BlastBombItem {
 		if(pLevel instanceof ServerLevel serverLevel && pEntity instanceof ServerPlayer player) {
 			int i = player.getInventory().countItem(BOItemRegister.C4.get());
 			if (i > 0) {
-				serverLevel.sendParticles(new DustParticleOptions(new Vector3f(1,0.1f,0.1f),1),player.getX(),player.getY() + 2,player.getZ(),1,0,0,0,1);
+				serverLevel.sendParticles(new DustParticleOptions(new Vector3f(1,0.1f,0.1f),1),player.getX()+0.25F,player.getY() + 1,player.getZ()+0.25F,1,0,0,0,1);
 			}
 		}
 	}
@@ -108,7 +108,8 @@ public class CompositionC4 extends Item implements BlastBombItem {
             boolean isInBombArea = map.checkPlayerIsInBombArea(player);
             if(canPlace && isInBombArea){
                 player.startUsingItem(hand);
-                return InteractionResultHolder.consume(itemstack);
+				level.playSound(null, player.getX(), player.getY(), player.getZ(), BOSoundRegister.click.get(), SoundSource.PLAYERS, 3.0F, 1.0F);
+				return InteractionResultHolder.consume(itemstack);
             }else{
                 if(!canPlace) {
                     player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail"), true);
@@ -128,17 +129,16 @@ public class CompositionC4 extends Item implements BlastBombItem {
     }
 
 	@Override
-	public void onUseTick(@NotNull Level pLevel, @NotNull LivingEntity pLivingEntity, @NotNull ItemStack pStack, int pRemainingUseDuration) {
-		if (pLevel.isClientSide && Minecraft.getInstance().player != null && pLivingEntity.getUUID().equals(Minecraft.getInstance().player.getUUID())) {
+	public void onUseTick(@NotNull Level pLevel, @NotNull LivingEntity entity, @NotNull ItemStack pStack, int pRemainingUseDuration) {
+		if (pLevel.isClientSide && Minecraft.getInstance().player != null && entity.getUUID().equals(Minecraft.getInstance().player.getUUID())) {
 			Minecraft.getInstance().options.keyUp.setDown(false);
 			Minecraft.getInstance().options.keyLeft.setDown(false);
 			Minecraft.getInstance().options.keyDown.setDown(false);
 			Minecraft.getInstance().options.keyRight.setDown(false);
 			Minecraft.getInstance().options.keyJump.setDown(false);
-		}
-		if (pLivingEntity instanceof Player player && player.isUsingItem() && pStack == player.getUseItem()) {
+
 			if (pRemainingUseDuration % 8 == 0) {
-				pLevel.playSound(null, player.getX(), player.getY(), player.getZ(), BOSoundRegister.click.get(), SoundSource.PLAYERS, 3.0F, 1.0F);
+				pLevel.playSound(null, entity.getX(), entity.getY(), entity.getZ(), BOSoundRegister.click.get(), SoundSource.PLAYERS, 3.0F, 1.0F);
 			}
 		}
 	}

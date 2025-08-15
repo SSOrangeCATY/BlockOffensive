@@ -64,7 +64,7 @@ public class CSClientData {
                 return data.get();
             }
         }
-        return new PlayerData(mc.player);
+        return null;
     }
 
     public static int getLivingWithTeam(String team){

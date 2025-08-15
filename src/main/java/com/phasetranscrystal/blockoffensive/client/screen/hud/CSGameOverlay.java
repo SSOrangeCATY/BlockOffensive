@@ -257,7 +257,7 @@ public class CSGameOverlay {
 
         String localTeam = FPSMClient.getGlobalData().getCurrentTeam();
 
-        boolean showInfo = CSClientData.isWaiting || !CSClientData.getLocalCSTabData().isLivingNoOnlineCheck();
+        boolean showInfo = CSClientData.isWaiting;
 
         renderAvatarRow(guiGraphics, teamPlayers.get("ct"),
                 ctBoxX - offset, startY, boxWidth,
@@ -326,16 +326,15 @@ public class CSGameOverlay {
                                  int avatarSize,
                                  int gap,
                                  boolean leftSide,
-                                 boolean showInfo,
+                                 boolean showNameInfo,
                                  String localTeam,
                                  String rowTeam,
                                  float scaleFactor
     )
     {
         boolean isSameTeam = isSameTeam(localTeam, rowTeam);
-        boolean fullDrawTeamInfo = isSameTeam && showInfo;
         boolean isCT = rowTeam.equals("ct");
-        if (showInfo) {
+        if (showNameInfo) {
             rowY += 6;
         }
         Font font = Minecraft.getInstance().font;
@@ -374,7 +373,7 @@ public class CSGameOverlay {
             RenderSystem.setShaderColor(1f,1f,1f,1f);
             int startY = rowY + avatarSize + margin;
             if (barRatio>0f) {
-                int barHeight = !fullDrawTeamInfo ? 2 : 4;
+                int barHeight = 4;
                 drawSmoothHealthBar(guiGraphics, barRatio, drawX, startY, drawX+avatarSize,startY + barHeight);
                 startY += barHeight + margin;
             }
@@ -385,11 +384,11 @@ public class CSGameOverlay {
                 startY += 5 + margin;
             }
 
-            if(showInfo){
+            if(showNameInfo){
                 drawPlayerName(guiGraphics, font, uuid, avX, avY + 1, smallAvSize,avatarSize,isCT,scaleFactor);
             }
 
-            if(fullDrawTeamInfo) {
+            if(isSameTeam) {
                 drawPlayerMoney(guiGraphics, font, uuid, avX + (smallAvSize/2), startY,scaleFactor);
             }
         }

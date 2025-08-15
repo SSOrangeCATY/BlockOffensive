@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.compat.CounterStrikeGrenadesCompat;
+import com.phasetranscrystal.blockoffensive.compat.LrtacticalCompat;
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
@@ -170,22 +171,22 @@ public class CSDeathMessageHud{
 
         // 击杀者名字
         guiGraphics.drawString(font, component, currentX, y + 4, -1, true);
-        currentX += font.width(component) + 2; // 间距调整为2px
+        currentX += font.width(component) + 2;
 
         // 武器图标
         ResourceLocation weaponIcon = message.getWeaponIcon();
+        poseStack.pushPose();
+        float scale = 0.32f;
+        poseStack.translate(currentX, y + (16 - 14) / 2f, 0);
+        poseStack.scale(scale, scale, 1.0f);
         if (weaponIcon != null) {
-            poseStack.pushPose();
-            float scale = 0.32f;
-            float weaponWidth = 117 * scale;
-
-            poseStack.translate(currentX, y + (16 - 14) / 2f, 0);
-            poseStack.scale(scale, scale, 1.0f);
             renderWeaponIcon(guiGraphics, weaponIcon);
-            poseStack.popPose();
-
-            currentX += (int)weaponWidth + 2; // 间距调整为2px
+            currentX += 39;
+        }else{
+            guiGraphics.renderItem(message.getWeapon(),0,0);
+            currentX += 7;
         }
+        poseStack.popPose();
 
         // 特殊击杀图标（统一处理）
         String icon = this.itemToIcon.getOrDefault(message.getItemRL(),null);
@@ -208,6 +209,7 @@ public class CSDeathMessageHud{
         currentX = Math.min(currentX, rightPadding - deadNameWidth);
         guiGraphics.drawString(font, message.getDead(), currentX, y + 4, -1, true);
     }
+
     private int renderConditionalIcon(GuiGraphics guiGraphics, String iconKey, int currentX, int y) {
         renderIcon(guiGraphics, specialKillIcons.get(iconKey), currentX, y + 2, 12, 12);
         return currentX + 14; // 统一图标间距

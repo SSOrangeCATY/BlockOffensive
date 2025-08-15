@@ -120,8 +120,6 @@ public class CSGameHud implements IHudRenderer {
         mvpHud.render(guiGraphics, screenWidth, screenHeight);
     }
 
-
-
     public void renderInfoLine(Minecraft mc, ForgeGui gui, GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
         int lineWidth = (int) (screenWidth * 0.26);
         int lineHeight = 1;
@@ -361,7 +359,6 @@ public class CSGameHud implements IHudRenderer {
                     bgColor, TEXT_COLOR);
         }
     }
-
 
     // 通用状态处理方法
     private void handleAnimationState(Animation anim, boolean isSelected) {

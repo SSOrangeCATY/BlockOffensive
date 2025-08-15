@@ -1,6 +1,5 @@
 package com.phasetranscrystal.blockoffensive.compat;
 
-import com.phasetranscrystal.fpsmatch.impl.FPSMImpl;
 import me.xjqsh.lrtactical.api.LrTacticalAPI;
 import me.xjqsh.lrtactical.api.item.IMeleeWeapon;
 import me.xjqsh.lrtactical.api.item.IThrowable;

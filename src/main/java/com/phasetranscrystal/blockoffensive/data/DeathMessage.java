@@ -155,8 +155,6 @@ public class DeathMessage {
             ResourceLocation gunId = iGun.getGunId(weapon);
             ClientGunIndex gunIndex = TimelessAPI.getClientGunIndex(gunId).orElse(null);
             return gunIndex != null ? gunIndex.getDefaultDisplay().getHUDTexture() : null;
-        }else if(FPSMImpl.findEquipmentMod()){
-            return LrtacticalCompat.getTexture(weapon);
         }
         return null;
     }

@@ -169,6 +169,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
         return gameMap;
     }));
+
     private static final Vector3f T_COLOR = new Vector3f(1, 0.75f, 0.25f);
     private static final Vector3f CT_COLOR = new Vector3f(0.25f, 0.55f, 1);
     private static final Map<String, BiConsumer<CSGameMap,ServerPlayer>> COMMANDS = registerCommands();
@@ -184,8 +185,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private final Setting<Integer> roundTimeLimit = this.addSetting("roundTimeLimit",2300);
     private final Setting<Integer> startMoney = this.addSetting("startMoney",800);
     private final Setting<Integer> closeShopTime = this.addSetting("closeShopTime",200);
-    private final Setting<Boolean> useMusicApi = this.addSetting("useMusicApi",false);
-    private final Setting<Boolean> useProfileApi = this.addSetting("useProfileApi",false);
+    // private final Setting<Boolean> useMusicApi = this.addSetting("useMusicApi",false);
+    // private final Setting<Boolean> useProfileApi = this.addSetting("useProfileApi",false);
     private final List<AreaData> bombAreaData = new ArrayList<>();
     private final Map<String, FPSMShop<ItemType>> shop = new HashMap<>();
     private final Map<String,List<ItemStack>> startKits = new HashMap<>();
@@ -376,9 +377,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         if (event.getEntity() instanceof ServerPlayer player) {
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
             if (map instanceof CSGameMap csGameMap) {
-                if(ModList.get().isLoaded("physicsmod")){
-                    csGameMap.sendPacketToJoinedPlayer(player,new PxDeathCompatS2CPacket(),true);
-                }
                 csGameMap.handlePlayerDeathMessage(player,event.getSource());
                 csGameMap.handlePlayerDeath(player,event.getSource().getEntity());
                 csGameMap.sendPacketToJoinedPlayer(player,new FPSMatchRespawnS2CPacket(),true);
@@ -546,51 +544,107 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.autoStartLogic();
     }
 
-    private void autoStartLogic(){
+    private void autoStartLogic() {
+        // 检查自动开始功能是否启用
         if (!canAutoStart.get()) return;
 
-        if(isStart) {
-            autoStartTimer = 0;
-            autoStartFirstMessageFlag = false;
+        // 如果游戏已经开始，重置状态
+        if (isStart) {
+            resetAutoStartState();
             return;
         }
 
-        List<BaseTeam> teams = this.getMapTeams().getTeams();
-        if(!teams.get(0).getPlayerList().isEmpty() && !teams.get(1).getPlayerList().isEmpty()){
-            autoStartTimer++;
-            if(!autoStartFirstMessageFlag){
-                this.sendAllPlayerMessage(Component.translatable("blockoffensive.map.cs.auto.start.message", autoStartTime.get() / 20).withStyle(ChatFormatting.YELLOW),false);
-                autoStartFirstMessageFlag = true;
-            }
+        // 检查两队是否都有玩家
+        boolean bothTeamsHavePlayers = getCTTeam().hasNoOnlinePlayers() && getTTeam().hasNoOnlinePlayers();
+
+        if (bothTeamsHavePlayers) {
+            handleActiveCountdown();
         } else {
-            autoStartTimer = 0;
+            resetAutoStartState();
+        }
+    }
+
+    private void resetAutoStartState() {
+        autoStartTimer = 0;
+        autoStartFirstMessageFlag = false;
+    }
+
+    private void handleActiveCountdown() {
+        autoStartTimer++;
+        int totalTicks = autoStartTime.get();
+        int secondsLeft = (totalTicks - autoStartTimer) / 20;
+
+        // 发送初始提示消息（仅一次）
+        if (!autoStartFirstMessageFlag) {
+            sendAutoStartMessage(secondsLeft);
+            autoStartFirstMessageFlag = true;
         }
 
-        if(this.autoStartTimer > 0){
-            if ((autoStartTimer >= 600 && autoStartTimer % 200 == 0) || (autoStartTimer >= 1000 && autoStartTimer <= 1180 && autoStartTimer % 20 == 0)) {
-                this.getMapTeams().getJoinedPlayers().forEach((data -> {
-                    data.getPlayer().ifPresent(serverPlayer -> {
-                        serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("blockoffensive.map.cs.auto.start.title", (autoStartTime.get() - autoStartTimer) / 20).withStyle(ChatFormatting.YELLOW)));
-                        serverPlayer.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("blockoffensive.map.cs.auto.start.subtitle").withStyle(ChatFormatting.YELLOW)));
-                    });
-                }));
-            } else {
-                if(autoStartTimer % 20 == 0){
-                    if(this.voteObj == null) this.sendAllPlayerMessage(Component.translatable("blockoffensive.map.cs.auto.start.actionbar",(autoStartTime.get() - autoStartTimer) / 20).withStyle(ChatFormatting.YELLOW),true);
-                }
-
-                if(autoStartTimer >= 1200){
-                    this.getMapTeams().getJoinedPlayers().forEach((data -> {
-                        data.getPlayer().ifPresent(serverPlayer->{
-                            serverPlayer.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("blockoffensive.map.cs.auto.started").withStyle(ChatFormatting.YELLOW)));
-                            serverPlayer.connection.send(new ClientboundSetSubtitleTextPacket(Component.literal("")));
-                        });
-                    }));
-                    this.autoStartTimer = 0;
-                    this.startGame();
-                }
-            }
+        // 处理倒计时结束
+        if (autoStartTimer >= totalTicks) {
+            startGameWithAnnouncement();
+            return;
         }
+
+        // 发送周期性提示
+        if (shouldSendTitleNotification(totalTicks)) {
+            sendTitleNotification(secondsLeft);
+        } else if (shouldSendActionbar()) {
+            sendActionbarMessage(secondsLeft);
+        }
+    }
+
+    private boolean shouldSendTitleNotification(int totalTicks) {
+        // 最后30秒：每10秒发送一次
+        if (autoStartTimer >= (totalTicks - 600) && autoStartTimer % 200 == 0) {
+            return true;
+        }
+        // 最后10秒：每秒发送一次
+        return autoStartTimer >= (totalTicks - 200) && autoStartTimer % 20 == 0;
+    }
+
+    private boolean shouldSendActionbar() {
+        return autoStartTimer % 20 == 0 && this.voteObj == null;
+    }
+
+    private void sendAutoStartMessage(int seconds) {
+        Component message = Component.translatable("blockoffensive.map.cs.auto.start.message", seconds)
+                .withStyle(ChatFormatting.YELLOW);
+        this.sendAllPlayerMessage(message, false);
+    }
+
+    private void sendTitleNotification(int seconds) {
+        Component title = Component.translatable("blockoffensive.map.cs.auto.start.title", seconds)
+                .withStyle(ChatFormatting.YELLOW);
+        Component subtitle = Component.translatable("blockoffensive.map.cs.auto.start.subtitle")
+                .withStyle(ChatFormatting.YELLOW);
+
+        sendTitleToAllPlayers(title, subtitle);
+    }
+
+    private void sendActionbarMessage(int seconds) {
+        Component message = Component.translatable("blockoffensive.map.cs.auto.start.actionbar", seconds)
+                .withStyle(ChatFormatting.YELLOW);
+        this.sendAllPlayerMessage(message, true);
+    }
+
+    private void startGameWithAnnouncement() {
+        Component title = Component.translatable("blockoffensive.map.cs.auto.started")
+                .withStyle(ChatFormatting.YELLOW);
+        Component subtitle = Component.literal("");
+
+        sendTitleToAllPlayers(title, subtitle);
+        resetAutoStartState();
+        this.startGame();
+    }
+
+    private void sendTitleToAllPlayers(Component title, Component subtitle) {
+        this.getMapTeams().getJoinedPlayers().forEach(data ->
+                data.getPlayer().ifPresent(player -> {
+                    player.connection.send(new ClientboundSetTitleTextPacket(title));
+                    player.connection.send(new ClientboundSetSubtitleTextPacket(subtitle));
+                })
+        );
     }
 
     private void setBystander(ServerPlayer player) {
@@ -1003,6 +1057,14 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 });
             }
         });
+        int deadT = (int) getTTeam().getPlayersData().stream().filter(data -> data.isOnline() && !data.isLiving()).count();
+        getCTTeam().getPlayerList().forEach(uuid -> {
+            this.addPlayerMoney(uuid, deadT*50);
+            Component message = Component.translatable("blockoffensive.map.cs.reward.team", deadT*50,deadT);
+            this.getPlayerByUUID(uuid).ifPresent(player->{
+                player.sendSystemMessage(message);
+            });
+        });
         // 同步商店金钱数据
         this.getShops().forEach(FPSMShop::syncShopMoneyData);
     }
@@ -1227,7 +1289,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             if(team.getPlayerList().isEmpty()) return;
 
             team.getPlayerList().forEach((uuid)-> clearPlayerInventory(uuid,(itemStack) -> itemStack.getItem() instanceof CompositionC4));
-
             UUID uuid = team.getPlayerList().get(random.nextInt(team.getPlayerList().size()));
             if(uuid!= null){
                 this.getPlayerByUUID(uuid).ifPresent(player->{
@@ -1652,14 +1713,10 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         return this.ctTeam;
     }
 
-    private void handleResetCommand(ServerPlayer serverPlayer) {
-        if(this.voteObj == null && this.isStart){
-            this.startVote("reset",Component.translatable("blockoffensive.map.vote.message",serverPlayer.getDisplayName(),Component.translatable("blockoffensive.cs.reset")),20,1f);
-            this.voteObj.addAgree(serverPlayer);
-        } else if (this.voteObj != null) {
-            Component translation = Component.translatable("blockoffensive.cs." + this.voteObj.getVoteTitle());
-            serverPlayer.displayClientMessage(Component.translatable("blockoffensive.map.vote.fail.alreadyHasVote", translation).withStyle(ChatFormatting.RED),false);
-        }
+    @Override
+    public void reload(){
+        resetGame();
+        loadConfig();
     }
 
     private void handleLogCommand(ServerPlayer serverPlayer) {
@@ -1777,6 +1834,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             return 300;
         }
     }
+
 
     public enum WinnerReason{
         TIME_OUT(3250),

@@ -81,5 +81,6 @@
   "commands.blockoffensive.mvp.success": "success add %2$s mvp music to %1$s players",
   "cs.game.winner.mvpNameSub": "Get Round Winner",
   "itemGroup.tab.blockoffensive": "Block Offensive",
-  "blockoffensive.map.cs.reward.money": "Received %1$s money ( %2$s )"
+  "blockoffensive.map.cs.reward.money": "Received %1$s money ( %2$s )",
+  "blockoffensive.map.cs.reward.team": "+$%1$s team income for %2$s eliminated terrorists"
 }

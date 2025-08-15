@@ -81,5 +81,6 @@
   "commands.blockoffensive.mvp.success": "成功添加 %2$s Mvp 音乐给 %1$s 位玩家",
   "cs.game.winner.mvpNameSub": "取得回合胜利",
   "itemGroup.tab.blockoffensive": "方块攻势",
-  "blockoffensive.map.cs.reward.money": "回合结算 %1$s 货币 ( %2$s )"
+  "blockoffensive.map.cs.reward.money": "回合结算 %1$s 货币 ( %2$s )",
+  "blockoffensive.map.cs.reward.team": "消灭 %2$s 个T获得 +$%1$s 队伍奖励"
 }

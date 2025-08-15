@@ -9,10 +9,11 @@ import net.minecraftforge.network.PacketDistributor;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class BulletproofArmorAttribute {
     public static final BulletproofArmorAttribute EMPTY = new BulletproofArmorAttribute(false,0);
-    private static final Map<Player, BulletproofArmorAttribute> PLAYER_ATTRIBUTES = new HashMap<>();
+    private static final Map<Player, BulletproofArmorAttribute> PLAYER_ATTRIBUTES = new ConcurrentHashMap<>();
     private boolean hasHelmet;
     private int durability;
 
