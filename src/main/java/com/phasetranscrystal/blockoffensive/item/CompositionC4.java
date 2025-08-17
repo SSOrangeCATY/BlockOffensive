@@ -1,6 +1,7 @@
 package com.phasetranscrystal.blockoffensive.item;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
@@ -83,104 +84,138 @@ public class CompositionC4 extends Item implements BlastBombItem {
 		if(pLevel instanceof ServerLevel serverLevel && pEntity instanceof ServerPlayer player) {
 			int i = player.getInventory().countItem(BOItemRegister.C4.get());
 			if (i > 0) {
-				serverLevel.sendParticles(new DustParticleOptions(new Vector3f(1,0.1f,0.1f),1),player.getX()+0.25F,player.getY() + 1,player.getZ()+0.25F,1,0,0,0,1);
+				double yawRad = Math.toRadians(player.getYRot());
+				double distance = -0.5;
+				double xOffset = -Math.sin(yawRad) * distance;
+				double zOffset = Math.cos(yawRad) * distance;
+				serverLevel.sendParticles(new DustParticleOptions(new Vector3f(1,0.1f,0.1f),1),player.getX()+xOffset,player.getY() + 1,player.getZ()+zOffset,1,0,0,0,1);
 			}
 		}
 	}
 
 	@Override
-    public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, Player player, @NotNull InteractionHand hand) {
-        ItemStack itemstack = player.getItemInHand(hand);
-        if(level.isClientSide) return InteractionResultHolder.pass(itemstack);
-        BaseMap baseMap = FPSMCore.getInstance().getMapByPlayer(player);
-        if(baseMap instanceof BlastModeMap<?> map) {
-            if(!baseMap.isStart) {
-                player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.map.notStart"), true);
-                return InteractionResultHolder.pass(itemstack);
-            }
-            BaseTeam team = baseMap.getMapTeams().getTeamByPlayer(player).orElse(null);
-            if(team == null) {
-                player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.team.notInTeam"), true);
-                return InteractionResultHolder.pass(itemstack);
-            }
-            // 检查玩家是否在指定区域内, 检查地图是否在爆炸状态中, 检查玩家是否在地上
-            boolean canPlace = map.checkCanPlacingBombs(team.getFixedName()) && map.isBlasting() == 0 && player.onGround();
-            boolean isInBombArea = map.checkPlayerIsInBombArea(player);
-            if(canPlace && isInBombArea){
-                player.startUsingItem(hand);
-				level.playSound(null, player.getX(), player.getY(), player.getZ(), BOSoundRegister.click.get(), SoundSource.PLAYERS, 3.0F, 1.0F);
-				return InteractionResultHolder.consume(itemstack);
-            }else{
-                if(!canPlace) {
-                    player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail"), true);
-                }else{
-                    if(map.getBombAreaData().isEmpty()) {
-                        player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.noArea"), true);
-                    }else{
-                        player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.notInArea"), true);
-                    }
-                }
-                return InteractionResultHolder.pass(itemstack);
-            }
-        }else{
-            player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.noMap"), true);
-            return InteractionResultHolder.pass(itemstack);
-        }
-    }
+	public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, Player player, @NotNull InteractionHand hand) {
+		ItemStack stack = player.getItemInHand(hand);
+		if (level.isClientSide) return InteractionResultHolder.pass(stack);
+
+		FPSMCore core = FPSMCore.getInstance();
+		BaseMap baseMap = core.getMapByPlayer(player);
+
+		if (!(baseMap instanceof BlastModeMap<?> map)) {
+			player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.noMap"), true);
+			return InteractionResultHolder.pass(stack);
+		}
+
+		if (!baseMap.isStart) {
+			player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.map.notStart"), true);
+			return InteractionResultHolder.pass(stack);
+		}
+
+		BaseTeam team = baseMap.getMapTeams().getTeamByPlayer(player).orElse(null);
+		if (team == null) {
+			player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.team.notInTeam"), true);
+			return InteractionResultHolder.pass(stack);
+		}
+
+		boolean canPlace = map.checkCanPlacingBombs(team.getFixedName())
+				&& map.isBlasting() == 0
+				&& player.onGround();
+		boolean inBombArea = map.checkPlayerIsInBombArea(player);
+
+		if (canPlace && inBombArea) {
+			player.startUsingItem(hand);
+			playClickSound(level, player);
+			return InteractionResultHolder.consume(stack);
+		}
+
+		if (!canPlace) {
+			player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail"), true);
+		} else if (map.getBombAreaData().isEmpty()) {
+			player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.noArea"), true);
+		} else {
+			player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.notInArea"), true);
+		}
+		return InteractionResultHolder.pass(stack);
+	}
+
+	private void playClickSound(Level level, LivingEntity entity) {
+		level.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+				BOSoundRegister.click.get(), SoundSource.PLAYERS, 3.0F, 1.0F);
+	}
 
 	@Override
-	public void onUseTick(@NotNull Level pLevel, @NotNull LivingEntity entity, @NotNull ItemStack pStack, int pRemainingUseDuration) {
-		if (pLevel.isClientSide && Minecraft.getInstance().player != null && entity.getUUID().equals(Minecraft.getInstance().player.getUUID())) {
-			Minecraft.getInstance().options.keyUp.setDown(false);
-			Minecraft.getInstance().options.keyLeft.setDown(false);
-			Minecraft.getInstance().options.keyDown.setDown(false);
-			Minecraft.getInstance().options.keyRight.setDown(false);
-			Minecraft.getInstance().options.keyJump.setDown(false);
+	public void onUseTick(@NotNull Level level, @NotNull LivingEntity entity,
+						  @NotNull ItemStack stack, int remainingTicks) {
+		if (!level.isClientSide) return;
 
-			if (pRemainingUseDuration % 8 == 0) {
-				pLevel.playSound(null, entity.getX(), entity.getY(), entity.getZ(), BOSoundRegister.click.get(), SoundSource.PLAYERS, 3.0F, 1.0F);
-			}
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null || !entity.getUUID().equals(mc.player.getUUID())) return;
+
+		// 禁用移动控制
+		disableMovementKeys(mc);
+
+		// 每8 tick播放声音（使用位运算优化取模）
+		if ((remainingTicks & 7) == 0) {
+			playClickSound(level, entity);
 		}
 	}
 
-
-	public @NotNull ItemStack finishUsingItem(@NotNull ItemStack pStack, @NotNull Level pLevel, @NotNull LivingEntity pLivingEntity) {
-		if (pLivingEntity instanceof ServerPlayer player) {
-			BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-			if (map instanceof BlastModeMap<?> blastModeMap) {
-				boolean isInBombArea = blastModeMap.checkPlayerIsInBombArea(player);
-				if (!isInBombArea) {
-					player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.notInArea"), true);
-					return pStack;
-				} else {
-					BaseTeam team = map.getMapTeams().getTeamByPlayer(player).orElse(null);
-					if (team != null && map instanceof ShopMap<?> shopMap) {
-						shopMap.addPlayerMoney(player.getUUID(), 300);
-					}
-					CompositionC4Entity entityC4 = new CompositionC4Entity(pLevel, player.getX(), player.getY() + 0.25F, player.getZ(), player, blastModeMap);
-					pLevel.addFreshEntity(entityC4);
-					pLevel.playSound(null, player.getX(), player.getY(), player.getZ(), BOSoundRegister.planted.get(), SoundSource.PLAYERS, 3.0F, 1F);
-					map.getMapTeams().getJoinedPlayers().forEach(data -> {
-						data.getPlayer().ifPresent(serverPlayer->{
-							serverPlayer.displayClientMessage(Component.translatable("blockoffensive.item.c4.planted").withStyle(ChatFormatting.RED),true);
-						});
-					});
-					return ItemStack.EMPTY;
-				}
-			} else {
-				return pStack;
-			}
-		}
-		return pStack;
+	private void disableMovementKeys(Minecraft mc) {
+		mc.options.keyUp.setDown(false);
+		mc.options.keyLeft.setDown(false);
+		mc.options.keyDown.setDown(false);
+		mc.options.keyRight.setDown(false);
+		mc.options.keyJump.setDown(false);
 	}
 
-    @Override
-    public @NotNull UseAnim getUseAnimation(@NotNull ItemStack pStack) {
-        return UseAnim.CUSTOM;
-    }
+	@Override
+	public @NotNull ItemStack finishUsingItem(@NotNull ItemStack stack, @NotNull Level level,
+											  @NotNull LivingEntity entity) {
+		if (!(entity instanceof ServerPlayer player)) return stack;
+
+		FPSMCore core = FPSMCore.getInstance();
+		BaseMap baseMap = core.getMapByPlayer(player);
+
+		if (!(baseMap instanceof BlastModeMap<?> map)) return stack;
+
+		if (!map.checkPlayerIsInBombArea(player)) {
+			player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.notInArea"), true);
+			return stack;
+		}
+
+		// 放置C4实体
+		CompositionC4Entity c4 = new CompositionC4Entity(
+				level, player.getX(), player.getY() + 0.25, player.getZ(), player, map
+		);
+		level.addFreshEntity(c4);
+
+		// 播放放置音效
+		level.playSound(null, player.getX(), player.getY(), player.getZ(),
+				BOSoundRegister.planted.get(), SoundSource.PLAYERS, 3.0F, 1.0F);
+
+		// 经济奖励
+		if (baseMap instanceof ShopMap<?> shopMap) {
+			baseMap.getMapTeams().getTeamByPlayer(player).ifPresent(team -> {
+				shopMap.addPlayerMoney(player.getUUID(), 300);
+			});
+		}
+
+		// 通知所有玩家
+		Component message = Component.translatable("blockoffensive.item.c4.planted").withStyle(ChatFormatting.RED);
+		baseMap.getMapTeams().getJoinedPlayers().forEach(data ->
+				data.getPlayer().ifPresent(p -> p.displayClientMessage(message, true))
+		);
+
+		return ItemStack.EMPTY;
+	}
 
 	@Override
-	public int getUseDuration(@NotNull ItemStack itemstack) {
+	public @NotNull UseAnim getUseAnimation(@NotNull ItemStack stack) {
+		return UseAnim.CUSTOM;
+	}
+
+	@Override
+	public int getUseDuration(@NotNull ItemStack stack) {
 		return 80;
 	}
 

@@ -377,6 +377,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         if (event.getEntity() instanceof ServerPlayer player) {
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
             if (map instanceof CSGameMap csGameMap) {
+                if(ModList.get().isLoaded("physicsmod")){
+                    csGameMap.sendPacketToJoinedPlayer(player,new PxDeathCompatS2CPacket(),true);
+                }
                 csGameMap.handlePlayerDeathMessage(player,event.getSource());
                 csGameMap.handlePlayerDeath(player,event.getSource().getEntity());
                 csGameMap.sendPacketToJoinedPlayer(player,new FPSMatchRespawnS2CPacket(),true);
@@ -1101,7 +1104,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             syncShopInfo(true,getShopCloseTime());
             syncNormalRoundStartMessage();
             this.giveBlastTeamBomb();
-            this.getShops().forEach(FPSMShop::syncShopData);
+            this.syncShopData();
             this.checkMatchPoint();
         }
     }

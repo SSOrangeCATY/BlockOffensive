@@ -65,6 +65,7 @@ public class BlockOffensive {
         PACKET_REGISTER.registerPacket(CSTabRemovalS2CPacket.class);
         PACKET_REGISTER.registerPacket(DeathMessageS2CPacket.class);
         PACKET_REGISTER.registerPacket(BulletproofArmorAttributeS2CPacket.class);
+        PACKET_REGISTER.registerPacket(PxDeathCompatS2CPacket.class);
         PACKET_REGISTER.registerPacket(PxResetCompatS2CPacket.class);
     }
 }
