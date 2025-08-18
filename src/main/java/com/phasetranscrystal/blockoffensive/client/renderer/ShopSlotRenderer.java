@@ -22,8 +22,6 @@ import java.util.Optional;
 public class ShopSlotRenderer implements MinecraftSurfaceView.Renderer {
     public final ItemType type;
     public final int index;
-    public int width;
-    public int height;
     public float scale = 1;
 
     public ShopSlotRenderer(ItemType type, int index) {
@@ -33,8 +31,6 @@ public class ShopSlotRenderer implements MinecraftSurfaceView.Renderer {
 
     @Override
     public void onSurfaceChanged(int width, int height) {
-        this.width = width;
-        this.height = height;
     }
 
     @Override

@@ -6,6 +6,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.mojang.serialization.codecs.UnboundedMapCodec;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.compat.CounterStrikeGrenadesCompat;
+import com.phasetranscrystal.blockoffensive.compat.LrtacticalCompat;
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import com.phasetranscrystal.blockoffensive.data.MvpReason;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
@@ -324,19 +325,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                     if(event.getAttacker() instanceof ServerPlayer attacker){
                         BaseMap fromMap = FPSMCore.getInstance().getMapByPlayer(player);
                         if (fromMap instanceof CSGameMap csGameMap && csGameMap.equals(map)) {
-                            BaseTeam killerTeam = map.getMapTeams().getTeamByPlayer(attacker).orElse(null);
-                            BaseTeam deadTeam = map.getMapTeams().getTeamByPlayer(player).orElse(null);
-                            if(killerTeam == null || deadTeam == null) return;
-                            if (killerTeam.getFixedName().equals(deadTeam.getFixedName())){
-                                cs.removePlayerMoney(attacker.getUUID(),300);
-                                attacker.displayClientMessage(Component.translatable("blockoffensive.kill.message.teammate",300),false);
-                            }else{
-                                int reward = cs.gerRewardByGunId(event.getGunId());
-                                cs.addPlayerMoney(attacker.getUUID(),reward);
-                                attacker.displayClientMessage(Component.translatable("blockoffensive.kill.message.enemy",reward),false);
-                            }
-
-                            if(attacker.getMainHandItem().getItem() instanceof IGun) {
+                            if(IGun.mainHandHoldGun(attacker)) {
+                                csGameMap.giveEco(player,attacker,attacker.getMainHandItem());
                                 csGameMap.getMapTeams().getTeamByPlayer(attacker).ifPresent(team->{
                                     if(event.isHeadShot()){
                                         team.getPlayerData(attacker.getUUID()).ifPresent(PlayerData::addHeadshotKill);
@@ -378,7 +368,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
             if (map instanceof CSGameMap csGameMap) {
                 if(ModList.get().isLoaded("physicsmod")){
-                    csGameMap.sendPacketToJoinedPlayer(player,new PxDeathCompatS2CPacket(),true);
+                    csGameMap.sendPacketToAllPlayer(new PxDeathCompatS2CPacket(player.getId()));
                 }
                 csGameMap.handlePlayerDeathMessage(player,event.getSource());
                 csGameMap.handlePlayerDeath(player,event.getSource().getEntity());
@@ -1603,6 +1593,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
         if(itemStack.getItem() instanceof IGun) return;
 
+        giveEco(player, attacker, itemStack);
+
         DeathMessage.Builder builder = new DeathMessage.Builder(attacker, player, itemStack);
         Map<UUID, Float> hurtDataMap = this.getMapTeams().getDamageMap().get(player.getUUID());
         if (hurtDataMap != null && !hurtDataMap.isEmpty()) {
@@ -1620,6 +1612,24 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         }
         DeathMessageS2CPacket killMessageS2CPacket = new DeathMessageS2CPacket(builder.build());
         this.sendPacketToAllPlayer(killMessageS2CPacket);
+    }
+
+    public void giveEco(ServerPlayer player, Player attacker, ItemStack itemStack) {
+        BaseTeam killerTeam = this.getMapTeams().getTeamByPlayer(attacker).orElse(null);
+        BaseTeam deadTeam = this.getMapTeams().getTeamByPlayer(player).orElse(null);
+        if(killerTeam == null || deadTeam == null) {
+            FPSMatch.LOGGER.error("CSGameMap {} -> killerTeam or deadTeam are null! : killer {} , dead {}",this.getMapName(),attacker.getDisplayName(),player.getDisplayName());
+            return;
+        }
+
+        if (killerTeam.getFixedName().equals(deadTeam.getFixedName())){
+            this.removePlayerMoney(attacker.getUUID(),300);
+            attacker.displayClientMessage(Component.translatable("blockoffensive.kill.message.teammate",300),false);
+        }else{
+            int reward = getRewardByItem(itemStack);
+            this.addPlayerMoney(attacker.getUUID(),reward);
+            attacker.displayClientMessage(Component.translatable("blockoffensive.kill.message.enemy",reward),false);
+        }
     }
 
     public void handlePlayerDeath(ServerPlayer player, @Nullable Entity fromEntity) {
@@ -1816,7 +1826,19 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         FPSMCore.getInstance().registerMap(this.getGameType(),this);
     }
 
-    public int gerRewardByGunId(ResourceLocation gunId){
+    public static int getRewardByItem(ItemStack itemStack){
+        if(FPSMImpl.findEquipmentMod() && LrtacticalCompat.isKnife(itemStack)){
+            return 1500;
+        }else{
+            if(itemStack.getItem() instanceof IGun iGun){
+                return gerRewardByGunId(iGun.getGunId(itemStack));
+            }else{
+                return 300;
+            }
+        }
+    }
+
+    public static int gerRewardByGunId(ResourceLocation gunId){
         Optional<GunTabType> optional = FPSMUtil.getGunTypeByGunId(gunId);
         if(optional.isPresent()){
             switch(optional.get()){

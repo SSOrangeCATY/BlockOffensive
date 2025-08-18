@@ -6,16 +6,18 @@ import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-public class PxDeathCompatS2CPacket {
+public record PxDeathCompatS2CPacket(int entityId) {
+
     public static void encode(PxDeathCompatS2CPacket packet, FriendlyByteBuf buf) {
+        buf.writeInt(packet.entityId);
     }
 
     public static PxDeathCompatS2CPacket decode(FriendlyByteBuf buf) {
-        return new PxDeathCompatS2CPacket();
+        return new PxDeathCompatS2CPacket(buf.readInt());
     }
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(PhysicsModCompat::handleDead);
+        ctx.get().enqueueWork(()->PhysicsModCompat.handleDead(entityId));
         ctx.get().setPacketHandled(true);
     }
 }

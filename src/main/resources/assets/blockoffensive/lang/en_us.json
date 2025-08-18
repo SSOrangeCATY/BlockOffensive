@@ -1,7 +1,7 @@
 {
   "blockoffensive.shop.title.cooldown": "Remaining purchase time %1$s",
   "blockoffensive.shop.title.min.money": "Minimum amount for next round %1$s",
-  "blockoffensive.shop.slot.empty" : "none",
+  "blockoffensive.shop.slot.empty" : "empty",
   "key.blockoffensive.open.shop.desc": "Open gun shop",
   "key.category.blockoffensive": "Block Offensive",
   "key.blockoffensive.open.shop.failed.no_map": "Cannot open the store because you have not joined any maps",

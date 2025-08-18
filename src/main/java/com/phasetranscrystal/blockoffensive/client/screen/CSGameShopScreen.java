@@ -198,7 +198,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             minMoneyText.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
             minMoneyText.setMargins(0,0, (int) (20 * scale),0);
             nextRoundMinMoneyText.setLayoutParams(minMoneyText);
-            nextRoundMinMoneyText.setTextSize(dp(15 * scale));
+            nextRoundMinMoneyText.setTextSize(15 * scale);
 
             LayoutParams moneyParams = new LayoutParams(
                     WRAP_CONTENT,
@@ -207,11 +207,11 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             moneyParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
             moneyParams.setMargins((int) (25 * scale),0,0,0);
             moneyText.setLayoutParams(moneyParams);
-            moneyText.setTextSize(dp(18 * scale));
+            moneyText.setTextSize(18 * scale);
 
             shopWindow.setLayoutParams(new LinearLayout.LayoutParams((int) (950 * scale), (int) (550* scale)));
 
-            cooldownText.setTextSize(dp(18* scale));
+            cooldownText.setTextSize(18* scale);
 
             typeBarLayouts.forEach(typeBarLayout -> typeBarLayout.setScale(scale));
 
@@ -290,12 +290,12 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
         }
 
         private void setScale(float scale) {
-            numTab.setTextSize(dp(15 * scale));
+            numTab.setTextSize(15 * scale);
             numTab.setPadding((int) (15 * scale), (int) (10 * scale), 0, 0);
             numTab.setLayoutParams(new LayoutParams((int) (25 * scale), -1));
 
             title.setLayoutParams(new LayoutParams((int) ((getGunButtonWeight(i) - 25) * scale), -1));
-            title.setTextSize(dp(21 * scale));
+            title.setTextSize(21 * scale);
 
             titleBar.setLayoutParams(new LayoutParams(-1, (int) (44 * scale)));
 
@@ -304,7 +304,6 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             shops.forEach((shop)-> shop.setLayoutParams(new LayoutParams(-1, (int) (98 * scale))));
 
             this.setLayoutParams(new LayoutParams((int) ((TypeBarLayout.getGunButtonWeight(i) + 30) * scale), -1));
-
         }
 
     }
@@ -339,6 +338,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             setBackground(background);
 
             minecraftSurfaceView = new MinecraftSurfaceView(getContext());
+
             ClientShopSlot currentSlot = getSlot();
             Optional<GunDisplayInstance> display = TimelessAPI.getGunDisplay(currentSlot.itemStack());
             LayoutParams msvp;
@@ -513,7 +513,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             numParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
             numParams.setMargins((int) (5 * scale), (int) (5*scale),0,0);
             numText.setLayoutParams(numParams);
-            numText.setTextSize(dp(13*scale));
+            numText.setTextSize(13*scale);
 
             LayoutParams itemNameParams = new LayoutParams(
                     WRAP_CONTENT,
@@ -522,7 +522,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             itemNameParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
             itemNameParams.setMargins(0 ,(int) (5*scale),(int) (5 * scale),0);
             itemNameText.setLayoutParams(itemNameParams);
-            itemNameText.setTextSize(dp(13*scale));
+            itemNameText.setTextSize(13*scale);
 
             LayoutParams returnGoodsParams = new LayoutParams(
                     WRAP_CONTENT,
@@ -531,7 +531,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             returnGoodsParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
             returnGoodsParams.setMargins((int) (5* scale), (int) (12*scale),0,0);
             returnGoodsText.setLayoutParams(returnGoodsParams);
-            returnGoodsText.setTextSize(dp(15*scale));
+            returnGoodsText.setTextSize(15*scale);
 
             LayoutParams costParams = new LayoutParams(
                     WRAP_CONTENT,
@@ -540,7 +540,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback{
             costParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
             costParams.setMargins(0,0, (int) (5*scale), (int) (5*scale));
             costText.setLayoutParams(costParams);
-            costText.setTextSize(dp(12*scale));
+            costText.setTextSize(12*scale);
             this.setLayoutParams(new LinearLayout.LayoutParams((int) (TypeBarLayout.getGunButtonWeight(this.type.ordinal()) * scale), (int) (90 * scale)));
         }
         @Override

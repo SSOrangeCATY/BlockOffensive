@@ -176,15 +176,16 @@ public class CSDeathMessageHud{
         // 武器图标
         ResourceLocation weaponIcon = message.getWeaponIcon();
         poseStack.pushPose();
-        float scale = 0.32f;
-        poseStack.translate(currentX, y + (16 - 14) / 2f, 0);
-        poseStack.scale(scale, scale, 1.0f);
+        poseStack.translate(currentX, y + 1, 0);
         if (weaponIcon != null) {
+            poseStack.scale(0.32f, 0.32f, 1.0f);
             renderWeaponIcon(guiGraphics, weaponIcon);
             currentX += 39;
         }else{
-            guiGraphics.renderItem(message.getWeapon(),0,0);
-            currentX += 7;
+            if(!this.itemToIcon.containsKey(message.getItemRL())){
+                guiGraphics.renderItem(message.getWeapon(),0,0);
+                currentX += 16;
+            }
         }
         poseStack.popPose();
 

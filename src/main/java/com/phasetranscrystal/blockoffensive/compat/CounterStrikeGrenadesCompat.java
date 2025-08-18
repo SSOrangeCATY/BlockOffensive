@@ -26,22 +26,20 @@ public class CounterStrikeGrenadesCompat {
     public static ItemStack getItemFromDamageSource(DamageSource damageSource){
         ModDamageType types = ModDamageType.INSTANCE;
         ModItems items = ModItems.INSTANCE;
-        Item item;
         if(damageSource.is(types.getFLASHBANG_HIT())){
-            item = items.getFLASH_BANG_ITEM().get();
-        }else if(damageSource.is(types.getHEGRENADE_HIT())){
-            item = items.getHEGRENADE_ITEM().get();
-        }else if(damageSource.is(types.getINCENDIARY_HIT())){
-            item = items.getINCENDIARY_ITEM().get();
-        }else if(damageSource.is(types.getMOLOTOV_HIT())){
-            item = items.getMOLOTOV_ITEM().get();
+            return new ItemStack(items.getFLASH_BANG_ITEM().get());
+        }else if(damageSource.is(types.getHEGRENADE_HIT()) || damageSource.is(types.getHEGRENADE_EXPLOSION())){
+            return new ItemStack(items.getHEGRENADE_ITEM().get());
+        }else if(damageSource.is(types.getINCENDIARY_HIT()) || damageSource.is(types.getINCENDIARY_FIRE())){
+            return new ItemStack(items.getINCENDIARY_ITEM().get());
+        }else if(damageSource.is(types.getMOLOTOV_HIT()) || damageSource.is(types.getMOLOTOV_FIRE())){
+            return new ItemStack(items.getMOLOTOV_ITEM().get());
         }else if(damageSource.is(types.getSMOKEGRENADE_HIT())){
-            item = items.getSMOKE_GRENADE_ITEM().get();
+            return new ItemStack(items.getSMOKE_GRENADE_ITEM().get());
         }else {
             return ItemStack.EMPTY;
         }
 
-        return new ItemStack(item);
     }
 
     public static boolean itemCheck(Item item){

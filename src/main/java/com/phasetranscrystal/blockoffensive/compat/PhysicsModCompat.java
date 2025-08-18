@@ -7,17 +7,22 @@ import net.diebuddies.physics.PhysicsWorld;
 import net.diebuddies.physics.ragdoll.Ragdoll;
 import net.diebuddies.physics.settings.mobs.MobPhysicsType;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+
 
 @OnlyIn(Dist.CLIENT)
 public class PhysicsModCompat {
 
-    public static void handleDead() {
-        AbstractClientPlayer player = Minecraft.getInstance().player;
-        if (player != null && RenderSystem.isOnRenderThread() && ConfigMobs.getMobSetting(player).getType() != MobPhysicsType.OFF) {
-            PhysicsMod.blockifyEntity(player.getCommandSenderWorld(), player);
+    public static void handleDead(int EntityId) {
+        ClientLevel world = Minecraft.getInstance().level;
+        if(world == null) return;
+        Entity entity = world.getEntity(EntityId);
+        if (entity instanceof LivingEntity living && RenderSystem.isOnRenderThread() && ConfigMobs.getMobSetting(entity).getType() != MobPhysicsType.OFF) {
+            PhysicsMod.blockifyEntity(living.getCommandSenderWorld(), living);
         }
     }
 
