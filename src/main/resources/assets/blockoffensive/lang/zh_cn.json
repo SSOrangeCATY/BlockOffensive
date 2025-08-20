@@ -82,5 +82,6 @@
   "cs.game.winner.mvpNameSub": "取得回合胜利",
   "itemGroup.tab.blockoffensive": "方块攻势",
   "blockoffensive.map.cs.reward.money": "回合结算 %1$s 货币 ( %2$s )",
-  "blockoffensive.map.cs.reward.team": "消灭 %2$s 个T获得 +$%1$s 队伍奖励"
+  "blockoffensive.map.cs.reward.team": "消灭 %2$s 个T获得 +$%1$s 队伍奖励",
+  "blockoffensive.map.cs.team.giveBomb": "%s 被选为C4炸弹携带者。请将其安置在指定地点！"
 }

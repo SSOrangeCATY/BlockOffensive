@@ -5,6 +5,7 @@ import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import com.phasetranscrystal.blockoffensive.client.screen.hud.animation.EnderKillAnimator;
 import com.phasetranscrystal.blockoffensive.client.screen.hud.animation.KillAnimator;
 import com.phasetranscrystal.blockoffensive.compat.HitIndicationCompat;
+import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import com.phasetranscrystal.fpsmatch.common.client.screen.hud.IHudRenderer;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import com.tacz.guns.api.TimelessAPI;
@@ -80,11 +81,11 @@ public class CSGameHud implements IHudRenderer {
         this.killAnimator = killAnimator;
     }
 
-    public void addKill(){
+    public void addKill(DeathMessage deathMessage) {
         if(killAnimator.isActive() || isStarted){
-            killAnimator.addKill();
+            killAnimator.addKill(deathMessage);
         }else{
-            killAnimator.start();
+            killAnimator.start(deathMessage);
             isStarted = true;
         }
     }

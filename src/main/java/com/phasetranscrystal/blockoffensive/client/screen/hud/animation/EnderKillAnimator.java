@@ -1,6 +1,7 @@
 package com.phasetranscrystal.blockoffensive.client.screen.hud.animation;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -31,7 +32,7 @@ public class EnderKillAnimator implements KillAnimator {
     private boolean rotationStopped;
 
     @Override
-    public void start() {
+    public void start(DeathMessage message) {
         startTime = System.currentTimeMillis();
         arcRotations.add(270f);
         Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.EXPERIENCE_ORB_PICKUP, 1.05F,1));
@@ -50,7 +51,7 @@ public class EnderKillAnimator implements KillAnimator {
     }
 
     @Override
-    public void addKill() {
+    public void addKill(DeathMessage message) {
         startTime = System.currentTimeMillis();
 
         if (arcRotations.size() < 5){

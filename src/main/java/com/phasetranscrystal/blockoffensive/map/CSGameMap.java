@@ -259,7 +259,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         }
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onPlayerPickupItem(PlayerEvent.ItemPickupEvent event){
         if(event.getEntity().level().isClientSide) return;
         BaseMap map = FPSMCore.getInstance().getMapByPlayer(event.getEntity());
@@ -316,7 +316,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         }
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onPlayerKilledByGun(EntityKillByGunEvent event){
         if(event.getLogicalSide() == LogicalSide.SERVER){
             if (event.getKilledEntity() instanceof ServerPlayer player) {
@@ -1270,27 +1270,36 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     /**
-     * 给爆破方随机玩家分配C4炸弹
+     * 为爆破方随机分配C4炸弹给一名在线玩家
      * @see CompositionC4 C4物品实体类
      * @see #cleanupMap() 回合结束清理残留C4
      */
-    public void giveBlastTeamBomb(){
+    public void giveBlastTeamBomb() {
         BaseTeam team = this.getMapTeams().getTeamByComplexName(this.blastTeam);
-        if(team != null){
-            Random random = new Random();
-            // 随机选择一个玩家作为炸弹携带者
-            if(team.getPlayerList().isEmpty()) return;
-
-            team.getPlayerList().forEach((uuid)-> clearPlayerInventory(uuid,(itemStack) -> itemStack.getItem() instanceof CompositionC4));
-            UUID uuid = team.getPlayerList().get(random.nextInt(team.getPlayerList().size()));
-            if(uuid!= null){
-                this.getPlayerByUUID(uuid).ifPresent(player->{
-                    player.getInventory().add(BOItemRegister.C4.get().getDefaultInstance());
-                    player.inventoryMenu.broadcastChanges();
-                    player.inventoryMenu.slotsChanged(player.getInventory());
-                });
-            }
+        if (team == null) {
+            return;
         }
+
+        // 获取在线玩家列表
+        List<UUID> onlinePlayers = team.getOnlinePlayers();
+        if (onlinePlayers.isEmpty()) {
+            return;
+        }
+
+        // 清理队伍所有成员的C4
+        team.getPlayerList().forEach(uuid ->
+                clearPlayerInventory(uuid, itemStack -> itemStack.getItem() instanceof CompositionC4)
+        );
+
+        // 随机选择一名在线玩家
+        UUID selectedUuid = onlinePlayers.get(new Random().nextInt(onlinePlayers.size()));
+        this.getPlayerByUUID(selectedUuid).ifPresent(player -> {
+            // 添加C4并更新库存
+            player.getInventory().add(BOItemRegister.C4.get().getDefaultInstance());
+            player.inventoryMenu.broadcastChanges();
+            player.inventoryMenu.slotsChanged(player.getInventory());
+            team.sendMessage(Component.translatable("blockoffensive.map.cs.team.giveBomb",player.getDisplayName()).withStyle(ChatFormatting.GREEN));
+        });
     }
 
     @Override
