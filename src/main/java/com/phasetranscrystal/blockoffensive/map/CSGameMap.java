@@ -548,7 +548,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         }
 
         // 检查两队是否都有玩家
-        boolean bothTeamsHavePlayers = getCTTeam().hasNoOnlinePlayers() && getTTeam().hasNoOnlinePlayers();
+        boolean bothTeamsHavePlayers = !getCTTeam().getOnlinePlayers().isEmpty() && !getTTeam().getOnlinePlayers().isEmpty();
 
         if (bothTeamsHavePlayers) {
             handleActiveCountdown();
@@ -558,8 +558,19 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     private void resetAutoStartState() {
-        autoStartTimer = 0;
-        autoStartFirstMessageFlag = false;
+        if(autoStartTimer != 0 || autoStartFirstMessageFlag){
+            autoStartTimer = 0;
+            autoStartFirstMessageFlag = false;
+            clearOfflinePlayers();
+        }
+    }
+
+    private void clearOfflinePlayers(){
+        for(BaseTeam team : this.getMapTeams().getTeams()){
+            for (UUID offline : team.getOfflinePlayers()) {
+                this.getMapTeams().leaveTeam(offline);
+            }
+        }
     }
 
     private void handleActiveCountdown() {
@@ -658,25 +669,21 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     public void join(String teamName, ServerPlayer player) {
         FPSMCore.checkAndLeaveTeam(player);
         MapTeams mapTeams = this.getMapTeams();
-        boolean success = mapTeams.joinTeam(teamName, player);
-        if(success){
-            mapTeams.getTeamByPlayer(player).ifPresent(team -> {
-                MinecraftForge.EVENT_BUS.post(new CSGamePlayerJoinEvent(this,team,player));
-            });
+        mapTeams.joinTeam(teamName, player);
+        mapTeams.getTeamByPlayer(player).ifPresent(team -> {
+            MinecraftForge.EVENT_BUS.post(new CSGamePlayerJoinEvent(this,team,player));
             // 同步游戏类型和地图信息
             this.pullGameInfo(player);
 
             // 如果游戏已经开始，设置玩家为旁观者
             if(this.isStart){
                 player.setGameMode(GameType.SPECTATOR);
-                mapTeams.getTeamByName(teamName)
-                        .flatMap(team -> team.getPlayerData(player.getUUID()))
-                        .ifPresent(data -> {
-                            data.setLiving(false);
-                        });
+                team.getPlayerData(player.getUUID()).ifPresent(data -> {
+                    data.setLiving(false);
+                });
                 setBystander(player);
             }
-        }
+        });
     }
 
     @Override
@@ -1402,7 +1409,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.getMapTeams().getJoinedPlayers().forEach(data->{
             data.getPlayer().ifPresent(this::resetPlayerClientData);
         });
-        this.getShops().forEach(FPSMShop::resetPlayerData);
+        this.getShops().forEach(FPSMShop::clearPlayerShopData);
         this.getMapTeams().reset();
     }
 

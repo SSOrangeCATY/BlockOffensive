@@ -71,7 +71,7 @@ public class DeathMessageS2CPacket {
             boolean isLocalPlayer = Minecraft.getInstance().player != null &&
                     deathMessage.getKillerUUID().equals(Minecraft.getInstance().player.getUUID());
             if(isLocalPlayer && !deathMessage.getDeadUUID().equals(Minecraft.getInstance().player.getUUID())) {
-                CSGameHud.getInstance().addKill();
+                CSGameHud.getInstance().addKill(deathMessage);
             }
         });
         ctx.get().setPacketHandled(true);
