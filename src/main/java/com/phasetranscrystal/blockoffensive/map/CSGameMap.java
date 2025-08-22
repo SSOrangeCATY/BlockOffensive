@@ -88,7 +88,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 /**
  * 反恐精英（CS）模式地图核心逻辑类
@@ -96,7 +95,8 @@ import java.util.function.Consumer;
  * 继承自 BaseMap 并实现爆炸模式、商店、初始装备等接口
  */
 @Mod.EventBusSubscriber(modid = BlockOffensive.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
-public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , ShopMap<CSGameMap> , GiveStartKitsMap<CSGameMap>, IConfigureMap<CSGameMap> , EndTeleportMap<CSGameMap>{
+public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
+        ShopMap<CSGameMap> , GiveStartKitsMap<CSGameMap>, IConfigureMap<CSGameMap> , EndTeleportMap<CSGameMap>{
     /**
      * Codec序列化配置（用于地图数据保存/加载）
      * <p> 地图名称、区域数据、出生点、商店配置等全量数据
@@ -174,7 +174,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private static final Vector3f T_COLOR = new Vector3f(1, 0.75f, 0.25f);
     private static final Vector3f CT_COLOR = new Vector3f(0.25f, 0.55f, 1);
     private static final Map<String, BiConsumer<CSGameMap,ServerPlayer>> COMMANDS = registerCommands();
-    private static final Map<String, Consumer<CSGameMap>> VOTE_ACTION = registerVoteAction();
     private final ArrayList<Setting<?>> settings = new ArrayList<>();
     private final Setting<Boolean> canAutoStart = this.addSetting("autoStart",true);
     private final Setting<Integer> autoStartTime = this.addSetting("autoStartTime",6000);
@@ -186,6 +185,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private final Setting<Integer> roundTimeLimit = this.addSetting("roundTimeLimit",2300);
     private final Setting<Integer> startMoney = this.addSetting("startMoney",800);
     private final Setting<Integer> closeShopTime = this.addSetting("closeShopTime",200);
+    private final Setting<Boolean> knifeSelection = this.addSetting("knifeSelection",false);
     // private final Setting<Boolean> useMusicApi = this.addSetting("useMusicApi",false);
     // private final Setting<Boolean> useProfileApi = this.addSetting("useProfileApi",false);
     private final List<AreaData> bombAreaData = new ArrayList<>();
@@ -201,6 +201,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private boolean isWarmTime = false;
     private boolean isWaitingWinner = false;
     private boolean isShopLocked = false;
+    private boolean isKnifeSelected = false;
+    private BaseTeam knifeWinnerSwitchTeam = null;
     private int isBlasting = 0; // 是否放置炸弹 0 = 未放置 | 1 = 已放置 | 2 = 已拆除
     private boolean isExploded = false; // 炸弹是否爆炸
     private String blastTeam;
@@ -391,15 +393,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         return commands;
     }
 
-    public static Map<String, Consumer<CSGameMap>> registerVoteAction(){
-        Map<String, Consumer<CSGameMap>> commands = new HashMap<>();
-        commands.put("overtime", CSGameMap::startOvertime);
-        commands.put("unpause", CSGameMap::setUnPauseState);
-        commands.put("reset", CSGameMap::resetGame);
-        commands.put("start", CSGameMap::startGame);
-        return commands;
-    }
-
     public static void write(FPSMDataManager manager){
         FPSMCore.getInstance().getMapByClass(CSGameMap.class)
                 .forEach((map -> {
@@ -426,10 +419,10 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         return team;
     }
 
-    public void startVote(String title,Component message,int second,float playerPercent){
+    public void startVote(VoteObj voteObj){
         if(this.voteObj == null){
-            this.voteObj = new VoteObj(title,message,second,playerPercent);
-            this.sendAllPlayerMessage(message,false);
+            this.voteObj = voteObj;
+            this.sendAllPlayerMessage(voteObj.getMessage(),false);
             this.sendAllPlayerMessage(Component.translatable("blockoffensive.map.vote.help").withStyle(ChatFormatting.GREEN),false);
         }
     }
@@ -635,11 +628,13 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private void startGameWithAnnouncement() {
         Component title = Component.translatable("blockoffensive.map.cs.auto.started")
                 .withStyle(ChatFormatting.YELLOW);
-        Component subtitle = Component.literal("");
-
-        sendTitleToAllPlayers(title, subtitle);
+        sendTitleToAllPlayers(title);
         resetAutoStartState();
         this.startGame();
+    }
+
+    private void sendTitleToAllPlayers(Component title) {
+        this.sendTitleToAllPlayers(title, Component.empty());
     }
 
     private void sendTitleToAllPlayers(Component title, Component subtitle) {
@@ -705,38 +700,22 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     private void voteLogic() {
-        if(this.voteObj != null){
-            this.sendAllPlayerMessage(Component.translatable("blockoffensive.map.vote.timer",(this.voteObj.getEndVoteTimer() - System.currentTimeMillis()) / 1000).withStyle(ChatFormatting.DARK_AQUA),true);
+        if (this.voteObj != null) {
+            // 获取当前玩家数量
             int joinedPlayer = this.getMapTeams().getJoinedPlayers().size();
-            AtomicInteger count = new AtomicInteger();
-            this.voteObj.voteResult.values().forEach(aBoolean -> {
-                if (aBoolean){
-                    count.addAndGet(1);
-                }
-            });
-            boolean accept = (float) count.get() / joinedPlayer >= this.voteObj.getPlayerPercent();
-            if(this.voteObj.checkVoteIsOverTime() || this.voteObj.voteResult.size() == joinedPlayer || accept){
-                Component translation = Component.translatable("blockoffensive.cs." + this.voteObj.getVoteTitle());
-                if(accept){
-                    if(VOTE_ACTION.containsKey(this.voteObj.getVoteTitle())){
-                        this.sendAllPlayerMessage(Component.translatable("blockoffensive.map.vote.success",translation).withStyle(ChatFormatting.GREEN),false);
-                        VOTE_ACTION.get(this.voteObj.getVoteTitle()).accept(this);
-                    }
-                }else{
-                    this.sendAllPlayerMessage(Component.translatable("blockoffensive.map.vote.fail",translation).withStyle(ChatFormatting.RED),false);
-                    for (PlayerData data : this.getMapTeams().getJoinedPlayers()) {
-                        if(!this.voteObj.voteResult.containsKey(data.getOwner())){
-                            this.sendAllPlayerMessage(Component.translatable("blockoffensive.map.vote.disagree", data.name()).withStyle(ChatFormatting.RED), false);
-                        }
-                    }
 
-                    if(this.voteObj.getVoteTitle().equals("overtime")){
-                        this.isPause = false;
-                        this.currentPauseTime = 0;
-                        this.syncToClient();
-                        this.resetGame();
-                    }
-                }
+            // 调用 tick 方法自动判断投票状态（会触发回调函数）
+            boolean voteEnded = this.voteObj.tick(joinedPlayer);
+
+            if (!voteEnded) {
+                // 投票仍在进行中，显示剩余时间
+                this.sendAllPlayerMessage(
+                        Component.translatable("blockoffensive.map.vote.timer", this.voteObj.getRemainingTime())
+                                .withStyle(ChatFormatting.DARK_AQUA),
+                        true
+                );
+            } else {
+                // 投票已结束，清理投票对象
                 this.voteObj = null;
             }
         }
@@ -776,9 +755,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.isStart = true;
         this.isWaiting = true;
         this.isWaitingWinner = false;
-        this.setBlasting(null);
-        this.setExploded(false);
-        this.currentRoundTime = 0;
         this.currentPauseTime = 0;
         this.isShopLocked = false;
         boolean spawnCheck = this.getMapTeams().setTeamsSpawnPoints();
@@ -786,6 +762,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
             this.resetGame();
             return;
         }
+        this.cleanupMap();
         this.getMapTeams().startNewRound();
         this.getMapTeams().resetLivingPlayers();
         this.getMapTeams().getJoinedPlayers().forEach((data -> {
@@ -929,6 +906,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     public int getShopCloseTime(){
+        if(knifeSelection.get() && !isKnifeSelected) return 0;
+
         int closeTime = (this.closeShopTime.get() - this.currentRoundTime);
         if (closeTime < 0) return 0;
         if(this.isWaiting){
@@ -1098,11 +1077,16 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                     this.teleportPlayerToReSpawnPoint(player);
                 });
             }));
-            syncShopInfo(true,getShopCloseTime());
-            syncNormalRoundStartMessage();
-            this.giveBlastTeamBomb();
-            this.syncShopData();
-            this.checkMatchPoint();
+
+            if(knifeSelection.get() && !isKnifeSelected){
+                syncShopInfo(false,getShopCloseTime());
+            }else {
+                syncShopInfo(true,getShopCloseTime());
+                syncNormalRoundStartMessage();
+                this.giveBlastTeamBomb();
+                this.syncShopData();
+                this.checkMatchPoint();
+            }
         }
     }
 
@@ -1167,7 +1151,21 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
 
     public void startOvertimeVote() {
         Component translation = Component.translatable("blockoffensive.cs.overtime");
-        this.startVote("overtime",Component.translatable("blockoffensive.map.vote.message","System",translation), 20, 0.5f);
+        Component message = Component.translatable("blockoffensive.map.vote.message","System",translation);
+        VoteObj overtime = new VoteObj(
+                "overtime",
+                message,
+                20,
+                0.6F,
+                obj->{
+                    this.startOvertime();
+                },
+                obj->{
+                    this.resetGame();
+                }
+        );
+
+        this.startVote(overtime);
     }
 
     public void startOvertime() {
@@ -1350,8 +1348,19 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     private void startUnpauseVote(ServerPlayer serverPlayer) {
         if(this.voteObj == null){
             Component translation = Component.translatable("blockoffensive.cs.unpause");
-            this.startVote("unpause",Component.translatable("blockoffensive.map.vote.message",serverPlayer.getDisplayName(),translation),15,1f);
-            this.voteObj.addAgree(serverPlayer);
+            VoteObj unpause = new VoteObj(
+                    "unpause",
+                    Component.translatable("blockoffensive.map.vote.message",serverPlayer.getDisplayName(),translation),
+                    15,
+                    1F,
+                    obj->{
+                        this.setUnPauseState();
+                    },
+                    obj->{
+                    }
+            );
+            this.startVote(unpause);
+            this.voteObj.processVote(serverPlayer,true);
         }else{
             Component translation = Component.translatable("blockoffensive.cs." + this.voteObj.getVoteTitle());
             serverPlayer.displayClientMessage(Component.translatable("blockoffensive.map.vote.fail.alreadyHasVote", translation).withStyle(ChatFormatting.RED),false);
@@ -1359,15 +1368,15 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     public void handleAgreeCommand(ServerPlayer serverPlayer){
-        if(this.voteObj != null && !this.voteObj.voteResult.containsKey(serverPlayer.getUUID())){
-            this.voteObj.addAgree(serverPlayer);
+        if(this.voteObj != null){
+            this.voteObj.processVote(serverPlayer, true);
             this.sendAllPlayerMessage(Component.translatable("blockoffensive.map.vote.agree",serverPlayer.getDisplayName()).withStyle(ChatFormatting.GREEN),false);
         }
     }
 
     private void handleDisagreeCommand(ServerPlayer serverPlayer) {
-        if(this.voteObj != null && !this.voteObj.voteResult.containsKey(serverPlayer.getUUID())){
-            this.voteObj.addDisagree(serverPlayer);
+        if(this.voteObj != null){
+            this.voteObj.processVote(serverPlayer, false);
             this.sendAllPlayerMessage(Component.translatable("blockoffensive.map.vote.disagree",serverPlayer.getDisplayName()).withStyle(ChatFormatting.RED),false);
         }
     }
@@ -1402,6 +1411,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
         this.isWaiting = false;
         this.isWaitingWinner = false;
         this.isWarmTime = false;
+        this.isPause = false;
         this.currentRoundTime = 0;
         this.currentPauseTime = 0;
         this.isBlasting = 0;
@@ -1631,6 +1641,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
     }
 
     public void giveEco(ServerPlayer player, Player attacker, ItemStack itemStack) {
+        if (knifeSelection.get() && !isKnifeSelected) return;
+
         BaseTeam killerTeam = this.getMapTeams().getTeamByPlayer(attacker).orElse(null);
         BaseTeam deadTeam = this.getMapTeams().getTeamByPlayer(player).orElse(null);
         if(killerTeam == null || deadTeam == null) {
@@ -1817,13 +1829,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> , Shop
                 serverPlayer.displayClientMessage(playerNameComponent.append(tabDataComponent).append(damagesComponent).append(isLivingComponent), false);
             }
             serverPlayer.displayClientMessage(Component.literal("-----------------------------------").withStyle(ChatFormatting.GREEN), false);
-        }
-    }
-
-    private void handleStartCommand(ServerPlayer serverPlayer) {
-        if((!this.isStart && this.voteObj == null) || (!this.isStart && !this.voteObj.getVoteTitle().equals("start"))){
-            this.startVote("start",Component.translatable("blockoffensive.map.vote.message",serverPlayer.getDisplayName(),Component.translatable("blockoffensive.cs.start")),20,1f);
-            this.voteObj.addAgree(serverPlayer);
         }
     }
 

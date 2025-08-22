@@ -1,5 +1,6 @@
 package com.phasetranscrystal.blockoffensive.entity;
 
+import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombActionS2CPacket;
@@ -58,8 +59,8 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
 
     public CompositionC4Entity(Level pLevel, double pX, double pY, double pZ, Player pOwner, @NotNull BlastModeMap<?> map) {
         this(BOEntityRegister.C4.get(), pLevel);
-        this.setFuse(DEFAULT_FUSE_TIME);
-        this.setExplosionRadius(DEFAULT_EXPLOSION_RADIUS);
+        this.setFuse(BOConfig.common.fuseTime.get());
+        this.setExplosionRadius(BOConfig.common.explosionRadius.get());
         this.setPos(pX, pY, pZ);
         this.owner = pOwner;
         this.map = map;
@@ -377,6 +378,5 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
     public Level.ExplosionInteraction explosionInteraction() {
         return Level.ExplosionInteraction.values()[this.entityData.get(DATA_EXPLOSION_INTERACTION)];
     }
-
 
 }
