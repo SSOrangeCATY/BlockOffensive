@@ -1,29 +1,29 @@
-# BlockOffensive
-[点击此处跳转到命令帮助](https://github.com/SSOrangeCATY/FPSMacth/blob/master/CommandHelper.md)
+# BlockOffensive [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/SSOrangeCATY/BlockOffensive) - [中文页](README_ZH-CN.md)
+[Click here to jump to Command Help](https://github.com/SSOrangeCATY/FPSMacth/blob/master/CommandHelper_en-us.md)
 
-### 基本介绍
-- 基于FPSMatch比赛框架创建的额外游戏模式
-- 基本完整复刻了反恐精英游戏的对局流程
-- 支持编辑队伍商店
-- 击杀反馈/死亡信息/TAB/Overlay/HUD
-- C4与拆弹工具
-- ....
+## Building
+- To build BlockOffensive, you must first download [FPSMatch](https://github.com/SSOrangeCATY/FPSMacth/) and run the publishing task before setting up the BlockOffensive build environment
 
-### 📌 版本信息
-| 依赖                                                    | 最低要求版本   |
+### Basic Introduction
+- Additional game mode created based on the [FPSMatch](https://github.com/SSOrangeCATY/FPSMacth/) competition framework
+- Essentially fully replicates the gameplay flow of Counter-Strike
+- Supports team shop editing
+- Kill feedback/death messages/TAB/Overlay/HUD
+- C4 and defuse tools
+- ...
+
+### 📌 INFO
+| Dependency                                            | Version  |
 |-------------------------------------------------------|----------|
 | Minecraft                                             | 1.20.1   |
 | Forge                                                 | 47.3.11  |
 | [FPSMatch](https://github.com/SSOrangeCATY/FPSMacth/) | 1.2.3.7  |
 | ModernUI                                              | 3.11.1.6 |
 
-### ℹ️交流群 : 
-- QQ: 771884981
-### 🏠主页 :
--  https://space.bilibili.com/21254202
+### 🏠Page :
+- [Modrinth](https://modrinth.com/mod/blockoffensive)
+- [CurseForge](https://www.curseforge.com/minecraft/mc-mods/blockoffensive)
 
-
-#### 用户须知：
-- 如果您使用Block Offensive模组即表示您接受 GPL v3 的条款。
-
-完整许可证见 [LICENSE](LICENSE) 文件。
+#### User Notice:
+- By using the Block Offensive mod, you agree to the terms of GPL v3.
+The complete license can be found in the [LICENSE](LICENSE) file.

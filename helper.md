@@ -24,7 +24,7 @@
 
 ---
 ### ❓：如何给初始装备设置虚拟弹药？
-### 🍊：输入指令 `/fpsm map 地图名 modify team teams 队伍名 kits add dummyAmmoAmount 虚拟弹匣子弹数量` 即可将自己主手上的枪设置虚拟弹药并添加到起始装备中。
+### 🍊：输入指令 `/fpsm map 游戏类型 地图名 modify team teams 队伍名 kits add dummyAmmoAmount 虚拟弹匣子弹数量` 即可将自己主手上的枪设置虚拟弹药并添加到起始装备中。
 
 ---
 ### ❓：我想在游戏外编辑地图数据或者配置游戏设置
