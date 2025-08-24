@@ -702,7 +702,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
     private void voteLogic() {
         if (this.voteObj != null) {
             // 获取当前玩家数量
-            int joinedPlayer = this.getMapTeams().getJoinedPlayers().size();
+            int joinedPlayer = this.getMapTeams().getJoinedPlayers().stream().filter(PlayerData::isOnline).toList().size();
 
             // 调用 tick 方法自动判断投票状态（会触发回调函数）
             boolean voteEnded = this.voteObj.tick(joinedPlayer);

@@ -1,7 +1,6 @@
 package com.phasetranscrystal.blockoffensive.item;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
@@ -20,6 +19,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.HumanoidArm;
@@ -28,14 +28,30 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.eventbus.api.Event;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
 import java.util.function.Consumer;
 
+@Mod.EventBusSubscriber(modid = "blockoffensive", bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CompositionC4 extends Item implements BlastBombItem {
+	@SubscribeEvent
+	public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+		Player player = event.getEntity();
+		ItemStack stack = player.getItemInHand(event.getHand());
+
+		if (stack.getItem() instanceof CompositionC4) {
+			event.setUseItem(Event.Result.ALLOW);
+			event.setUseBlock(Event.Result.DENY);
+		}
+	}
 
 	public CompositionC4(Properties pProperties) {
 		super(pProperties);
@@ -94,9 +110,9 @@ public class CompositionC4 extends Item implements BlastBombItem {
 	}
 
 	@Override
-	public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, Player player, @NotNull InteractionHand hand) {
+	public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
 		ItemStack stack = player.getItemInHand(hand);
-		if (level.isClientSide) return InteractionResultHolder.pass(stack);
+		if (level.isClientSide) return InteractionResultHolder.success(stack);
 
 		FPSMCore core = FPSMCore.getInstance();
 		BaseMap baseMap = core.getMapByPlayer(player);
@@ -136,6 +152,25 @@ public class CompositionC4 extends Item implements BlastBombItem {
 			player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.notInArea"), true);
 		}
 		return InteractionResultHolder.pass(stack);
+	}
+
+	public @NotNull InteractionResult useOn(UseOnContext context) {
+		Player player = context.getPlayer();
+		Level level = context.getLevel();
+
+		if (player == null) return InteractionResult.PASS;
+
+		if (level.isClientSide) {
+			return InteractionResult.SUCCESS;
+		}
+
+		InteractionResultHolder<ItemStack> result = this.use(level, player, context.getHand());
+
+		if (result.getResult() == InteractionResult.CONSUME) {
+			return InteractionResult.SUCCESS;
+		}
+
+		return InteractionResult.PASS;
 	}
 
 	private void playClickSound(Level level, LivingEntity entity) {
