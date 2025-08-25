@@ -189,8 +189,7 @@ public class CompositionC4 extends Item implements BlastBombItem {
 		// 禁用移动控制
 		disableMovementKeys(mc);
 
-		// 每8 tick播放声音（使用位运算优化取模）
-		if ((remainingTicks & 7) == 0) {
+		if ((remainingTicks & 8) == 0) {
 			playClickSound(level, entity);
 		}
 	}

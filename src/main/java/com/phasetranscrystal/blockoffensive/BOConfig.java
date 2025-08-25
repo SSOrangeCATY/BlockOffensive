@@ -33,6 +33,15 @@ public class BOConfig {
         public final ForgeConfigSpec.IntValue fuseTime;
         public final ForgeConfigSpec.IntValue explosionRadius;
 
+        // 新增的游戏规则配置项
+        public final ForgeConfigSpec.BooleanValue keepInventory;
+        public final ForgeConfigSpec.BooleanValue immediateRespawn;
+        public final ForgeConfigSpec.BooleanValue daylightCycle;
+        public final ForgeConfigSpec.BooleanValue weatherCycle;
+        public final ForgeConfigSpec.BooleanValue mobSpawning;
+        public final ForgeConfigSpec.BooleanValue naturalRegeneration;
+        public final ForgeConfigSpec.BooleanValue hardDifficulty;
+
         private Common(ForgeConfigSpec.Builder builder) {
             builder.push("login");
             {
@@ -47,7 +56,6 @@ public class BOConfig {
                 enemyMuffledStepVolume = builder.comment("Enemy Muffled Step Volume").defineInRange("enemyMuffledStepVolume", 0.4D, 0, 10);
                 enemyStepVolume = builder.comment("Enemy Step Volume").defineInRange("enemyStepVolume", 1.2D, 0, 10);
             }
-
             builder.pop();
 
             builder.push("c4");
@@ -55,8 +63,36 @@ public class BOConfig {
                 fuseTime = builder.comment("Fuse Time").defineInRange("Fuse Time", 800, 1, 3200);
                 explosionRadius = builder.comment("Explosion Radius").defineInRange("Explosion Radius", 60, 10, 300);
             }
+            builder.pop();
+
+            // 新增的游戏规则配置部分
+            builder.push("inGameRules");
+            {
+                keepInventory = builder.comment("Whether players keep their inventory after death")
+                        .define("keepInventory", true);
+
+                immediateRespawn = builder.comment("Whether players respawn immediately without showing the death screen")
+                        .define("immediateRespawn", true);
+
+                daylightCycle = builder.comment("Whether the daylight cycle and moon phases progress")
+                        .define("daylightCycle", false);
+
+                weatherCycle = builder.comment("Whether the weather can change naturally")
+                        .define("weatherCycle", false);
+
+                mobSpawning = builder.comment("Whether mobs can spawn naturally")
+                        .define("mobSpawning", false);
+
+                naturalRegeneration = builder.comment("Whether players regenerate health naturally when hunger is full")
+                        .define("naturalRegeneration", false);
+
+                hardDifficulty = builder.comment("Whether to set game difficulty to Hard")
+                        .define("hardDifficulty", true);
+            }
+            builder.pop();
         }
     }
+
     public static final Client client;
     public static final ForgeConfigSpec clientSpec;
     public static final Common common;

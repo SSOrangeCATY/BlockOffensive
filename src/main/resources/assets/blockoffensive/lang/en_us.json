@@ -83,5 +83,6 @@
   "itemGroup.tab.blockoffensive": "Block Offensive",
   "blockoffensive.map.cs.reward.money": "Received %1$s money ( %2$s )",
   "blockoffensive.map.cs.reward.team": "+$%1$s team income for %2$s eliminated terrorists",
-  "blockoffensive.map.cs.team.giveBomb": "%s has been chosen to carry the C4 bomb. Plant it at the designated site!"
+  "blockoffensive.map.cs.team.giveBomb": "%s has been chosen to carry the C4 bomb. Plant it at the designated site!",
+  "blockoffensive.cs.knife.selection": "Side Selection"
 }
