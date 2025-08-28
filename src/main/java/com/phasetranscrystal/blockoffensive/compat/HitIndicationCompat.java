@@ -14,6 +14,7 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3d;
 
+@SuppressWarnings("all")
 public class HitIndicationCompat {
 
     public static class Renderer {

@@ -2,6 +2,7 @@ package com.phasetranscrystal.blockoffensive.client;
 
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
+import com.phasetranscrystal.blockoffensive.compat.BOImpl;
 import com.phasetranscrystal.blockoffensive.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.blockoffensive.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
@@ -62,7 +63,7 @@ public class BoClientEvent {
             Item off = player.getOffhandItem().getItem();
             return itemCheck(main) || itemCheck(off)
                     || (FPSMImpl.findEquipmentMod() && (LrtacticalCompat.itemCheck(main) || LrtacticalCompat.itemCheck(off))
-                    || (ModList.get().isLoaded("csgrenades") && (CounterStrikeGrenadesCompat.itemCheck(main) || CounterStrikeGrenadesCompat.itemCheck(off))));
+                    || (BOImpl.isCounterStrikeGrenadesLoaded() && (CounterStrikeGrenadesCompat.itemCheck(main) || CounterStrikeGrenadesCompat.itemCheck(off))));
         }
         return false;
     }

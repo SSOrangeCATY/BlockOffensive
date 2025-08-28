@@ -137,7 +137,7 @@ dependencies {
     runtimeOnly fg.deobf("maven.modrinth:kotlin-for-forge:${kotlin_forge_version}")
     implementation fg.deobf("maven.modrinth:hit-indication:${hit_indication_version}")
     implementation fg.deobf("maven.modrinth:physicsmod:${physicsmod_version}")
-
+    implementation fg.deobf("maven.modrinth:gd656killicon:${gd656killicon_version}")
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }

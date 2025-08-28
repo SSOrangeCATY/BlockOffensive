@@ -1,9 +1,11 @@
 package com.phasetranscrystal.blockoffensive.client.screen.hud;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import com.phasetranscrystal.blockoffensive.client.screen.hud.animation.EnderKillAnimator;
 import com.phasetranscrystal.blockoffensive.client.screen.hud.animation.KillAnimator;
+import com.phasetranscrystal.blockoffensive.compat.BOImpl;
 import com.phasetranscrystal.blockoffensive.compat.HitIndicationCompat;
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import com.phasetranscrystal.fpsmatch.common.client.screen.hud.IHudRenderer;
@@ -35,7 +37,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
-import net.minecraftforge.fml.ModList;
 
 import static com.phasetranscrystal.blockoffensive.client.screen.hud.CSGameTabRenderer.GUI_ICONS_LOCATION;
 
@@ -111,7 +112,7 @@ public class CSGameHud implements IHudRenderer {
     @Override
     public void onPlayerRender(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         Minecraft mc = Minecraft.getInstance();
-        if(ModList.get().isLoaded("hitindication")){
+        if(BOImpl.isHitIndicationLoaded()){
             HitIndicationCompat.Renderer.render(gui.getMinecraft().getWindow(),guiGraphics);
         }
         gameOverlay.render(guiGraphics, screenWidth, screenHeight);
@@ -433,6 +434,7 @@ public class CSGameHud implements IHudRenderer {
     }
 
     public void renderCombatKillTips(Minecraft mc, ForgeGui gui, GuiGraphics guiGraphics,int centerX, int y) {
+        if(!BOConfig.client.killIconHudEnabled.get()) return;
         killAnimator.render(mc, gui, guiGraphics, centerX, y);
     }
 

@@ -5,20 +5,28 @@ import org.apache.commons.lang3.tuple.Pair;
 
 public class BOConfig {
     public static class Client{
-        public final ForgeConfigSpec.BooleanValue hudEnabled;
-        public final ForgeConfigSpec.IntValue hudPosition;
+        public final ForgeConfigSpec.BooleanValue killMessageHudEnabled;
+        public final ForgeConfigSpec.IntValue killMessageHudPosition;
         public final ForgeConfigSpec.IntValue messageShowTime;
         public final ForgeConfigSpec.IntValue maxShowCount;
 
+        public final ForgeConfigSpec.BooleanValue killIconHudEnabled;
+
         private Client(ForgeConfigSpec.Builder builder) {
-            builder.push("client");
+            builder.push("kill message");
             {
-                hudEnabled = builder.comment("Kill message enabled").define("hudEnabled",true);
-                hudPosition = builder.comment("Kill message position").defineInRange("hudPosition",2,1,4);
+                killMessageHudEnabled = builder.comment("Kill message enabled").define("hudEnabled",true);
+                killMessageHudPosition = builder.comment("Kill message position").defineInRange("hudPosition",2,1,4);
                 messageShowTime = builder.comment("Per message show time").defineInRange("messageShowTime",5,1,60);
                 maxShowCount = builder.comment("Max show count").defineInRange("maxShowCount",5,1,10);
             }
+
             builder.pop();
+
+            builder.push("kill icon");
+            {
+                killIconHudEnabled = builder.comment("Kill icon enabled").define("killIconEnabled",true);
+            }
         }
     }
 

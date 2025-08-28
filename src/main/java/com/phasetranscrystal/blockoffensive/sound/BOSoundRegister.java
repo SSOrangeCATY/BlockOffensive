@@ -10,6 +10,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
+@SuppressWarnings("all")
 public class BOSoundRegister {
     public static final DeferredRegister<SoundEvent> SOUNDS = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, BlockOffensive.MODID);
     public static RegistryObject<SoundEvent> beep = SOUNDS.register("beep", () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(BlockOffensive.MODID, "beep")));

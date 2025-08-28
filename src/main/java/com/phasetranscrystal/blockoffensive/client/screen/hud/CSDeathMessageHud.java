@@ -3,12 +3,11 @@ package com.phasetranscrystal.blockoffensive.client.screen.hud;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
+import com.phasetranscrystal.blockoffensive.compat.BOImpl;
 import com.phasetranscrystal.blockoffensive.compat.CounterStrikeGrenadesCompat;
-import com.phasetranscrystal.blockoffensive.compat.LrtacticalCompat;
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
-import com.phasetranscrystal.fpsmatch.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -16,7 +15,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.fml.ModList;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.HashMap;
@@ -24,6 +22,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.UUID;
 
+@SuppressWarnings("all")
 public class CSDeathMessageHud{
     private final Object queueLock = new Object();
     private final LinkedList<MessageData> messageQueue = new LinkedList<>();
@@ -56,13 +55,13 @@ public class CSDeathMessageHud{
         registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(FPSMItemRegister.SMOKE_SHELL.get()),"smoke_shell");
         registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(BOItemRegister.C4.get()),"explode");
 
-        if(FPSMImpl.findCounterStrikeGrenadesMod()){
+        if(BOImpl.isCounterStrikeGrenadesLoaded()){
             CounterStrikeGrenadesCompat.registerKillIcon(itemToIcon);
         }
     }
 
     public void render(GuiGraphics guiGraphics) {
-        if (BOConfig.client.hudEnabled.get() && !messageQueue.isEmpty()) {
+        if (BOConfig.client.killMessageHudEnabled.get() && !messageQueue.isEmpty()) {
             if (minecraft.player != null) {
                 renderKillTips(guiGraphics);
             }
@@ -114,14 +113,14 @@ public class CSDeathMessageHud{
     }
 
     private int getHudPositionYOffset() {
-        return switch (BOConfig.client.hudPosition.get()) {
+        return switch (BOConfig.client.killMessageHudPosition.get()) {
             case 1, 2 -> 10;
             default -> minecraft.getWindow().getGuiScaledHeight() - 10 * 5;
         };
     }
 
     private int getHudPositionXOffset(int stringWidth) {
-        return switch (BOConfig.client.hudPosition.get()) {
+        return switch (BOConfig.client.killMessageHudPosition.get()) {
             case 2, 4 -> minecraft.getWindow().getGuiScaledWidth() - 10 - stringWidth;
             default -> 10;
         };
