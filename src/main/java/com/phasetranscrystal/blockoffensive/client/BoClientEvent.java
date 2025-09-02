@@ -2,6 +2,8 @@ package com.phasetranscrystal.blockoffensive.client;
 
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
+import com.phasetranscrystal.blockoffensive.client.key.OpenShopKey;
+import com.phasetranscrystal.blockoffensive.client.screen.CSGameShopScreen;
 import com.phasetranscrystal.blockoffensive.compat.BOImpl;
 import com.phasetranscrystal.blockoffensive.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.blockoffensive.compat.LrtacticalCompat;
@@ -12,6 +14,7 @@ import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
 import com.phasetranscrystal.fpsmatch.impl.FPSMImpl;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.util.InputExtraCheck;
+import icyllis.modernui.mc.MuiScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.Item;
@@ -26,18 +29,39 @@ import net.minecraftforge.fml.common.Mod;
 public class BoClientEvent {
     @SubscribeEvent
     public static void onClientTickEvent(TickEvent.ClientTickEvent event) {
-        LocalPlayer player = Minecraft.getInstance().player;
-        if(player == null) return;
-        if((CSClientData.isWaiting || CSClientData.isPause) && (FPSMClient.getGlobalData().equalsGame("cs") && !FPSMClient.getGlobalData().isSpectator())){
-            Minecraft.getInstance().options.keyUp.setDown(false);
-            Minecraft.getInstance().options.keyLeft.setDown(false);
-            Minecraft.getInstance().options.keyDown.setDown(false);
-            Minecraft.getInstance().options.keyRight.setDown(false);
-            Minecraft.getInstance().options.keyJump.setDown(false);
-        }
+        Minecraft mc = Minecraft.getInstance();
+        lockMove(mc);
 
+        pullMessage();
+
+        checkOption(mc);
+    }
+
+    public static void checkOption(Minecraft mc){
+        if(OpenShopKey.getLastGuiScaleOption() == -1) return;
+        boolean isShop = mc.screen instanceof MuiScreen muiScreen && muiScreen.getFragment() instanceof CSGameShopScreen;
+        if(!isShop && OpenShopKey.getLastGuiScaleOption() != mc.options.guiScale().get()){
+            mc.options.guiScale().set(OpenShopKey.getLastGuiScaleOption());
+            mc.resizeDisplay();
+            OpenShopKey.resetLastGuiScaleOption();
+        }
+    }
+
+    public static void pullMessage(){
         if(CSClientData.isStart && (FPSMClient.getGlobalData().equalsMap("fpsm_none") || FPSMClient.getGlobalData().equalsGame("none"))){
             FPSMatch.pullGameInfo();
+        }
+    }
+    
+    public static void lockMove(Minecraft mc){
+        LocalPlayer player = mc.player;
+        if(player == null) return;
+        if((CSClientData.isWaiting || CSClientData.isPause) && (FPSMClient.getGlobalData().equalsGame("cs") && !FPSMClient.getGlobalData().isSpectator())){
+            mc.options.keyUp.setDown(false);
+            mc.options.keyLeft.setDown(false);
+            mc.options.keyDown.setDown(false);
+            mc.options.keyRight.setDown(false);
+            mc.options.keyJump.setDown(false);
         }
     }
 

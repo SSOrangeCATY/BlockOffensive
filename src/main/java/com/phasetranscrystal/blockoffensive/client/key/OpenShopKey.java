@@ -30,6 +30,16 @@ public class OpenShopKey {
             GLFW.GLFW_KEY_B,
             "key.category.blockoffensive");
 
+    public static int lastGuiScaleOption = -1;
+
+    public static int getLastGuiScaleOption(){
+        return lastGuiScaleOption;
+    }
+
+    public static void resetLastGuiScaleOption(){
+        lastGuiScaleOption = -1;
+    }
+
     @SubscribeEvent
     public static void onInspectPress(InputEvent.Key event) {
         if (isInGame() && event.getAction() == GLFW.GLFW_PRESS && OPEN_SHOP_KEY.matches(event.getKey(), event.getScanCode())) {
@@ -39,7 +49,7 @@ public class OpenShopKey {
             }
 
             if(CSClientData.isDebug){
-                MuiForgeApi.openScreen(CSGameShopScreen.getInstance());
+                openShop();
             }else{
                 if(FPSMClient.getGlobalData().equalsMap("fpsm_none")){
                     Minecraft.getInstance().player.sendSystemMessage(Component.translatable("key.blockoffensive.open.shop.failed.no_map"));
@@ -57,11 +67,22 @@ public class OpenShopKey {
                 }
 
                 if(CSClientData.isStart){
-                    MuiForgeApi.openScreen(CSGameShopScreen.getInstance());
+                    openShop();
                 }else{
                     Minecraft.getInstance().player.sendSystemMessage(Component.translatable("key.blockoffensive.open.shop.failed.game.not_started"));
                 }
             }
         }
+    }
+
+    private static void openShop(){
+        Minecraft minecraft = Minecraft.getInstance();
+        int guiScaleOption = minecraft.options.guiScale().get();
+        if(guiScaleOption != 2) {
+            lastGuiScaleOption = guiScaleOption;
+            minecraft.options.guiScale().set(2);
+            minecraft.resizeDisplay();
+        }
+        MuiForgeApi.openScreen(CSGameShopScreen.getInstance());
     }
 }

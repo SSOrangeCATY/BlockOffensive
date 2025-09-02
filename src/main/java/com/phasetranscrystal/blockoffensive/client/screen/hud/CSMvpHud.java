@@ -55,7 +55,7 @@ public class CSMvpHud {
     // 配置参数
     private static final int BASE_WIDTH = 1920;
     private static final int BASE_HEIGHT = 1080;
-    private static final float MIN_SCALE = 0.7f;
+    private static final float MIN_SCALE = 0.5f;
     private static final int ROUND_BANNER_WIDTH = 400;
     private static final int ROUND_BANNER_HEIGHT = 80;
     private static final int MVP_PANEL_WIDTH = 580;
@@ -359,7 +359,7 @@ public class CSMvpHud {
 
 
     private float getCurrentScaleFactor() {
-        int screenWidth = minecraft.getWindow().getGuiScaledWidth();
+        int screenWidth = minecraft.getWindow().getWidth();
         return Math.max((float) screenWidth / BASE_WIDTH, MIN_SCALE);
     }
 
