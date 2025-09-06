@@ -1,12 +1,13 @@
 package com.phasetranscrystal.blockoffensive.client.data;
 
 import com.phasetranscrystal.blockoffensive.client.screen.hud.CSGameHud;
-import com.phasetranscrystal.blockoffensive.client.screen.hud.CSMvpHud;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
+import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import net.minecraft.client.Minecraft;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class CSClientData {
@@ -25,12 +26,17 @@ public class CSClientData {
     public static int shopCloseTime = 0;
     public static int nextRoundMoney = 0;
     public static float dismantleBombProgress = 0;
+    public static final Map<UUID, WeaponData> weaponData = new ConcurrentHashMap<>();
 
-    public static boolean bpAttributeHasHelmet = false;
-    public static int bpAttributeDurability = 0;
+    public static int getMoney() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) return 0;
 
-    public static int getMoney(){
-        return FPSMClient.getGlobalData().getPlayerMoney(Minecraft.getInstance().player.getUUID());
+        return FPSMClient.getGlobalData().getPlayerMoney(mc.player.getUUID());
+    }
+
+    public static WeaponData getWeaponData(UUID uuid) {
+        return weaponData.getOrDefault(uuid, WeaponData.EMPTY);
     }
 
     public static void reset() {
@@ -49,32 +55,29 @@ public class CSClientData {
         nextRoundMoney = 0;
         canOpenShop = false;
         dismantleBombProgress = 0;
+        weaponData.clear();
     }
 
     public static int getNextRoundMinMoney() {
         return nextRoundMoney;
     }
 
-    public static PlayerData getLocalCSTabData(){
+    public static Optional<PlayerData> getLocalCSTabData() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
             UUID uuid = mc.player.getUUID();
-            Optional<PlayerData> data = FPSMClient.getGlobalData().getPlayerTabData(uuid);
-            if(data.isPresent()){
-                return data.get();
+            return FPSMClient.getGlobalData().getPlayerTabData(uuid);
+        }
+        return Optional.empty();
+    }
+
+    public static int getLivingWithTeam(String team) {
+        int living = 0;
+        for (var pair : FPSMClient.getGlobalData().tabData.values()) {
+            if (pair.getFirst().equals(team) && pair.getSecond().isLivingNoOnlineCheck()) {
+                living++;
             }
         }
-        return null;
+        return living;
     }
-
-    public static int getLivingWithTeam(String team){
-        AtomicReference<Integer> living = new AtomicReference<>(0);
-        FPSMClient.getGlobalData().tabData.values().forEach((pair)->{
-            if(pair.getFirst().equals(team) && pair.getSecond().isLivingNoOnlineCheck()){
-                living.getAndSet(living.get() + 1);
-            }
-        });
-        return living.get();
-    }
-
 }

@@ -6,6 +6,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.mojang.serialization.codecs.UnboundedMapCodec;
 import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
+import com.phasetranscrystal.blockoffensive.client.data.WeaponData;
 import com.phasetranscrystal.blockoffensive.compat.BOImpl;
 import com.phasetranscrystal.blockoffensive.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.blockoffensive.compat.LrtacticalCompat;
@@ -26,6 +27,7 @@ import com.phasetranscrystal.blockoffensive.net.mvp.MvpMessageS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.shop.ShopStatesS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.MVPMusicManager;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
 import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
 import com.phasetranscrystal.fpsmatch.common.entity.drop.MatchDropEntity;
 import com.phasetranscrystal.fpsmatch.common.packet.*;
@@ -67,6 +69,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
@@ -274,7 +277,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
 
     @SubscribeEvent
     public static void onChat(ServerChatEvent event){
-        BaseMap map = FPSMCore.getInstance().getMapByPlayer(event.getPlayer());
+        Optional<BaseMap> optional = FPSMCore.getInstance().getMapByPlayer(event.getPlayer());
+        if(optional.isEmpty()) return;
+        BaseMap map = optional.get();
         if(map instanceof CSGameMap csGameMap){
             String[] m = event.getMessage().getString().split("\\.");
             if(m.length > 1){
@@ -286,7 +291,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
     @SubscribeEvent
     public static void onPlayerLoggedOutEvent(PlayerEvent.PlayerLoggedOutEvent event){
         if(event.getEntity() instanceof ServerPlayer player){
-            BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
+            Optional<BaseMap> optional = FPSMCore.getInstance().getMapByPlayer(player);
+            if(optional.isEmpty()) return;
+            BaseMap map = optional.get();
             if(map instanceof CSGameMap){
                 dropC4(player);
                 player.getInventory().clearContent();
@@ -305,7 +312,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onPlayerPickupItem(PlayerEvent.ItemPickupEvent event){
         if(event.getEntity().level().isClientSide) return;
-        BaseMap map = FPSMCore.getInstance().getMapByPlayer(event.getEntity());
+        Optional<BaseMap> optional = FPSMCore.getInstance().getMapByPlayer(event.getEntity());
+        if(optional.isEmpty()) return;
+        BaseMap map = optional.get();
         if (map instanceof ShopMap<?> shopMap) {
             shopMap.getShop(event.getEntity()).ifPresent(shop -> {
                 ShopData<?> shopData = shop.getPlayerShopData(event.getEntity().getUUID());
@@ -317,7 +326,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
                 }});
         }
 
-        if(map != null){
+        if(map instanceof CSGameMap){
             FPSMUtil.sortPlayerInventory(event.getEntity());
         }
     }
@@ -326,7 +335,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
     public static void onPlayerDropItem(ItemTossEvent event){
         if(event.getEntity().level().isClientSide) return;
         ItemStack itemStack = event.getEntity().getItem();
-        BaseMap map = FPSMCore.getInstance().getMapByPlayer(event.getPlayer());
+        Optional<BaseMap> optional = FPSMCore.getInstance().getMapByPlayer(event.getPlayer());
+        if(optional.isEmpty()) return;
+        BaseMap map = optional.get();
         if(itemStack.getItem() instanceof CompositionC4){
             event.getEntity().setGlowingTag(true);
         }
@@ -363,10 +374,14 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
     public static void onPlayerKilledByGun(EntityKillByGunEvent event){
         if(event.getLogicalSide() == LogicalSide.SERVER){
             if (event.getKilledEntity() instanceof ServerPlayer player) {
-                BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
+                Optional<BaseMap> optional = FPSMCore.getInstance().getMapByPlayer(player);
+                if(optional.isEmpty()) return;
+                BaseMap map = optional.get();
                 if (map instanceof CSGameMap cs && map.checkGameHasPlayer(player)) {
                     if(event.getAttacker() instanceof ServerPlayer attacker){
-                        BaseMap fromMap = FPSMCore.getInstance().getMapByPlayer(player);
+                        Optional<BaseMap> optionalFromMap = FPSMCore.getInstance().getMapByPlayer(player);
+                        if(optionalFromMap.isEmpty()) return;
+                        BaseMap fromMap = optionalFromMap.get();
                         if (fromMap instanceof CSGameMap csGameMap && csGameMap.equals(map)) {
                             if(IGun.mainHandHoldGun(attacker)) {
                                 csGameMap.giveEco(player,attacker,attacker.getMainHandItem());
@@ -408,8 +423,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onPlayerDeathEvent(LivingDeathEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-            if (map instanceof CSGameMap csGameMap) {
+            Optional<BaseMap> optional = FPSMCore.getInstance().getMapByPlayer(player);
+            if (optional.isPresent() && optional.get() instanceof CSGameMap csGameMap) {
                 if(BOImpl.isPhysicsModLoaded()){
                     csGameMap.sendPacketToAllPlayer(new PxDeathCompatS2CPacket(player.getId()));
                 }
@@ -1604,17 +1619,62 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
                 this.isWaiting,
                 this.isWaitingWinner
         );
-        this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> this.getPlayerByUUID(uuid).ifPresent(player->{
-            this.sendPacketToJoinedPlayer(player,packet,true);
-            for (BaseTeam team : this.getMapTeams().getTeamsWithSpec()) {
-                for (UUID existingPlayerId : team.getPlayers().keySet()) {
-                    team.getPlayerData(existingPlayerId).ifPresent(playerData -> {
-                        var p1 = new GameTabStatsS2CPacket(existingPlayerId, playerData, team.name);
-                        this.sendPacketToJoinedPlayer(player,p1,true);
-                    });
+        for(UUID uuid : this.getMapTeams().getJoinedPlayersWithSpec()){
+            this.getPlayerByUUID(uuid).ifPresent(player-> {
+                this.sendPacketToJoinedPlayer(player, packet, true);
+                for (BaseTeam team : this.getMapTeams().getTeamsWithSpec()) {
+                    for (UUID existingPlayerId : team.getPlayers().keySet()) {
+                        team.getPlayerData(existingPlayerId).ifPresent(playerData -> {
+                            var p1 = new GameTabStatsS2CPacket(existingPlayerId, playerData, team.name);
+                            this.sendPacketToJoinedPlayer(player, p1, true);
+                        });
+                    }
+                }
+            });
+        }
+
+        Map<UUID, WeaponData> weaponDataMap = new HashMap<>();
+
+        for (PlayerData data : this.getMapTeams().getJoinedPlayers()){
+            Optional<ServerPlayer> optional = data.getPlayer();
+            if(optional.isEmpty()) continue;
+            ServerPlayer player = optional.get();
+            Map<String, List<String>> weaponData = new HashMap<>();
+
+            List<List<ItemStack>> items = new ArrayList<>();
+            items.add(player.getInventory().items);
+            items.add(player.getInventory().armor);
+            items.add(player.getInventory().offhand);
+            for (List<ItemStack> itemStacks : items) {
+                for(ItemStack itemStack : itemStacks){
+                    if(itemStack.isEmpty()) continue;
+                    for (DropType dropType : DropType.values()) {
+                        if(dropType.itemMatch().test(itemStack)){
+                            weaponData.computeIfAbsent(dropType.name(), k -> new ArrayList<>()).add(itemStack.getHoverName().getString());
+                            break;
+                        }
+                    }
                 }
             }
-        })));
+            boolean hasHelmet;
+            int durability;
+            Optional<BulletproofArmorAttribute> attribute = BulletproofArmorAttribute.getInstance(player);
+            if(attribute.isPresent()){
+                hasHelmet = attribute.get().hasHelmet();
+                durability = attribute.get().getDurability();
+            }else{
+                hasHelmet = false;
+                durability = 0;
+            }
+            weaponDataMap.put(player.getUUID(),new WeaponData(weaponData,hasHelmet,durability));
+        }
+
+        CSGameWeaponDataS2CPacket weaponDataS2CPacket = new CSGameWeaponDataS2CPacket(weaponDataMap);
+        for (UUID uuid : this.getMapTeams().getSpecPlayers()){
+            this.getPlayerByUUID(uuid).ifPresent(player-> {
+                this.sendPacketToJoinedPlayer(player, weaponDataS2CPacket, true);
+            });
+        }
 
         if(!isShopLocked){
             this.syncShopInfo(true,getShopCloseTime());
@@ -1716,8 +1776,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
     public void handlePlayerDeath(ServerPlayer player, @Nullable Entity fromEntity) {
         ServerPlayer from;
         if (fromEntity instanceof ServerPlayer fromPlayer) {
-            BaseMap fromMap = FPSMCore.getInstance().getMapByPlayer(fromPlayer);
-            if (fromMap != null && fromMap.equals(this)) {
+            Optional<BaseMap> optionalFromMap = FPSMCore.getInstance().getMapByPlayer(fromPlayer);
+            if (optionalFromMap.isPresent() && optionalFromMap.get().equals(this)) {
                 from = fromPlayer;
             } else {
                 from = null;

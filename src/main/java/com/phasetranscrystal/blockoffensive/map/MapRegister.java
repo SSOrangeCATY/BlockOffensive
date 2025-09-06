@@ -1,8 +1,6 @@
 package com.phasetranscrystal.blockoffensive.map;
 
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
-import com.phasetranscrystal.blockoffensive.map.shop.BulletproofArmorWithHelmetListenerModule;
-import com.phasetranscrystal.blockoffensive.map.shop.BulletproofArmorWithoutHelmetListenerModule;
 import com.phasetranscrystal.fpsmatch.core.data.save.SaveHolder;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMSaveDataEvent;
 import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMapEvent;
@@ -26,11 +24,5 @@ public class MapRegister {
                         .withWriteHandler(CSGameMap::write)
                         .build()
         );
-    }
-
-    @SubscribeEvent
-    public static void onShopRegister(RegisterListenerModuleEvent event){
-        event.register(new BulletproofArmorWithoutHelmetListenerModule());
-        event.register(new BulletproofArmorWithHelmetListenerModule());
     }
 }

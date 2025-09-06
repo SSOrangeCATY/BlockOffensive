@@ -16,6 +16,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.Optional;
+
 @Mixin(ItemEntity.class)
 public abstract class C4KitsItemEntityMixin {
     @Shadow public abstract ItemStack getItem();
@@ -24,11 +26,12 @@ public abstract class C4KitsItemEntityMixin {
     public void fpsMatch$playerTouch$CustomC4(Player player, CallbackInfo ci) {
         if(!player.isCreative() && !player.level().isClientSide){
             if(this.getItem().getItem() instanceof CompositionC4){
-                BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-                if (map == null) {
+                Optional<BaseMap> optional = FPSMCore.getInstance().getMapByPlayer(player);
+                if (optional.isEmpty()) {
                     ci.cancel();
                     return;
                 }
+                BaseMap map = optional.get();
                 BaseTeam team = map.getMapTeams().getTeamByPlayer(player).orElse(null);
                 if(team != null && map instanceof BlastModeMap<?> blastModeMap){
                     if(!blastModeMap.checkCanPlacingBombs(team.getFixedName())){
@@ -40,11 +43,12 @@ public abstract class C4KitsItemEntityMixin {
             }
 
             if(this.getItem().getItem() instanceof BombDisposalKit){
-                BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-                if (map == null) {
+                Optional<BaseMap> optional = FPSMCore.getInstance().getMapByPlayer(player);
+                if (optional.isEmpty()) {
                     ci.cancel();
                     return;
                 }
+                BaseMap map = optional.get();
                 BaseTeam team = map.getMapTeams().getTeamByPlayer(player).orElse(null);
                 if(team != null && map instanceof BlastModeMap<?> blastModeMap){
                     if(!blastModeMap.checkCanPlacingBombs(team.getFixedName())){

@@ -8,6 +8,7 @@ import com.phasetranscrystal.blockoffensive.client.screen.hud.animation.KillAnim
 import com.phasetranscrystal.blockoffensive.compat.BOImpl;
 import com.phasetranscrystal.blockoffensive.compat.HitIndicationCompat;
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
+import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
 import com.phasetranscrystal.fpsmatch.common.client.screen.hud.IHudRenderer;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import com.tacz.guns.api.TimelessAPI;
@@ -187,11 +188,11 @@ public class CSGameHud implements IHudRenderer {
     }
 
     public void renderArmorBar(Minecraft mc, ForgeGui gui, GuiGraphics guiGraphics, int healthTextX, int healthTextY) {
-        if(CSClientData.bpAttributeDurability == 0) return;
+        if(BulletproofArmorAttribute.Client.bpAttributeDurability == 0) return;
         Font font = mc.font;
-        String text = String.valueOf(CSClientData.bpAttributeDurability);
+        String text = String.valueOf(BulletproofArmorAttribute.Client.bpAttributeDurability);
         int width = font.width(text);
-        guiGraphics.blit(GUI_ICONS_LOCATION, healthTextX - 9, healthTextY, CSClientData.bpAttributeHasHelmet ? 34 : 25, 9, 9, 9);
+        guiGraphics.blit(GUI_ICONS_LOCATION, healthTextX - 9, healthTextY, BulletproofArmorAttribute.Client.bpAttributeHasHelmet ? 34 : 25, 9, 9, 9);
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(healthTextX - width + 1, healthTextY + 6,0);
         guiGraphics.drawString(font, text, 0, 0, 0xFFFFFFFF, false);

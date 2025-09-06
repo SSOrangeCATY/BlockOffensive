@@ -12,6 +12,7 @@ public class BOConfig {
 
         public final ForgeConfigSpec.BooleanValue killIconHudEnabled;
 
+
         private Client(ForgeConfigSpec.Builder builder) {
             builder.push("kill message");
             {
@@ -27,6 +28,8 @@ public class BOConfig {
             {
                 killIconHudEnabled = builder.comment("Kill icon enabled").define("killIconEnabled",true);
             }
+
+            builder.pop();
         }
     }
 
@@ -49,6 +52,9 @@ public class BOConfig {
         public final ForgeConfigSpec.BooleanValue mobSpawning;
         public final ForgeConfigSpec.BooleanValue naturalRegeneration;
         public final ForgeConfigSpec.BooleanValue hardDifficulty;
+
+        public final ForgeConfigSpec.BooleanValue webServerEnabled;
+        public final ForgeConfigSpec.IntValue webServerPort;
 
         private Common(ForgeConfigSpec.Builder builder) {
             builder.push("login");
@@ -96,6 +102,13 @@ public class BOConfig {
 
                 hardDifficulty = builder.comment("Whether to set game difficulty to Hard")
                         .define("hardDifficulty", true);
+            }
+            builder.pop();
+
+            builder.push("web server");
+            {
+                webServerEnabled = builder.comment("Web server enabled").define("webServerEnabled",false);
+                webServerPort = builder.comment("Web server port").defineInRange("webServerPort",8080,1,65535);
             }
             builder.pop();
         }

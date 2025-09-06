@@ -15,6 +15,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 public record BombActionC2SPacket(boolean action) {
@@ -30,11 +31,12 @@ public record BombActionC2SPacket(boolean action) {
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ServerPlayer sender = ctx.get().getSender();
-        BaseMap map = FPSMCore.getInstance().getMapByPlayer(sender);
-        if (map == null || sender == null) {
+        Optional<BaseMap> optional = FPSMCore.getInstance().getMapByPlayer(sender);
+        if (optional.isEmpty() || sender == null) {
             ctx.get().setPacketHandled(true);
             return;
         }
+        BaseMap map = optional.get();
         BaseTeam team = map.getMapTeams().getTeamByPlayer(sender).orElse(null);
         if (team == null) {
             ctx.get().setPacketHandled(true);

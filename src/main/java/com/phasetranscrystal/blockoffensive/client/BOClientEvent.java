@@ -1,14 +1,17 @@
 package com.phasetranscrystal.blockoffensive.client;
 
+import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import com.phasetranscrystal.blockoffensive.client.key.OpenShopKey;
 import com.phasetranscrystal.blockoffensive.client.screen.CSGameShopScreen;
+import com.phasetranscrystal.blockoffensive.web.BOClientWebServer;
 import com.phasetranscrystal.blockoffensive.compat.BOImpl;
 import com.phasetranscrystal.blockoffensive.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.blockoffensive.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
+import com.phasetranscrystal.fpsmatch.common.client.data.FPSMClientGlobalData;
 import com.phasetranscrystal.fpsmatch.common.client.event.FPSMClientResetEvent;
 import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
 import com.phasetranscrystal.fpsmatch.impl.FPSMImpl;
@@ -22,11 +25,10 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = BlockOffensive.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
-public class BoClientEvent {
+public class BOClientEvent {
     @SubscribeEvent
     public static void onClientTickEvent(TickEvent.ClientTickEvent event) {
         Minecraft mc = Minecraft.getInstance();
@@ -35,6 +37,19 @@ public class BoClientEvent {
         pullMessage();
 
         checkOption(mc);
+
+        startWebServer();
+    }
+
+    public static void startWebServer(){
+        if(!BOConfig.common.webServerEnabled.get()) return;
+        FPSMClientGlobalData data = FPSMClient.getGlobalData();
+
+        if(!(data.equalsMap("fpsm_none") || data.equalsGame("none")) && data.isSpectator()) {
+            BOClientWebServer.start();
+        }else {
+            BOClientWebServer.stop();
+        }
     }
 
     public static void checkOption(Minecraft mc){

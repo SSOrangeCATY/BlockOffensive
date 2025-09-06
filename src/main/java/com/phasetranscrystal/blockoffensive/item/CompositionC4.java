@@ -38,6 +38,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 
 @Mod.EventBusSubscriber(modid = "blockoffensive", bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -115,7 +116,13 @@ public class CompositionC4 extends Item implements BlastBombItem {
 		if (level.isClientSide) return InteractionResultHolder.success(stack);
 
 		FPSMCore core = FPSMCore.getInstance();
-		BaseMap baseMap = core.getMapByPlayer(player);
+		Optional<BaseMap> optional = core.getMapByPlayer(player);
+
+		if (optional.isEmpty()) {
+			player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.noMap"), true);
+			return InteractionResultHolder.pass(stack);
+		}
+		BaseMap baseMap = optional.get();
 
 		if (!(baseMap instanceof BlastModeMap<?> map)) {
 			player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.noMap"), true);
@@ -208,7 +215,10 @@ public class CompositionC4 extends Item implements BlastBombItem {
 		if (!(entity instanceof ServerPlayer player)) return stack;
 
 		FPSMCore core = FPSMCore.getInstance();
-		BaseMap baseMap = core.getMapByPlayer(player);
+		Optional<BaseMap> optional = core.getMapByPlayer(player);
+
+		if (optional.isEmpty()) return stack;
+		BaseMap baseMap = optional.get();
 
 		if (!(baseMap instanceof BlastModeMap<?> map)) return stack;
 

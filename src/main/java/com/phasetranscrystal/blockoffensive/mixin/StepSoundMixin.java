@@ -39,7 +39,9 @@ public abstract class StepSoundMixin extends LivingEntity {
         if(this.level().isClientSide) return;
 
         Player me = (Player)(Object)this;
-        BaseMap map = FPSMCore.getInstance().getMapByPlayer(me);
+        Optional<BaseMap> optional = FPSMCore.getInstance().getMapByPlayer(me);
+        if (optional.isEmpty()) return;
+        BaseMap map = optional.get();
         if (map instanceof CSGameMap && !this.isSilent() && !this.isCrouching()){
             Optional<BaseTeam> team = map.getMapTeams().getTeamByPlayer(me);
             if (team.isPresent()) {
@@ -89,8 +91,8 @@ public abstract class StepSoundMixin extends LivingEntity {
         var enemy = new ClientboundSoundPacket(sound, this.getSoundSource() ,this.getX(), this.getY(), this.getZ(), (float) (soundtype.getVolume() * (isMuffled ? config.enemyMuffledStepVolume.get() : config.enemyStepVolume.get())), soundtype.getPitch(),this.level().getRandom().nextLong());
 
         for (ServerPlayer player : players) {
-            BaseMap map = FPSMCore.getInstance().getMapByPlayer(player);
-            if(map instanceof CSGameMap){
+            Optional<BaseMap> optional = FPSMCore.getInstance().getMapByPlayer(player);
+            if (optional.isPresent() && optional.get() instanceof CSGameMap map){
                 Optional<BaseTeam> team = map.getMapTeams().getTeamByPlayer(player);
                 if (team.isPresent() && team.get().getFixedName().equals(joined.getFixedName())) {
                     player.connection.send(teammate);

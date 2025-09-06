@@ -4,7 +4,6 @@ import com.phasetranscrystal.blockoffensive.command.VoteCommand;
 import com.phasetranscrystal.blockoffensive.entity.BOEntityRegister;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.net.*;
-import com.phasetranscrystal.blockoffensive.net.attribute.BulletproofArmorAttributeS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombActionC2SPacket;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombActionS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombDemolitionProgressS2CPacket;
@@ -64,8 +63,8 @@ public class BlockOffensive {
         PACKET_REGISTER.registerPacket(CSGameSettingsS2CPacket.class);
         PACKET_REGISTER.registerPacket(CSTabRemovalS2CPacket.class);
         PACKET_REGISTER.registerPacket(DeathMessageS2CPacket.class);
-        PACKET_REGISTER.registerPacket(BulletproofArmorAttributeS2CPacket.class);
         PACKET_REGISTER.registerPacket(PxDeathCompatS2CPacket.class);
         PACKET_REGISTER.registerPacket(PxResetCompatS2CPacket.class);
+        PACKET_REGISTER.registerPacket(CSGameWeaponDataS2CPacket.class);
     }
 }
