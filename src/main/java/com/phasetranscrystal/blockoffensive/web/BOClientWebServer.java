@@ -76,6 +76,8 @@ public class BOClientWebServer {
             response.put("shopCloseTime", CSClientData.shopCloseTime);
             response.put("nextRoundMoney", CSClientData.nextRoundMoney);
             response.put("dismantleBombProgress", CSClientData.dismantleBombProgress);
+            response.put("bombFuse", CSClientData.bombFuse);
+            response.put("bombTotalFuse", CSClientData.bombTotalFuse);
 
             Map<String, Object> tabData = new HashMap<>();
             for (UUID uuid : globalData.tabData.keySet()) {
@@ -86,9 +88,9 @@ public class BOClientWebServer {
                 Map<String, Object> playerData = new HashMap<>();
                 playerData.put("name", data.name().getString());
                 playerData.put("team", team);
-                playerData.put("data", data.mappedInfo());
-                playerData.put("living", data.isLivingNoOnlineCheck());
+                playerData.putAll(data.mappedInfo());
                 playerData.put("money", globalData.getPlayerMoney(uuid));
+                playerData.put("health",data.healthPercent() * 100);
                 WeaponData weaponData = CSClientData.getWeaponData(uuid);
                 playerData.put("items", weaponData.weaponData());
                 playerData.put("bpAttributeHasHelmet", weaponData.bpAttributeHasHelmet());

@@ -3,6 +3,7 @@ package com.phasetranscrystal.blockoffensive.item;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.item.BlastBombItem;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
@@ -12,6 +13,7 @@ import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.network.chat.Component;
@@ -188,16 +190,16 @@ public class CompositionC4 extends Item implements BlastBombItem {
 	@Override
 	public void onUseTick(@NotNull Level level, @NotNull LivingEntity entity,
 						  @NotNull ItemStack stack, int remainingTicks) {
-		if (!level.isClientSide) return;
+		if (!(level instanceof ClientLevel clientLevel)) return;
 
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null || !entity.getUUID().equals(mc.player.getUUID())) return;
-
 		// 禁用移动控制
 		disableMovementKeys(mc);
 
-		if ((remainingTicks & 8) == 0) {
-			playClickSound(level, entity);
+
+		if (remainingTicks != 80 && remainingTicks % 8 == 0) {
+			clientLevel.playLocalSound(entity.getX(), entity.getY(), entity.getZ(), BOSoundRegister.click.get(), SoundSource.PLAYERS, 3.0F, 1.0F,false);
 		}
 	}
 

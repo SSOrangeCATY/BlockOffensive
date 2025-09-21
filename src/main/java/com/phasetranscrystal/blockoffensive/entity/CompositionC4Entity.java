@@ -5,7 +5,9 @@ import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombActionS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombDemolitionProgressS2CPacket;
+import com.phasetranscrystal.blockoffensive.net.spec.BombFuseS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.entity.BlastBombEntity;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
@@ -29,6 +31,7 @@ import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+import java.util.Optional;
 import java.util.UUID;
 
 public class CompositionC4Entity extends Entity implements TraceableEntity , BlastBombEntity {
@@ -59,31 +62,31 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
 
     public CompositionC4Entity(Level pLevel, double pX, double pY, double pZ, Player pOwner, @NotNull BlastModeMap<?> map) {
         this(BOEntityRegister.C4.get(), pLevel);
+        this.map = map;
         this.setFuse(BOConfig.common.fuseTime.get());
         this.setExplosionRadius(BOConfig.common.explosionRadius.get());
         this.setPos(pX, pY, pZ);
         this.owner = pOwner;
-        this.map = map;
         map.setBlasting(this);
     }
 
     public CompositionC4Entity(Level pLevel, Vec3 pos, Player pOwner, @NotNull BlastModeMap<?> map, int fuseTime, int explosionRadius) {
         this(BOEntityRegister.C4.get(), pLevel);
+        this.map = map;
         this.setFuse(fuseTime);
         this.setExplosionRadius(explosionRadius);
         this.setPos(pos);
         this.owner = pOwner;
-        this.map = map;
         map.setBlasting(this);
     }
     public CompositionC4Entity(Level pLevel, Vec3 pos, Player pOwner, @NotNull BlastModeMap<?> map, int fuseTime, int explosionRadius, Level.ExplosionInteraction explosionInteraction) {
         this(BOEntityRegister.C4.get(), pLevel);
+        this.map = map;
         this.setExplosionInteraction(explosionInteraction);
         this.setFuse(fuseTime);
         this.setExplosionRadius(explosionRadius);
         this.setPos(pos);
         this.owner = pOwner;
-        this.map = map;
         map.setBlasting(this);
     }
 
@@ -303,6 +306,10 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
 
     public void setFuse(int pLife) {
         this.entityData.set(DATA_FUSE_ID, pLife);
+        this.getMap().getMap().getMapTeams().getSpecPlayers().forEach((pUUID)->{
+            Optional<ServerPlayer> receiver = FPSMCore.getInstance().getPlayerByUUID(pUUID);
+            receiver.ifPresent(player -> BlockOffensive.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new BombFuseS2CPacket(pLife,BOConfig.common.fuseTime.get())));
+        });
     }
 
     public int getFuse() {

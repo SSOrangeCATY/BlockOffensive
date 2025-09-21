@@ -10,6 +10,8 @@ import com.phasetranscrystal.blockoffensive.net.bomb.BombDemolitionProgressS2CPa
 import com.phasetranscrystal.blockoffensive.net.mvp.MvpHUDCloseS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.mvp.MvpMessageS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.shop.ShopStatesS2CPacket;
+import com.phasetranscrystal.blockoffensive.net.spec.BombFuseS2CPacket;
+import com.phasetranscrystal.blockoffensive.net.spec.CSGameWeaponDataS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
 import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 import net.minecraft.resources.ResourceLocation;
@@ -66,5 +68,6 @@ public class BlockOffensive {
         PACKET_REGISTER.registerPacket(PxDeathCompatS2CPacket.class);
         PACKET_REGISTER.registerPacket(PxResetCompatS2CPacket.class);
         PACKET_REGISTER.registerPacket(CSGameWeaponDataS2CPacket.class);
+        PACKET_REGISTER.registerPacket(BombFuseS2CPacket.class);
     }
 }

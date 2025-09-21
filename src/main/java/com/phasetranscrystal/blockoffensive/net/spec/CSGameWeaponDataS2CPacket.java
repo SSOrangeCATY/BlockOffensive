@@ -1,4 +1,4 @@
-package com.phasetranscrystal.blockoffensive.net;
+package com.phasetranscrystal.blockoffensive.net.spec;
 
 import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import com.phasetranscrystal.blockoffensive.client.data.WeaponData;

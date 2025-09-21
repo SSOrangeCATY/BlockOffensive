@@ -26,7 +26,12 @@ public class CSClientData {
     public static int shopCloseTime = 0;
     public static int nextRoundMoney = 0;
     public static float dismantleBombProgress = 0;
+    // 旁观者数据
+    public static int bombFuse = 0;
+    public static int bombTotalFuse;
+
     public static final Map<UUID, WeaponData> weaponData = new ConcurrentHashMap<>();
+
 
     public static int getMoney() {
         Minecraft mc = Minecraft.getInstance();

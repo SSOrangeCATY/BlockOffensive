@@ -25,6 +25,8 @@ import com.phasetranscrystal.blockoffensive.net.bomb.BombDemolitionProgressS2CPa
 import com.phasetranscrystal.blockoffensive.net.mvp.MvpHUDCloseS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.mvp.MvpMessageS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.shop.ShopStatesS2CPacket;
+import com.phasetranscrystal.blockoffensive.net.spec.BombFuseS2CPacket;
+import com.phasetranscrystal.blockoffensive.net.spec.CSGameWeaponDataS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.MVPMusicManager;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
@@ -60,6 +62,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -69,7 +72,6 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
@@ -261,7 +263,10 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
                     this.setUnPauseState();
                     this.startGame();
                     },
-                this::setUnPauseState,
+                ()-> {
+                    this.setUnPauseState();
+                    this.clearTeamScore();
+                },
                 winnerTeam.getPlayerList()
         );
         this.getMapTeams().getTeams().forEach(( team) -> {
@@ -269,6 +274,13 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
             team.getPlayers().forEach((uuid,data)-> data.reset());
         });
         this.startVote(knife);
+    }
+
+    public void clearTeamScore(){
+        this.getMapTeams().getTeams().forEach(( team) -> {
+            team.setScores(0);
+            team.getPlayers().forEach((uuid,data)-> data.reset());
+        });
     }
 
     public boolean isKnifeSelectingVote(){
@@ -890,6 +902,11 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
 
     public boolean checkWaitingTime(){
         if(this.isWaiting && currentPauseTime < waitingTime.get()){
+            // 最后三秒 向全体玩家发送无来源声音
+            if(waitingTime.get() - currentPauseTime <= 60 && currentPauseTime % 20 == 0){
+                this.sendPacketToAllPlayer(new FPSMusicPlayS2CPacket(SoundEvents.NOTE_BLOCK_BELL.value().getLocation()));
+            }
+
             this.currentPauseTime++;
             boolean b = false;
             Iterator<BaseTeam> teams = this.getMapTeams().getTeams().iterator();
@@ -1048,7 +1065,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
                     .setTeamName(Component.literal(winnerTeam.name.toUpperCase(Locale.ROOT))).build();
         }
         this.sendPacketToAllPlayer(new MvpMessageS2CPacket(mvpReason));
-
         MinecraftForge.EVENT_BUS.post(new CSGameRoundEndEvent(this,winnerTeam,reason));
         int currentScore = winnerTeam.getScores();
         int target = currentScore + 1;
@@ -1258,6 +1274,10 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
                 entity.discard();
             }
         }
+        this.getMap().getMap().getMapTeams().getSpecPlayers().forEach((pUUID)->{
+            Optional<ServerPlayer> receiver = FPSMCore.getInstance().getPlayerByUUID(pUUID);
+            receiver.ifPresent(player -> BlockOffensive.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new BombFuseS2CPacket(0,BOConfig.common.fuseTime.get())));
+        });
         AtomicInteger atomicInteger = new AtomicInteger(0);
         int ctScore = this.getCTTeam().getScores();
         int tScore = this.getTTeam().getScores();
@@ -1656,6 +1676,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
                     }
                 }
             }
+            // carried
+            weaponData.computeIfAbsent("CARRIED", k -> new ArrayList<>()).add(player.getMainHandItem().getHoverName().getString());
+
             boolean hasHelmet;
             int durability;
             Optional<BulletproofArmorAttribute> attribute = BulletproofArmorAttribute.getInstance(player);
