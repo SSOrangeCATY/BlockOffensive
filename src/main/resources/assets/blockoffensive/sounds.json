@@ -55,5 +55,145 @@
     "sounds": [
       "blockoffensive:boom"
     ]
+  },
+  "weapon_knife_impact" : {
+    "subtitle": "sounds.blockoffensive.weapon.knife.impact",
+    "sounds": [
+      "blockoffensive:weapon_knife_impact_01",
+      "blockoffensive:weapon_knife_impact_02",
+      "blockoffensive:weapon_knife_impact_03",
+      "blockoffensive:weapon_knife_impact_04",
+      "blockoffensive:weapon_knife_impact_05"
+    ]
+  },
+  "weapon_heavy_impact" : {
+    "subtitle": "sounds.blockoffensive.weapon.heavy.impact",
+    "sounds": [
+      "blockoffensive:weapon_heavy_impact_01",
+      "blockoffensive:weapon_heavy_impact_02",
+      "blockoffensive:weapon_heavy_impact_03",
+      "blockoffensive:weapon_heavy_impact_04"
+    ]
+  },
+  "weapon_pistol_impact" : {
+    "subtitle": "sounds.blockoffensive.weapon.pistol.impact",
+    "sounds": [
+      "blockoffensive:weapon_pistol_impact"
+    ]
+  },
+  "weapon_rifle_impact" : {
+    "subtitle": "sounds.blockoffensive.weapon.rifle.impact",
+    "sounds": [
+      "blockoffensive:weapon_rifle_impact"
+    ]
+  },
+  "weapon_shotgun_impact" : {
+    "subtitle": "sounds.blockoffensive.weapon.shotgun.impact",
+    "sounds": [
+      "blockoffensive:weapon_shotgun_impact"
+    ]
+  },
+  "weapon_smg_impact" : {
+    "subtitle": "sounds.blockoffensive.weapon.smg.impact",
+    "sounds": [
+      "blockoffensive:weapon_smg_impact"
+    ]
+  },
+  "weapon_sniper_impact" : {
+    "subtitle": "sounds.blockoffensive.weapon.sniper.impact",
+    "sounds": [
+      "blockoffensive:weapon_sniper_impact"
+    ]
+  },
+  "weapon_c4_impact" : {
+    "subtitle": "sounds.blockoffensive.weapon.c4.impact",
+    "sounds": [
+      "blockoffensive:weapon_c4_impact_01"
+    ]
+  },
+  "weapon_c4beep_impact" : {
+    "subtitle": "sounds.blockoffensive.weapon.c4beep.impact",
+    "sounds": [
+      "blockoffensive:weapon_c4beep_impact_04",
+      "blockoffensive:weapon_c4beep_impact_05"
+    ]
+  },
+  "weapon_pickup" : {
+    "subtitle": "sounds.blockoffensive.weapon.pickup",
+    "sounds": [
+      "blockoffensive:pickup_weapon_01",
+      "blockoffensive:pickup_weapon_02"
+    ]
+  },
+  "weapon_ammo_pickup" : {
+    "subtitle": "sounds.blockoffensive.ammo.pickup",
+    "sounds": [
+      "blockoffensive:pickup_ammo_01",
+      "blockoffensive:pickup_ammo_02"
+    ]
+  },
+  "weapon_grenade_pickup" : {
+    "subtitle": "sounds.blockoffensive.weapon.grenade.pickup",
+    "sounds": [
+      "blockoffensive:pickup_grenade_01",
+      "blockoffensive:pickup_grenade_02",
+      "blockoffensive:pickup_grenade_03"
+    ]
+  },
+  "weapon_pistol_pickup" : {
+    "subtitle": "sounds.blockoffensive.weapon.pistol.pickup",
+    "sounds": [
+      "blockoffensive:pickup_pistol"
+    ]
+  },
+  "weapon_quiet_pickup" : {
+    "subtitle": "sounds.blockoffensive.weapon.pickup.quiet",
+    "sounds": [
+      "blockoffensive:pickup_quiet_01",
+      "blockoffensive:pickup_quiet_02",
+      "blockoffensive:pickup_quiet_03"
+    ]
+  },
+  "weapon_rifle_pickup" : {
+    "subtitle": "sounds.blockoffensive.weapon.rifle.pickup",
+    "sounds": [
+      "blockoffensive:pickup_rifle"
+    ]
+  },
+  "weapon_shotgun_pickup" : {
+    "subtitle": "sounds.blockoffensive.weapon.shotgun.pickup",
+    "sounds": [
+      "blockoffensive:pickup_shotgun"
+    ]
+  },
+  "weapon_smg_pickup" : {
+    "subtitle": "sounds.blockoffensive.weapon.smg.pickup",
+    "sounds": [
+      "blockoffensive:pickup_smg"
+    ]
+  },
+  "weapon_sniper_pickup" : {
+    "subtitle": "sounds.blockoffensive.weapon.sniper.pickup",
+    "sounds": [
+      "blockoffensive:pickup_sniper"
+    ]
+  },
+  "action_jump_shot" : {
+    "subtitle": "sounds.blockoffensive.action.jump_shot",
+    "sounds": [
+      "blockoffensive:effort_m_01"
+    ]
+  },
+  "match_point": {
+    "subtitle": "sounds.blockoffensive.match_point",
+    "sounds": [
+      "blockoffensive:cs_stinger"
+    ]
+  },
+  "weapon_c4_pre_explode": {
+    "subtitle": "sounds.blockoffensive.weapon.c4.pre_explode",
+    "sounds": [
+      "blockoffensive:nvg_on"
+    ]
   }
 }

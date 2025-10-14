@@ -4,25 +4,19 @@ import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombActionS2CPacket;
-import com.phasetranscrystal.blockoffensive.net.bomb.BombDemolitionProgressS2CPacket;
-import com.phasetranscrystal.blockoffensive.net.spec.BombFuseS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
-import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.entity.BlastBombEntity;
-import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.map.BlastBombState;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -31,16 +25,9 @@ import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
-import java.util.Optional;
-import java.util.UUID;
 
 public class CompositionC4Entity extends Entity implements TraceableEntity , BlastBombEntity {
-    public static final TicketType<UUID> ENTITY_CHUNK_TICKET = TicketType.create("bo_chunk_ticket", (a, b) -> 0);
-    private ChunkPos currentChunkPos;
-    private static final EntityDataAccessor<Integer> DATA_FUSE_ID = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_EXPLOSION_RADIUS = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> DATA_DEMOLITION_STATE = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> DATA_DEMOLITION_PROGRESS = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_DELETE_TIME = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_EXPLOSION_INTERACTION = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
     private static final int DEFAULT_FUSE_TIME = 800; // 40秒
@@ -48,15 +35,16 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
     private Player owner;
     @Nullable
     private Player demolisher;
-    private BlastModeMap<?> map;
     private boolean deleting = false;
-    private int soundPlayCount = 0;  // 用于记录播放次数
+    private int demolitionProgress = 0;
+    private int fuse = DEFAULT_FUSE_TIME;
+    private BlastBombState state = BlastBombState.TICKING;
+    private BlastModeMap<?> map;
 
     public CompositionC4Entity(EntityType<?> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.blocksBuilding = true;
         this.noCulling = true;
-        this.setDemolitionProgress(0);
         this.setDeleteTime(0);
     }
 
@@ -67,7 +55,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
         this.setExplosionRadius(BOConfig.common.explosionRadius.get());
         this.setPos(pX, pY, pZ);
         this.owner = pOwner;
-        map.setBlasting(this);
+        this.map.setBombEntity(this);
     }
 
     public CompositionC4Entity(Level pLevel, Vec3 pos, Player pOwner, @NotNull BlastModeMap<?> map, int fuseTime, int explosionRadius) {
@@ -77,8 +65,9 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
         this.setExplosionRadius(explosionRadius);
         this.setPos(pos);
         this.owner = pOwner;
-        map.setBlasting(this);
+        this.map.setBombEntity(this);
     }
+
     public CompositionC4Entity(Level pLevel, Vec3 pos, Player pOwner, @NotNull BlastModeMap<?> map, int fuseTime, int explosionRadius, Level.ExplosionInteraction explosionInteraction) {
         this(BOEntityRegister.C4.get(), pLevel);
         this.map = map;
@@ -87,7 +76,12 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
         this.setExplosionRadius(explosionRadius);
         this.setPos(pos);
         this.owner = pOwner;
-        map.setBlasting(this);
+        this.map.setBombEntity(this);
+    }
+
+    @Override
+    public boolean isAlwaysTicking() {
+        return true;
     }
 
     public boolean isDeleting(){
@@ -96,11 +90,8 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
 
     @Override
     protected void defineSynchedData() {
-        this.entityData.define(DATA_FUSE_ID, DEFAULT_FUSE_TIME);
         this.entityData.define(DATA_EXPLOSION_RADIUS, DEFAULT_EXPLOSION_RADIUS);
-        this.entityData.define(DATA_DEMOLITION_PROGRESS,0);
         this.entityData.define(DATA_DELETE_TIME,0);
-        this.entityData.define(DATA_DEMOLITION_STATE, 0);
         this.entityData.define(DATA_EXPLOSION_INTERACTION, Level.ExplosionInteraction.NONE.ordinal());
     }
 
@@ -108,36 +99,16 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
     @Override
     public void onAddedToWorld() {
         super.onAddedToWorld();
-        if (!this.level().isClientSide) {
-            forceLoadChunk();
-        }
     }
 
-    private void forceLoadChunk() {
-        ServerLevel serverLevel = (ServerLevel) this.level();
-        currentChunkPos = new ChunkPos(this.blockPosition());
-        serverLevel.getChunkSource().addRegionTicket(
-                ENTITY_CHUNK_TICKET,
-                currentChunkPos,
-                0,
-                this.getUUID()
-        );
-    }
-    private void unForceLoadChunk() {
-        ServerLevel serverLevel = (ServerLevel) this.level();
-        serverLevel.getChunkSource().removeRegionTicket(
-                ENTITY_CHUNK_TICKET,
-                currentChunkPos,
-                0,
-                this.getUUID()
-        );
-    }
 
     @Override
     public void onRemovedFromWorld() {
         super.onRemovedFromWorld();
         if (!this.level().isClientSide) {
-            unForceLoadChunk();
+            if(map != null){
+                map.setBombEntity(null);
+            }
         }
     }
 
@@ -152,47 +123,32 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
     }
 
     public void tick() {
-        if (!this.level().isClientSide) {
-            ChunkPos newChunkPos = new ChunkPos(this.blockPosition());
-            if (!newChunkPos.equals(currentChunkPos)) {
-                unForceLoadChunk();
-                currentChunkPos = newChunkPos;
-                forceLoadChunk();
-            }
-        }
-
         if(this.getDeleteTime() >= 140){
-            this.syncDemolitionProgress(0);
+            demolitionProgress = 0;
             this.discard();
         }
 
-        if (soundPlayCount > 0 && soundPlayCount < 3) {
-            // 如果音效播放次数小于3次
-            this.playDefusingSound();
-            soundPlayCount++;  // 增加播放次数
-        }
-
         if(!this.level().isClientSide){
+            if(this.map == null){
+                this.discard();
+                return;
+            }
+
             if(this.deleting){
                 int d = this.getDeleteTime() + 1;
                 this.setDeleteTime(d);
                 return;
             }
 
-            if(this.map == null) {
-                this.discard();
-                return;
-            }
-
             int i = this.getFuse() - 1;
             this.setFuse(i);
             if(demolisher == null){
-                this.setDemolitionProgress(0);
+                demolitionProgress = 0;
             }else{
-                this.setDemolitionProgress(this.getDemolitionProgress() + 1);
+                demolitionProgress++;
                 if (demolisher instanceof ServerPlayer serverPlayer){
                     if(serverPlayer.gameMode.getGameModeForPlayer() == GameType.SPECTATOR){
-                        this.syncDemolitionProgress(0);
+                        demolitionProgress = 0;
                         this.demolisher = null;
                     }
                     if(i % 2 == 0 && i > 0){
@@ -201,38 +157,24 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
                 }
             }
 
-            int j = 200;
-            if(demolisher != null && this.demolisher.getInventory().countItem(BOItemRegister.BOMB_DISPOSAL_KIT.get()) >= 1){
-                j = 100;
-            }
-
-            if(this.getDemolitionProgress() > j){
-                this.setDemolitionProgress(0);
-            }
-
-            float k = (float) this.getDemolitionProgress() / j;
-            if(k > 0 && demolisher != null){
-                this.syncDemolitionProgress(k);
-            }else {
-                this.syncDemolitionProgress(0);
-            }
-
-            if(this.getDemolitionProgress() >= j){
+            if(demolitionProgress >= getTotalDemolitionProgress()){
+                this.state = BlastBombState.DEFUSED;
                 this.deleting = true;
-                map.setBlasting(this);
+                this.demolitionProgress = 0;
                 this.playDefusedSound();
                 return;
             }
 
             if (i <= 0) {
                 if (!this.level().isClientSide) {
+                    this.state = BlastBombState.EXPLODED;
                     this.explode();
                 }
             }
 
             if(i < 200){
                 if(i < 100){
-                    if(i <= 20) this.playBeepSound();
+                    if(i == 20) this.playNvgOnSound();
                     if(i % 5 == 0){
                         this.playBeepSound();
                     }
@@ -255,44 +197,25 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
 
 
     public void playBeepSound(){
-//        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.VOICE, 3.0F, 1.0F);
-        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), BOSoundRegister.beep.get(), SoundSource.VOICE, 3.0F, 0.8F);
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), BOSoundRegister.BEEP.get(), SoundSource.VOICE, 3.0F, 1);
     }
+
+    public void playNvgOnSound(){
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), BOSoundRegister.WEAPON_C4_PRE_EXPLODE.get(), SoundSource.VOICE, 3.0F, 1);
+    }
+
     public void playDefusingSound(){
-        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.VOICE, 3.0F, 2.0F);
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.VOICE, 3.0F, 1);
     }
     public void playDefusedSound(){
-        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), BOSoundRegister.defused.get(), SoundSource.VOICE, 3.0F, 0.9F);
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), BOSoundRegister.DEFUSED.get(), SoundSource.VOICE, 3.0F, 1);
     }
+
     private void explode() {
         float explosionRadius = this.getExplosionRadius(); // 爆炸半径
         this.deleting = true;
-        this.map.setExploded(true);
-        this.syncDemolitionProgress(0);
+        this.demolitionProgress = 0;
         this.level().explode(this, this.getX(), this.getY(), this.getZ(), explosionRadius, this.explosionInteraction());
-    }
-
-    public void syncDemolitionProgress(float progress){
-        BaseMap map = (BaseMap) this.map;
-        if(map != null){
-            map.getMapTeams().getJoinedPlayers().forEach((data)->{
-                data.getPlayer().ifPresent(receiver->{
-                    map.getMapTeams().getTeamByPlayer(receiver).ifPresent(team->{
-                        boolean flag = this.map.checkCanPlacingBombs(team.getFixedName());
-                        if(!flag){
-                            BlockOffensive.INSTANCE.send(PacketDistributor.PLAYER.with(() -> receiver), new BombDemolitionProgressS2CPacket(progress));
-                        }
-                    });
-                });
-            });
-
-            map.getMapTeams().getSpecPlayers().forEach((pUUID)-> {
-                ServerPlayer receiver = (ServerPlayer) this.level().getPlayerByUUID(pUUID);
-                if (receiver != null) {
-                    BlockOffensive.INSTANCE.send(PacketDistributor.PLAYER.with(() -> receiver), new BombDemolitionProgressS2CPacket(progress));
-                }
-            });
-        }
     }
 
     @Nullable
@@ -305,15 +228,11 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
     }
 
     public void setFuse(int pLife) {
-        this.entityData.set(DATA_FUSE_ID, pLife);
-        this.getMap().getMap().getMapTeams().getSpecPlayers().forEach((pUUID)->{
-            Optional<ServerPlayer> receiver = FPSMCore.getInstance().getPlayerByUUID(pUUID);
-            receiver.ifPresent(player -> BlockOffensive.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new BombFuseS2CPacket(pLife,BOConfig.common.fuseTime.get())));
-        });
+        this.fuse = pLife;
     }
 
     public int getFuse() {
-        return this.entityData.get(DATA_FUSE_ID);
+        return this.fuse;
     }
 
     public void setExplosionRadius(int radius){
@@ -324,25 +243,26 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
         return this.entityData.get(DATA_EXPLOSION_RADIUS);
     }
 
-    public int getDemolitionProgress(){
-        return this.entityData.get(DATA_DEMOLITION_PROGRESS);
-    }
-
-    public void setDemolitionProgress(int progress){
-        this.entityData.set(DATA_DEMOLITION_PROGRESS, progress);
-    }
-
     public int getDeleteTime(){
         return this.entityData.get(DATA_DELETE_TIME);
+    }
+
+    public int getTotalDemolitionProgress(){
+        int j = 200;
+        if(demolisher != null && this.demolisher.getInventory().countItem(BOItemRegister.BOMB_DISPOSAL_KIT.get()) >= 1){
+            j = 100;
+        }
+        return j;
+    }
+
+    public float getDemolitionProgress(){
+        return (float) this.demolitionProgress / this.getTotalDemolitionProgress();
     }
 
     public void setDeleteTime(int progress){
         this.entityData.set(DATA_DELETE_TIME, progress);
     }
 
-    public BlastModeMap<?> getMap() {
-        return map;
-    }
 
     public void setDemolisher(@org.jetbrains.annotations.Nullable Player player){
         if(this.demolisher == null) {
@@ -371,19 +291,16 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
         return demolisher;
     }
 
-    public int demolitionStates() {
-        return this.entityData.get(DATA_DEMOLITION_STATE);
-    }
-
-    public void setDemolitionStates(int demolitionStates) {
-        this.entityData.set(DATA_DEMOLITION_STATE, demolitionStates);
-    }
-
     public void setExplosionInteraction(Level.ExplosionInteraction explosionInteraction) {
-        this.entityData.set(DATA_DEMOLITION_STATE, explosionInteraction.ordinal());
+        this.entityData.set(DATA_EXPLOSION_INTERACTION, explosionInteraction.ordinal());
     }
+
     public Level.ExplosionInteraction explosionInteraction() {
         return Level.ExplosionInteraction.values()[this.entityData.get(DATA_EXPLOSION_INTERACTION)];
+    }
+
+    public BlastBombState getState(){
+        return state;
     }
 
 }

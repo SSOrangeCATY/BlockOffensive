@@ -13,8 +13,12 @@ import com.phasetranscrystal.blockoffensive.net.shop.ShopStatesS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.spec.BombFuseS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.spec.CSGameWeaponDataS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
+import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
+import com.tacz.guns.api.item.GunTabType;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -69,5 +73,27 @@ public class BlockOffensive {
         PACKET_REGISTER.registerPacket(PxResetCompatS2CPacket.class);
         PACKET_REGISTER.registerPacket(CSGameWeaponDataS2CPacket.class);
         PACKET_REGISTER.registerPacket(BombFuseS2CPacket.class);
+
+        event.enqueueWork(() -> {
+            FPSMSoundRegister.registerGunPickupSound(GunTabType.PISTOL,BOSoundRegister.WEAPON_PISTOL_PICKUP.get());
+            FPSMSoundRegister.registerGunPickupSound(GunTabType.RIFLE,BOSoundRegister.WEAPON_RIFLE_PICKUP.get());
+            FPSMSoundRegister.registerGunPickupSound(GunTabType.SHOTGUN,BOSoundRegister.WEAPON_SHOTGUN_PICKUP.get());
+            FPSMSoundRegister.registerGunPickupSound(GunTabType.SMG,BOSoundRegister.WEAPON_SMG_PICKUP.get());
+            FPSMSoundRegister.registerGunPickupSound(GunTabType.SNIPER,BOSoundRegister.WEAPON_SNIPER_PICKUP.get());
+            FPSMSoundRegister.registerGunPickupSound(GunTabType.MG,BOSoundRegister.WEAPON_PICKUP.get());
+            FPSMSoundRegister.registerGunPickupSound(GunTabType.RPG,BOSoundRegister.WEAPON_PICKUP.get());
+
+            FPSMSoundRegister.registerGunDropSound(GunTabType.PISTOL,BOSoundRegister.WEAPON_PISTOL_IMPACT.get());
+            FPSMSoundRegister.registerGunDropSound(GunTabType.SNIPER,BOSoundRegister.WEAPON_SNIPER_IMPACT.get());
+            FPSMSoundRegister.registerGunDropSound(GunTabType.RIFLE,BOSoundRegister.WEAPON_RIFLE_IMPACT.get());
+            FPSMSoundRegister.registerGunDropSound(GunTabType.SMG,BOSoundRegister.WEAPON_SMG_IMPACT.get());
+            FPSMSoundRegister.registerGunDropSound(GunTabType.SHOTGUN,BOSoundRegister.WEAPON_SHOTGUN_IMPACT.get());
+            FPSMSoundRegister.registerGunDropSound(GunTabType.MG,BOSoundRegister.WEAPON_HEAVY_IMPACT.get());
+            FPSMSoundRegister.registerGunDropSound(GunTabType.RPG,BOSoundRegister.WEAPON_HEAVY_IMPACT.get());
+
+            FPSMSoundRegister.registerKnifeDropSound(BOSoundRegister.WEAPON_KNIFE_IMPACT.get());
+            FPSMSoundRegister.registerItemPickupSound(BOItemRegister.C4.get().asItem(), SoundEvents.EXPERIENCE_ORB_PICKUP);
+            FPSMSoundRegister.registerItemDropSound(BOItemRegister.C4.get().asItem(), BOSoundRegister.WEAPON_C4_IMPACT.get());
+        });
     }
 }

@@ -6,6 +6,7 @@ import club.pisquad.minecraft.csgrenades.registery.ModDamageType;
 import club.pisquad.minecraft.csgrenades.registery.ModItems;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -42,8 +43,10 @@ public class CounterStrikeGrenadesCompat {
 
     }
 
-    public static boolean itemCheck(Item item){
-        return item instanceof CounterStrikeGrenadeItem;
+    public static boolean itemCheck(Player player){
+        Item main = player.getMainHandItem().getItem();
+        Item off = player.getOffhandItem().getItem();
+        return main instanceof CounterStrikeGrenadeItem || off instanceof CounterStrikeGrenadeItem;
     }
 
 }

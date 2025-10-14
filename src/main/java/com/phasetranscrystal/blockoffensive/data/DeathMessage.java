@@ -1,8 +1,6 @@
 package com.phasetranscrystal.blockoffensive.data;
 
-import com.phasetranscrystal.blockoffensive.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.common.effect.FPSMEffectRegister;
-import com.phasetranscrystal.fpsmatch.impl.FPSMImpl;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.client.resource.index.ClientGunIndex;

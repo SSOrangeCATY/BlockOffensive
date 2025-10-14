@@ -8,11 +8,11 @@ import com.phasetranscrystal.blockoffensive.client.screen.CSGameShopScreen;
 import com.phasetranscrystal.blockoffensive.web.BOClientWebServer;
 import com.phasetranscrystal.blockoffensive.compat.BOImpl;
 import com.phasetranscrystal.blockoffensive.compat.CounterStrikeGrenadesCompat;
-import com.phasetranscrystal.blockoffensive.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.data.FPSMClientGlobalData;
 import com.phasetranscrystal.fpsmatch.common.client.event.FPSMClientResetEvent;
+import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
 import com.phasetranscrystal.fpsmatch.impl.FPSMImpl;
 import com.tacz.guns.api.item.IGun;
@@ -20,6 +20,7 @@ import com.tacz.guns.util.InputExtraCheck;
 import icyllis.modernui.mc.MuiScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
@@ -98,18 +99,15 @@ public class BOClientEvent {
     public static boolean checkLocalPlayerHand(){
         LocalPlayer player = Minecraft.getInstance().player;
         if (player != null) {
-            Item main = player.getMainHandItem().getItem();
-            Item off = player.getOffhandItem().getItem();
-            return itemCheck(main) || itemCheck(off)
-                    || (FPSMImpl.findEquipmentMod() && (LrtacticalCompat.itemCheck(main) || LrtacticalCompat.itemCheck(off))
-                    || (BOImpl.isCounterStrikeGrenadesLoaded() && (CounterStrikeGrenadesCompat.itemCheck(main) || CounterStrikeGrenadesCompat.itemCheck(off))));
+            return itemCheck(player) || (FPSMImpl.findEquipmentMod() && LrtacticalCompat.itemCheck(player) || (BOImpl.isCounterStrikeGrenadesLoaded() && CounterStrikeGrenadesCompat.itemCheck(player)));
         }
         return false;
     }
 
-    private static boolean itemCheck(Item item){
-        return item instanceof IGun || item instanceof IThrowEntityAble;
+    private static boolean itemCheck(Player player){
+        Item main = player.getMainHandItem().getItem();
+        Item off = player.getOffhandItem().getItem();
+        return (main instanceof IGun || main instanceof IThrowEntityAble) || (off instanceof IGun || off instanceof IThrowEntityAble);
     }
-
 
 }

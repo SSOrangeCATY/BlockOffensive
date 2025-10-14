@@ -5,10 +5,7 @@ import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.item.BlastBombItem;
-import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import com.phasetranscrystal.fpsmatch.core.map.BaseTeam;
-import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
-import com.phasetranscrystal.fpsmatch.core.map.ShopMap;
+import com.phasetranscrystal.fpsmatch.core.map.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
@@ -141,7 +138,7 @@ public class CompositionC4 extends Item implements BlastBombItem {
 		}
 
 		boolean canPlace = map.checkCanPlacingBombs(team.getFixedName())
-				&& map.isBlasting() == 0
+				&& map.blastState() == BlastBombState.NONE
 				&& player.onGround();
 		boolean inBombArea = map.checkPlayerIsInBombArea(player);
 
@@ -182,7 +179,7 @@ public class CompositionC4 extends Item implements BlastBombItem {
 
 	private void playClickSound(Level level, LivingEntity entity) {
 		level.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
-				BOSoundRegister.click.get(), SoundSource.PLAYERS, 3.0F, 1.0F);
+				BOSoundRegister.CLICK.get(), SoundSource.PLAYERS, 3.0F, 1.0F);
 	}
 
 	@Override
@@ -197,7 +194,7 @@ public class CompositionC4 extends Item implements BlastBombItem {
 
 
 		if (remainingTicks != 80 && remainingTicks % 8 == 0) {
-			level.playLocalSound(entity.getX(), entity.getY(), entity.getZ(), BOSoundRegister.click.get(), SoundSource.PLAYERS, 3.0F, 1.0F,false);
+			level.playLocalSound(entity.getX(), entity.getY(), entity.getZ(), BOSoundRegister.CLICK.get(), SoundSource.PLAYERS, 3.0F, 1.0F,false);
 		}
 	}
 
@@ -235,7 +232,7 @@ public class CompositionC4 extends Item implements BlastBombItem {
 
 		// 播放放置音效
 		level.playSound(null, player.getX(), player.getY(), player.getZ(),
-				BOSoundRegister.planted.get(), SoundSource.PLAYERS, 3.0F, 1.0F);
+				BOSoundRegister.PLANTED.get(), SoundSource.PLAYERS, 3.0F, 1.0F);
 
 		// 经济奖励
 		if (baseMap instanceof ShopMap<?> shopMap) {

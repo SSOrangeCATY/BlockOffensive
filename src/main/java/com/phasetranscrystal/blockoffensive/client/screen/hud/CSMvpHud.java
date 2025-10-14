@@ -80,7 +80,7 @@ public class CSMvpHud {
         boolean flag = reason.getTeamName().getString().equals("CT");
         if (minecraft.level != null) {
             if (minecraft.player != null) {
-                minecraft.level.playLocalSound(minecraft.player.getOnPos().above().above(), flag ? BOSoundRegister.voice_ct_win.get() : BOSoundRegister.voice_t_win.get(), SoundSource.VOICE, 1.0f, 1.0f,false);
+                minecraft.level.playLocalSound(minecraft.player.getOnPos().above().above(), flag ? BOSoundRegister.VOICE_CT_WIN.get() : BOSoundRegister.VOICE_T_WIN.get(), SoundSource.VOICE, 1.0f, 1.0f,false);
             }
         }
     }

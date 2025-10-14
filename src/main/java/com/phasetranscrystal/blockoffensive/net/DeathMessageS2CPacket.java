@@ -1,6 +1,5 @@
 package com.phasetranscrystal.blockoffensive.net;
 
-import com.phasetranscrystal.blockoffensive.client.screen.hud.CSDeathMessageHud;
 import com.phasetranscrystal.blockoffensive.client.screen.hud.CSGameHud;
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import net.minecraft.client.Minecraft;
