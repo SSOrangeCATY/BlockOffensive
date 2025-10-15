@@ -223,6 +223,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
 
     private CompositionC4Entity c4 = null;
 
+    private final Map<UUID,Integer> knifeCache = new HashMap<>();
+
     /**
      * 构造函数：创建CS地图实例
      * @param serverLevel 服务器世界实例
@@ -456,7 +458,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
 
     private void handleDropKnifeCommand(ServerPlayer player) {
         List<ItemStack> list = FPSMUtil.searchInventoryForType(player.getInventory(),DropType.THIRD_WEAPON);
-        if(!list.isEmpty()){
+        int currentKnives = knifeCache.getOrDefault(player.getUUID(), 0);
+        if(!list.isEmpty() && currentKnives < 5){
+            knifeCache.put(player.getUUID(), currentKnives + 1);
             FPSMUtil.playerDropMatchItem(player,list.get(0).copy());
         }
     }
@@ -1338,6 +1342,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
                 this.getShop(player).ifPresent(shop -> shop.getPlayerShopData(player.getUUID()).lockShopSlots(player));
             }
         })));
+        this.knifeCache.clear();
         this.getShops().forEach(FPSMShop::syncShopData);
     }
 
@@ -1875,8 +1880,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
     }
 
     public void handleChatCommand(String rawText,ServerPlayer player){
+        String command = rawText.toLowerCase(Locale.US);
         COMMANDS.forEach((k,v)->{
-            if (rawText.contains(k.toLowerCase(Locale.US)) && rawText.length() == k.length()){
+            if (command.equals(k) && rawText.length() == k.length()){
                 v.accept(this,player);
             }
         });
