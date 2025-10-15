@@ -242,7 +242,6 @@ public class CSGameOverlay {
                 false);
         guiGraphics.pose().popPose();
 
-        // 拆弹进度显示
         if(CSClientData.dismantleBombProgress > 0) {
             renderDemolitionProgress(guiGraphics,screenWidth,screenHeight);
         }
@@ -281,19 +280,88 @@ public class CSGameOverlay {
     private void renderDemolitionProgress(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
         Font font = Minecraft.getInstance().font;
         MutableComponent component = Component.empty();
+
         for (int i = 1; i < 8; i++) {
             boolean flag = getDemolitionProgressTextStyle(i);
             int color = flag ? 5635925 : 16777215;
             component.append(Component.literal(String.valueOf(code.toCharArray()[i - 1]))
                     .withStyle(Style.EMPTY.withColor(color).withObfuscated(!flag)));
         }
-        float xStart = screenWidth / 2F - ((font.width(component) * 1.5F) / 2F);
-        float yStart = screenHeight / 2F + 65 + (font.lineHeight * 1.5F / 2F);
+
+        float progress = CSClientData.dismantleBombProgress; // 使用拆弹进度
+
+        // 绘制文本
+        float textXStart = screenWidth / 2F - ((font.width(component) * 1.5F) / 2F);
+        float textYStart = screenHeight / 2F + 65 + (font.lineHeight * 1.5F / 2F);
         guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(xStart, yStart, 0);
-        guiGraphics.pose().scale(1.5F,1.5F,0);
-        guiGraphics.drawString(font, component, 0, 0, -1,true);
+        guiGraphics.pose().translate(textXStart, textYStart, 0);
+        guiGraphics.pose().scale(1.5F, 1.5F, 0);
+        guiGraphics.drawString(font, component, 0, 0, -1, true);
         guiGraphics.pose().popPose();
+
+        // 绘制美化进度条
+        int progressBarWidth = 150;
+        int progressBarHeight = 6;
+        int progressBarX = screenWidth / 2 - progressBarWidth / 2;
+        int progressBarY = (int) textYStart + 25; // 在文本下方
+
+        // 进度条背景（带圆角效果）
+        drawRoundedRect(guiGraphics, progressBarX, progressBarY, progressBarWidth, progressBarHeight, 0xFF2D2D2D, 3);
+
+        // 进度条前景（渐变效果）
+        if (progress > 0) {
+            int progressWidth = (int) (progressBarWidth * progress);
+
+            int color;
+            if (progress < 0.5f) {
+                float ratio = progress * 2;
+                int red = 255;
+                int green = (int) (165 * ratio);
+                color = (0xFF << 24) | (red << 16) | (green << 8);
+            } else {
+                float ratio = (progress - 0.5f) * 2;
+                int red = 255 - (int) (255 * ratio);
+                int green = 165 + (int) (90 * ratio);
+                color = (0xFF << 24) | (red << 16) | (green << 8);
+            }
+
+            drawRoundedRect(guiGraphics, progressBarX, progressBarY, progressWidth, progressBarHeight, color, 3);
+        }
+
+        guiGraphics.fill(progressBarX, progressBarY, progressBarX + progressBarWidth, progressBarY + 1, 0x66FFFFFF);
+        guiGraphics.fill(progressBarX, progressBarY + 1, progressBarX + 1, progressBarY + progressBarHeight - 1, 0x66FFFFFF);
+
+        guiGraphics.fill(progressBarX + progressBarWidth - 1, progressBarY + 1, progressBarX + progressBarWidth, progressBarY + progressBarHeight, 0x66000000);
+        guiGraphics.fill(progressBarX + 1, progressBarY + progressBarHeight - 1, progressBarX + progressBarWidth, progressBarY + progressBarHeight, 0x66000000);
+
+        String progressText = String.format("%d%%", (int)(progress * 100));
+        int progressTextWidth = font.width(progressText);
+        int textX = progressBarX + (progressBarWidth - progressTextWidth) / 2;
+        int textY = progressBarY + (progressBarHeight - font.lineHeight) / 2;
+
+        guiGraphics.drawString(font, progressText, textX, textY, 0xFFFFFFFF, true);
+    }
+
+    // 绘制圆角矩形辅助方法
+    private void drawRoundedRect(GuiGraphics guiGraphics, int x, int y, int width, int height, int color, int cornerRadius) {
+        // 主体矩形
+        guiGraphics.fill(x + cornerRadius, y, x + width - cornerRadius, y + height, color);
+        guiGraphics.fill(x, y + cornerRadius, x + width, y + height - cornerRadius, color);
+
+        // 四个角
+        guiGraphics.fill(x + cornerRadius, y + cornerRadius, x + width - cornerRadius, y + height - cornerRadius, color);
+
+        // 绘制圆角（简单的近似圆角）
+        if (cornerRadius > 0) {
+            // 左上角
+            guiGraphics.fill(x, y, x + cornerRadius, y + cornerRadius, color);
+            // 右上角
+            guiGraphics.fill(x + width - cornerRadius, y, x + width, y + cornerRadius, color);
+            // 左下角
+            guiGraphics.fill(x, y + height - cornerRadius, x + cornerRadius, y + height, color);
+            // 右下角
+            guiGraphics.fill(x + width - cornerRadius, y + height - cornerRadius, x + width, y + height, color);
+        }
     }
 
     private void renderMoneyText(GuiGraphics guiGraphics, int screenHeight) {

@@ -4,8 +4,12 @@ import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombActionS2CPacket;
+import com.phasetranscrystal.blockoffensive.net.bomb.BombDemolitionProgressS2CPacket;
+import com.phasetranscrystal.blockoffensive.net.spec.BombFuseS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.entity.BlastBombEntity;
+import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.BlastBombState;
 import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import net.minecraft.nbt.CompoundTag;
@@ -25,6 +29,7 @@ import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+import java.util.Optional;
 
 public class CompositionC4Entity extends Entity implements TraceableEntity , BlastBombEntity {
     private static final EntityDataAccessor<Integer> DATA_EXPLOSION_RADIUS = SynchedEntityData.defineId(CompositionC4Entity.class, EntityDataSerializers.INT);
@@ -157,6 +162,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
                 }
             }
 
+            this.syncDemolitionProgress();
             if(demolitionProgress >= getTotalDemolitionProgress()){
                 this.state = BlastBombState.DEFUSED;
                 this.deleting = true;
@@ -229,6 +235,34 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
 
     public void setFuse(int pLife) {
         this.fuse = pLife;
+        this.map.getMap().getMapTeams().getSpecPlayers().forEach((pUUID)->{
+            Optional<ServerPlayer> receiver = FPSMCore.getInstance().getPlayerByUUID(pUUID);
+            receiver.ifPresent(player -> BlockOffensive.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new BombFuseS2CPacket(pLife,BOConfig.common.fuseTime.get())));
+        });
+    }
+
+    public void syncDemolitionProgress(){
+        BaseMap map = (BaseMap) this.map;
+        float progress = this.getDemolitionProgress();
+        if(map != null){
+            map.getMapTeams().getJoinedPlayers().forEach((data)->{
+                data.getPlayer().ifPresent(receiver->{
+                    map.getMapTeams().getTeamByPlayer(receiver).ifPresent(team->{
+                        boolean flag = this.map.checkCanPlacingBombs(team.getFixedName());
+                        if(!flag){
+                            BlockOffensive.INSTANCE.send(PacketDistributor.PLAYER.with(() -> receiver), new BombDemolitionProgressS2CPacket(progress));
+                        }
+                    });
+                });
+            });
+
+            map.getMapTeams().getSpecPlayers().forEach((pUUID)-> {
+                ServerPlayer receiver = (ServerPlayer) this.level().getPlayerByUUID(pUUID);
+                if (receiver != null) {
+                    BlockOffensive.INSTANCE.send(PacketDistributor.PLAYER.with(() -> receiver), new BombDemolitionProgressS2CPacket(progress));
+                }
+            });
+        }
     }
 
     public int getFuse() {
@@ -262,7 +296,6 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
     public void setDeleteTime(int progress){
         this.entityData.set(DATA_DELETE_TIME, progress);
     }
-
 
     public void setDemolisher(@org.jetbrains.annotations.Nullable Player player){
         if(this.demolisher == null) {

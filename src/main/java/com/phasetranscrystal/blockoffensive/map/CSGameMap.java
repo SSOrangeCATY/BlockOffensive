@@ -1590,27 +1590,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
         return this.c4 == null ? BlastBombState.NONE : this.c4.getState();
     }
 
-    public void syncDemolitionProgress(){
-        float progress = c4.getDemolitionProgress();
-
-        this.getMapTeams().getJoinedPlayers().forEach((data)->{
-            data.getPlayer().ifPresent(receiver->{
-                this.getMapTeams().getTeamByPlayer(receiver).ifPresent(team->{
-                    boolean flag = this.checkCanPlacingBombs(team.getFixedName());
-                    if(!flag){
-                        BlockOffensive.INSTANCE.send(PacketDistributor.PLAYER.with(() -> receiver), new BombDemolitionProgressS2CPacket(progress));
-                    }
-                });
-            });
-        });
-
-        this.getMapTeams().getSpecPlayers().forEach((pUUID)-> {
-            this.getPlayerByUUID(pUUID).ifPresent(player->{
-                BlockOffensive.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new BombDemolitionProgressS2CPacket(progress));
-            });
-        });
-    }
-
     public int getClientTime(){
         int time;
         if(this.isPause){
