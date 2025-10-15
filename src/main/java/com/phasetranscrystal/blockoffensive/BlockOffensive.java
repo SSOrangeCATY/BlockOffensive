@@ -13,7 +13,6 @@ import com.phasetranscrystal.blockoffensive.net.shop.ShopStatesS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.spec.BombFuseS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.spec.CSGameWeaponDataS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
-import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.tacz.guns.api.item.GunTabType;

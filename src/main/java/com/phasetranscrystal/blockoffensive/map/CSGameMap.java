@@ -449,7 +449,16 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
         commands.put("a", CSGameMap::handleAgreeCommand);
         commands.put("disagree", CSGameMap::handleDisagreeCommand);
         commands.put("da", CSGameMap::handleDisagreeCommand);
+        commands.put("d", CSGameMap::handleDropKnifeCommand);
+        commands.put("drop", CSGameMap::handleDropKnifeCommand);
         return commands;
+    }
+
+    private void handleDropKnifeCommand(ServerPlayer player) {
+        List<ItemStack> list = FPSMUtil.searchInventoryForType(player.getInventory(),DropType.THIRD_WEAPON);
+        if(!list.isEmpty()){
+            FPSMUtil.playerDropMatchItem(player,list.get(0).copy());
+        }
     }
 
     public static void write(FPSMDataManager manager){
@@ -1840,7 +1849,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
                 });
             });
 
-
             Map<UUID, Float> hurtDataMap = teams.getDamageMap().get(player.getUUID());
             if (hurtDataMap != null && !hurtDataMap.isEmpty()) {
                 hurtDataMap.entrySet().stream()
@@ -1868,7 +1876,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
 
     public void handleChatCommand(String rawText,ServerPlayer player){
         COMMANDS.forEach((k,v)->{
-            if (rawText.contains(k) && rawText.length() == k.length()){
+            if (rawText.contains(k.toLowerCase(Locale.US)) && rawText.length() == k.length()){
                 v.accept(this,player);
             }
         });

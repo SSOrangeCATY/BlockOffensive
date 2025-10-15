@@ -127,7 +127,7 @@ dependencies {
     }
 
     implementation fg.deobf("icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_forge_version}")
-    implementation fg.deobf("curse.maven:timeless-and-classics-zero-1028108:6518539")
+    implementation fg.deobf("maven.modrinth:timeless-and-classics-zero:${tacz_version}")
     implementation fg.deobf("curse.maven:tacz-lesraisins-tactical-equipements-1273094:6584599")
     implementation fg.deobf("com.phasetranscrystal:fpsmatch:${fpsm_version}"){
         transitive = false
@@ -138,6 +138,8 @@ dependencies {
     implementation fg.deobf("maven.modrinth:hit-indication:${hit_indication_version}")
     implementation fg.deobf("maven.modrinth:physicsmod:${physicsmod_version}")
     implementation fg.deobf("maven.modrinth:gd656killicon:${gd656killicon_version}")
+    runtimeOnly fg.deobf("maven.modrinth:jade:${jade_version}")
+
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
