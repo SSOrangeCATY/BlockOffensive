@@ -1716,54 +1716,49 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
 
     public void handlePlayerDeathMessage(ServerPlayer player, DamageSource source) {
         Player attacker;
-        if(source.getEntity() instanceof Player p){
+        if (source.getEntity() instanceof Player p) {
             attacker = p;
-        }else{
-            if(source.getEntity() instanceof ThrowableItemProjectile throwable){
-                if(throwable.getOwner() instanceof Player p){
-                    attacker = p;
-                }else{
-                    return;
-                }
-            }else{
-                return;
-            }
+        } else if (source.getEntity() instanceof ThrowableItemProjectile throwable
+                && throwable.getOwner() instanceof Player p) {
+            attacker = p;
+        } else {
+            attacker = null;
         }
+
+        if (attacker == null) return;
 
         ItemStack itemStack;
-
         if (source.getDirectEntity() instanceof ThrowableItemProjectile projectile) {
             itemStack = projectile.getItem();
-        }else{
-            if(FPSMImpl.findCounterStrikeGrenadesMod()){
-                itemStack = CounterStrikeGrenadesCompat.getItemFromDamageSource(source);
-                if(itemStack.isEmpty()){
-                    itemStack = attacker.getMainHandItem();
-                }
-            }else{
+        } else if (FPSMImpl.findCounterStrikeGrenadesMod()) {
+            itemStack = CounterStrikeGrenadesCompat.getItemFromDamageSource(source);
+            if (itemStack.isEmpty()) {
                 itemStack = attacker.getMainHandItem();
             }
+        } else {
+            itemStack = attacker.getMainHandItem();
         }
 
-        if(itemStack.getItem() instanceof IGun) return;
+        if (itemStack.getItem() instanceof IGun) return;
 
         giveEco(player, attacker, itemStack);
 
         DeathMessage.Builder builder = new DeathMessage.Builder(attacker, player, itemStack);
         Map<UUID, Float> hurtDataMap = this.getMapTeams().getDamageMap().get(player.getUUID());
+
         if (hurtDataMap != null && !hurtDataMap.isEmpty()) {
             hurtDataMap.entrySet().stream()
                     .filter(entry -> entry.getValue() > player.getMaxHealth() / 4)
-                    .sorted(Map.Entry.<UUID, Float>comparingByValue().reversed())
-                    .limit(1)
-                    .findAny()
+                    .max(Map.Entry.comparingByValue())
                     .flatMap(entry -> this.getMapTeams().getTeamByPlayer(entry.getKey())
-                            .flatMap(team -> team.getPlayerData(entry.getKey()))).ifPresent(playerData -> {
-                        if (!attacker.getUUID().equals(playerData.getOwner())){
+                            .flatMap(team -> team.getPlayerData(entry.getKey())))
+                    .ifPresent(playerData -> {
+                        if (!attacker.getUUID().equals(playerData.getOwner())) {
                             builder.setAssist(playerData.name(), playerData.getOwner());
                         }
                     });
         }
+
         DeathMessageS2CPacket killMessageS2CPacket = new DeathMessageS2CPacket(builder.build());
         this.sendPacketToAllPlayer(killMessageS2CPacket);
     }
