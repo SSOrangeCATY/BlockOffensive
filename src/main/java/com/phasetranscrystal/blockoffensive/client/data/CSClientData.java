@@ -78,9 +78,11 @@ public class CSClientData {
 
     public static int getLivingWithTeam(String team) {
         int living = 0;
-        for (var pair : FPSMClient.getGlobalData().tabData.values()) {
-            if (pair.getFirst().equals(team) && pair.getSecond().isLivingNoOnlineCheck()) {
-                living++;
+        for (var clientTeam : FPSMClient.getGlobalData().clientTeamData.values()) {
+            if (clientTeam.name.equals(team)) {
+                for (var data :clientTeam.players.values()){
+                    if (data.isLivingNoOnlineCheck()) living++;
+                }
             }
         }
         return living;

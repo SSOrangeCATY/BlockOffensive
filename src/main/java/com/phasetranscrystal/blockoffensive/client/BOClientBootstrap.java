@@ -1,9 +1,11 @@
 package com.phasetranscrystal.blockoffensive.client;
 
+import com.phasetranscrystal.blockoffensive.client.key.SwitchSpectatorKey;
 import com.phasetranscrystal.blockoffensive.client.renderer.C4Renderer;
 import com.phasetranscrystal.blockoffensive.client.screen.hud.*;
 import com.phasetranscrystal.blockoffensive.entity.BOEntityRegister;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMGameHudManager;
+import com.phasetranscrystal.fpsmatch.common.client.spec.SpecKeyHandler;
 import com.phasetranscrystal.fpsmatch.common.client.tab.TabManager;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.client.key.DismantleBombKey;
@@ -33,6 +35,10 @@ public class BOClientBootstrap {
         // 注册键位
         event.register(OpenShopKey.OPEN_SHOP_KEY);
         event.register(DismantleBombKey.DISMANTLE_BOMB_KEY);
+        event.register(SwitchSpectatorKey.KEY_SPECTATE_NEXT);
+        event.register(SwitchSpectatorKey.KEY_SPECTATE_PREV);
+        SpecKeyHandler.registerSwitchKey(SwitchSpectatorKey.KEY_SPECTATE_NEXT);
+        SpecKeyHandler.registerSwitchKey(SwitchSpectatorKey.KEY_SPECTATE_PREV);
         // cs: hud | overlay | tab
         TabManager.getInstance().registerRenderer(new CSGameTabRenderer());
         FPSMGameHudManager.INSTANCE.registerHud("cs", CSGameHud.getInstance());

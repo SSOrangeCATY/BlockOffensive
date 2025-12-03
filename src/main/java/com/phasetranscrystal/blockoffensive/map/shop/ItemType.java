@@ -31,23 +31,12 @@ public enum ItemType implements INamedType {
         return dropUnlock;
     }
 
-    /**
-     * 获取默认的商店数据。
-     * <p>
-     * 默认数据包含每个物品类型的 5 个空槽位。
-     *
-     * @return 默认的商店数据
-     */
-    public static Map<ItemType, ArrayList<ShopSlot>> getRawData() {
-        Map<ItemType, ArrayList<ShopSlot>> data = new HashMap<>();
-        for (ItemType type : ItemType.values()) {
-            ArrayList<ShopSlot> list = new ArrayList<>();
-            for (int i = 0; i < type.slotCount(); i++) {
-                list.add(new ShopSlot(ItemStack.EMPTY, 0));
-            }
-            data.put(type, list);
+    @Override
+    public ArrayList<ShopSlot> defaultSlots() {
+        ArrayList<ShopSlot> list = new ArrayList<>();
+        for (int i = 0; i < this.slotCount(); i++) {
+            list.add(new ShopSlot(ItemStack.EMPTY, 0));
         }
-        return data;
+        return list;
     }
-
 }

@@ -252,7 +252,7 @@ public class CSGameOverlay {
         int avatarGap  = (int)(3 * scaleFactor);
         int offset     = (int)(26.0F * scaleFactor);
 
-        Map<String, List<PlayerInfo>> teamPlayers = RenderUtil.getCSTeamsPlayerInfo();
+        Map<String, List<PlayerInfo>> teamPlayers = RenderUtil.getTeamsPlayerInfo();
 
         String localTeam = FPSMClient.getGlobalData().getCurrentTeam();
 

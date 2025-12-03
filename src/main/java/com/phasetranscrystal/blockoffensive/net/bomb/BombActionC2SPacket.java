@@ -1,10 +1,10 @@
 package com.phasetranscrystal.blockoffensive.net.bomb;
 
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
+import com.phasetranscrystal.blockoffensive.map.CSGameMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import com.phasetranscrystal.fpsmatch.core.map.BaseTeam;
-import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
+import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
@@ -37,14 +37,14 @@ public record BombActionC2SPacket(boolean action) {
             return;
         }
         BaseMap map = optional.get();
-        BaseTeam team = map.getMapTeams().getTeamByPlayer(sender).orElse(null);
+        ServerTeam team = map.getMapTeams().getTeamByPlayer(sender).orElse(null);
         if (team == null) {
             ctx.get().setPacketHandled(true);
             return;
         }
 
         ctx.get().enqueueWork(() -> {
-            if (map instanceof BlastModeMap<?> blastModeMap && !blastModeMap.checkCanPlacingBombs(team.getFixedName())) {
+            if (map instanceof CSGameMap csGameMap && !csGameMap.checkCanPlacingBombs(team.getFixedName())) {
                 List<? extends CompositionC4Entity> entities = sender.serverLevel().getEntities(EntityTypeTest.forClass(CompositionC4Entity.class),(t)->{
                     LivingEntity player = t.getDemolisher();
                     return player != null && player.getUUID().equals(sender.getUUID());

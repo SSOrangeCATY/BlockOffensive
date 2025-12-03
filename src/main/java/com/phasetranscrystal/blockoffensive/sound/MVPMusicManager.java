@@ -3,9 +3,10 @@ package com.phasetranscrystal.blockoffensive.sound;
 import com.google.common.collect.Maps;
 import com.mojang.serialization.Codec;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
-import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
-import com.phasetranscrystal.fpsmatch.core.data.save.SaveHolder;
-import com.phasetranscrystal.fpsmatch.core.event.RegisterFPSMSaveDataEvent;
+import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMSaveDataEvent;
+import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
+import com.phasetranscrystal.fpsmatch.core.persistence.SaveHolder;
+import com.phasetranscrystal.fpsmatch.core.persistence.datafixer.DataFixer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -53,6 +54,7 @@ public class MVPMusicManager {
                         .withReadHandler(MVPMusicManager::read)
                         .withWriteHandler(MVPMusicManager::write)
                         .withMergeHandler(MVPMusicManager::merge)
+                        .withVersion(0)
                         .isGlobal(true)
                         .build()
         );
@@ -67,7 +69,7 @@ public class MVPMusicManager {
     }
 
     public static void write(FPSMDataManager manager){
-        manager.saveData(INSTANCE,"data");
+        manager.saveData(INSTANCE,"data",false);
     }
 
     public static MVPMusicManager merge(@Nullable MVPMusicManager old, MVPMusicManager newer){

@@ -1,7 +1,7 @@
 package com.phasetranscrystal.blockoffensive.event;
 
 import com.phasetranscrystal.blockoffensive.map.CSGameMap;
-import com.phasetranscrystal.fpsmatch.core.map.BaseTeam;
+import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import net.minecraftforge.eventbus.api.Event;
 
 public class CSGameRoundEndEvent extends Event {

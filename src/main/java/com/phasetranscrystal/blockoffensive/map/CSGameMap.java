@@ -1,14 +1,11 @@
 package com.phasetranscrystal.blockoffensive.map;
 
-import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import com.mojang.serialization.codecs.UnboundedMapCodec;
 import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.client.data.WeaponData;
 import com.phasetranscrystal.blockoffensive.compat.BOImpl;
-import com.phasetranscrystal.blockoffensive.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import com.phasetranscrystal.blockoffensive.data.MvpReason;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
@@ -18,7 +15,6 @@ import com.phasetranscrystal.blockoffensive.event.CSGameRoundEndEvent;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.item.BombDisposalKit;
 import com.phasetranscrystal.blockoffensive.item.CompositionC4;
-import com.phasetranscrystal.blockoffensive.map.shop.ItemType;
 import com.phasetranscrystal.blockoffensive.net.*;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombDemolitionProgressS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.mvp.MvpHUDCloseS2CPacket;
@@ -30,23 +26,33 @@ import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
 import com.phasetranscrystal.blockoffensive.sound.MVPMusicManager;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
+import com.phasetranscrystal.fpsmatch.common.capability.map.DemolitionModeCapability;
+import com.phasetranscrystal.fpsmatch.common.capability.map.GameEndTeleportCapability;
+import com.phasetranscrystal.fpsmatch.common.capability.team.*;
 import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
 import com.phasetranscrystal.fpsmatch.common.entity.drop.MatchDropEntity;
 import com.phasetranscrystal.fpsmatch.common.packet.*;
+import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
+import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.core.*;
+import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
+import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
+import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
-import com.phasetranscrystal.fpsmatch.core.data.save.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.entity.BlastBombEntity;
-import com.phasetranscrystal.fpsmatch.core.event.GameWinnerEvent;
+import com.phasetranscrystal.fpsmatch.core.event.FPSMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.*;
+import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
-import com.phasetranscrystal.fpsmatch.core.shop.slot.ShopSlot;
-import com.phasetranscrystal.fpsmatch.impl.FPSMImpl;
+import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
+import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
+import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
+import com.phasetranscrystal.fpsmatch.core.team.TeamData;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.event.common.EntityKillByGunEvent;
 import com.tacz.guns.api.item.GunTabType;
@@ -93,56 +99,29 @@ import org.joml.Vector3f;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
 /**
  * 反恐精英（CS）模式地图核心逻辑类
  * 管理回合制战斗、炸弹逻辑、商店系统、队伍经济、玩家装备等核心机制
- * 继承自 BaseMap 并实现爆炸模式、商店、初始装备等接口
  */
 @Mod.EventBusSubscriber(modid = BlockOffensive.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
-public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
-        ShopMap<CSGameMap> , GiveStartKitsMap<CSGameMap>, IConfigureMap<CSGameMap> , EndTeleportMap<CSGameMap>{
+public class CSGameMap extends BaseMap implements IConfigureMap<CSGameMap>{
     /**
      * Codec序列化配置（用于地图数据保存/加载）
-     * <p> 地图名称、区域数据、出生点、商店配置等全量数据
      */
     public static final Codec<CSGameMap> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             // 基础地图数据
             Codec.STRING.fieldOf("mapName").forGetter(CSGameMap::getMapName),
             AreaData.CODEC.fieldOf("mapArea").forGetter(CSGameMap::getMapArea),
             ResourceLocation.CODEC.fieldOf("serverLevel").forGetter(map -> map.getServerLevel().dimension().location()),
-
-            // 队伍出生点数据
-            new UnboundedMapCodec<>(
+            CapabilityMap.CapabilityMapWrapper.DATA_CODEC.fieldOf("capabilities").forGetter(csGameMap -> csGameMap.getCapabilityMap().getData().data()),
+            // 队伍数据
+            Codec.unboundedMap(
                     Codec.STRING,
-                    SpawnPointData.CODEC.listOf()
-            ).fieldOf("spawnpoints").forGetter(map->map.getMapTeams().getAllSpawnPoints()),
-
-            // 商店数据 - 使用字符串到FPSMShop的映射
-            Codec.unboundedMap(Codec.STRING, FPSMShop.withCodec(ItemType.class)).fieldOf("shops")
-                    .forGetter(map -> map.shop),
-
-            // 初始装备数据
-            new UnboundedMapCodec<>(
-                    Codec.STRING,
-                    ItemStack.CODEC.listOf()
-            ).fieldOf("startKits").forGetter(map -> map.startKits),
-
-            // 炸弹区域数据
-            AreaData.CODEC.listOf().fieldOf("bombAreas")
-                    .forGetter(map -> map.bombAreaData),
-
-            // 爆破队伍
-            Codec.STRING.fieldOf("blastTeam")
-                    .forGetter(map -> map.blastTeam),
-
-            // 比赛结束传送点
-            SpawnPointData.CODEC.optionalFieldOf("matchEndPoint")
-                    .forGetter(map -> Optional.ofNullable(map.matchEndTeleportPoint))
-
-    ).apply(instance, (mapName, mapArea, serverLevel, spawnPoints, shops, startKits, bombAreas, blastTeam, matchEndPoint) -> {
+                    CapabilityMap.CapabilityMapWrapper.CODEC
+            ).fieldOf("teams").forGetter(csGameMap -> csGameMap.getMapTeams().getData())
+    ).apply(instance, (mapName, mapArea, serverLevel, capability, teamsData) -> {
         // 创建新的CSGameMap实例
         CSGameMap gameMap = new CSGameMap(
                 FPSMCore.getInstance().getServer().getLevel(ResourceKey.create(Registries.DIMENSION,serverLevel)),
@@ -150,30 +129,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
                 mapArea
         );
 
-        // 设置出生点数据
-        gameMap.getMapTeams().putAllSpawnPoints(spawnPoints);
-
-        // 设置商店数据
-        for (Map.Entry<String,FPSMShop<ItemType>> shop : gameMap.shop.entrySet()){
-            shop.getValue().setDefaultShopData(shops.get(shop.getKey()).getDefaultShopDataMap());
-        }
-
-        // 设置初始装备
-        Map<String, ArrayList<ItemStack>> data = new HashMap<>();
-        startKits.forEach((t,l)->{
-            ArrayList<ItemStack> list = new ArrayList<>(l);
-            data.put(t,list);
-        });
-        gameMap.setStartKits(data);
-
-        // 设置炸弹区域
-        gameMap.bombAreaData.addAll(bombAreas);
-
-        // 设置爆破队伍
-        gameMap.blastTeam = blastTeam;
-
-        // 设置比赛结束传送点
-        matchEndPoint.ifPresent(point -> gameMap.matchEndTeleportPoint = point);
+        gameMap.getCapabilityMap().write(capability);
+        gameMap.getMapTeams().writeData(teamsData);
 
         return gameMap;
     }));
@@ -185,24 +142,26 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
     private final Setting<Boolean> canAutoStart = this.addSetting("autoStart",true);
     private final Setting<Integer> autoStartTime = this.addSetting("autoStartTime",6000);
     private final Setting<Integer> winnerRound = this.addSetting("winnerRound",13); // 13回合
+    private final Setting<Integer> overtimeRound = this.addSetting("overtimeRound",3); // 3回合
     private final Setting<Integer> pauseTime = this.addSetting("pauseTime",1200); // 60秒
     private final Setting<Integer> winnerWaitingTime = this.addSetting("winnerWaitingTime",160);
     private final Setting<Integer> warmUpTime = this.addSetting("warmUpTime",1200);
     private final Setting<Integer> waitingTime = this.addSetting("waitingTime",300);
     private final Setting<Integer> roundTimeLimit = this.addSetting("roundTimeLimit",2300);
     private final Setting<Integer> startMoney = this.addSetting("startMoney",800);
+    private final Setting<Integer> defaultLoserEconomy = this.addSetting("defaultLoserEconomy",1400);
+    private final Setting<Integer> defuseBonus = this.addSetting("defuseBonus",600);
+    private final Setting<Integer> compensationBase = this.addSetting("compensationBase",500);
+    private final Setting<Integer> tDeathRewardPer = this.addSetting("tDeathRewardPer",50);
     private final Setting<Integer> closeShopTime = this.addSetting("closeShopTime",200);
     private final Setting<Boolean> knifeSelection = this.addSetting("knifeSelection",false);
     private final Setting<Integer> ctLimit = this.addSetting("ctLimit",5);
     private final Setting<Integer> tLimit = this.addSetting("tLimit",5);
     private final Setting<Boolean> allowFriendlyFire = this.addSetting("allowFriendlyFire",false);
-    // private final Setting<Boolean> useMusicApi = this.addSetting("useMusicApi",false);
-    // private final Setting<Boolean> useProfileApi = this.addSetting("useProfileApi",false);
-    private final List<AreaData> bombAreaData = new ArrayList<>();
-    private final Map<String, FPSMShop<ItemType>> shop = new HashMap<>();
-    private final Map<String,List<ItemStack>> startKits = new HashMap<>();
-    private final BaseTeam ctTeam;
-    private final BaseTeam tTeam;
+    private static final List<Class<? extends MapCapability>> MAP_CAPABILITIES = List.of(DemolitionModeCapability.class, GameEndTeleportCapability.class);
+    private static final List<Class<? extends TeamCapability>> TEAM_CAPABILITIES = List.of(PauseCapability.class, CompensationCapability.class, TeamSwitchRestrictionCapability.class, ShopCapability.class, StartKitsCapability.class);
+    private final ServerTeam ctTeam;
+    private final ServerTeam tTeam;
     private int currentPauseTime = 0;
     private int currentRoundTime = 0;
     private boolean isError = false;
@@ -212,7 +171,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
     private boolean isWaitingWinner = false;
     private boolean isShopLocked = false;
     private boolean isKnifeSelected = false;
-    private String blastTeam;
     private boolean isOvertime = false;
     private int overCount = 0;
     private boolean isWaitingOverTimeVote = false;
@@ -221,8 +179,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
     private int autoStartTimer = 0;
     private boolean autoStartFirstMessageFlag = false;
 
-    private CompositionC4Entity c4 = null;
-
     private final Map<UUID,Integer> knifeCache = new HashMap<>();
 
     /**
@@ -230,18 +186,17 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
      * @param serverLevel 服务器世界实例
      * @param mapName 地图名称
      * @param areaData 地图区域数据
-     * @see #addTeam(String, int) 初始化时自动添加CT和T阵营
+     * @see #addTeam(TeamData) 初始化时自动添加CT和T阵营
      */
     public CSGameMap(ServerLevel serverLevel, String mapName, AreaData areaData) {
-        super(serverLevel,mapName,areaData);
+        super(serverLevel,mapName,areaData, MAP_CAPABILITIES);
         this.loadConfig();
-        this.ctTeam = this.addTeam("ct",ctLimit.get());
+        this.ctTeam = this.addTeam(TeamData.of("ct",ctLimit.get(), TEAM_CAPABILITIES));
         this.ctTeam.setColor(CT_COLOR);
-        this.tTeam = this.addTeam("t",tLimit.get());
+        this.tTeam = this.addTeam(TeamData.of("t",tLimit.get(), TEAM_CAPABILITIES));
         this.tTeam.setColor(T_COLOR);
-        this.setBlastTeam(this.tTeam);
+        CapabilityMap.getMapCapability(this, DemolitionModeCapability.class).ifPresent(cap -> cap.setDemolitionTeam(this.tTeam));
     }
-
     /**
      * 切换两个队伍的阵营
      */
@@ -252,7 +207,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
     /**
      * 刀局胜利处理
      */
-    private void knifeRoundVictory(BaseTeam winnerTeam) {
+    private void knifeRoundVictory(ServerTeam winnerTeam) {
         Component translation = Component.translatable("blockoffensive.cs.knife.selection");
         Component message = Component.translatable("blockoffensive.map.vote.message","System",translation);
         this.isPause = true;
@@ -265,11 +220,11 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
                 ()->{
                     this.switchTeams();
                     this.setUnPauseState();
-                    this.startGame();
+                    this.start();
                     },
                 ()-> {
                     this.setUnPauseState();
-                    this.startGame();
+                    this.start();
                 },
                 winnerTeam.getPlayerList()
         );
@@ -314,28 +269,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
         }
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onPlayerPickupItem(PlayerEvent.ItemPickupEvent event){
-        if(event.getEntity().level().isClientSide) return;
-        Optional<BaseMap> optional = FPSMCore.getInstance().getMapByPlayer(event.getEntity());
-        if(optional.isEmpty()) return;
-        BaseMap map = optional.get();
-        if (map instanceof ShopMap<?> shopMap) {
-            shopMap.getShop(event.getEntity()).ifPresent(shop -> {
-                ShopData<?> shopData = shop.getPlayerShopData(event.getEntity().getUUID());
-                Pair<? extends Enum<?>, ShopSlot> pair = shopData.checkItemStackIsInData(event.getStack());
-                if(pair != null){
-                    ShopSlot slot = pair.getSecond();
-                    slot.lock(event.getStack().getCount());
-                    shop.syncShopData((ServerPlayer) event.getEntity(),pair.getFirst().name(),slot);
-                }});
-        }
-
-        if(map instanceof CSGameMap){
-            FPSMUtil.sortPlayerInventory(event.getEntity());
-        }
-    }
-
     @SubscribeEvent
     public static void onPlayerDropItem(ItemTossEvent event){
         if(event.getEntity().level().isClientSide) return;
@@ -343,35 +276,16 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
         Optional<BaseMap> optional = FPSMCore.getInstance().getMapByPlayer(event.getPlayer());
         if(optional.isEmpty()) return;
         BaseMap map = optional.get();
-        if(itemStack.getItem() instanceof CompositionC4){
-            event.getEntity().setGlowingTag(true);
-        }
+        if (map instanceof CSGameMap csGameMap){
+            if(itemStack.getItem() instanceof CompositionC4){
+                event.getEntity().setGlowingTag(true);
+            }
 
-        if(itemStack.getItem() instanceof BombDisposalKit){
-            event.setCanceled(true);
-            event.getPlayer().displayClientMessage(Component.translatable("blockoffensive.item.bomb_disposal_kit.drop.message").withStyle(ChatFormatting.RED),true);
-            event.getPlayer().getInventory().add(new ItemStack(BOItemRegister.BOMB_DISPOSAL_KIT.get(),1));
-        }
-
-        //商店逻辑
-        if (map instanceof ShopMap<?> shopMap){
-            shopMap.getShop(event.getPlayer()).ifPresent(shop -> {
-                ShopData<?> shopData = shop.getPlayerShopData(event.getEntity().getUUID());
-                Pair<? extends Enum<?>, ShopSlot> pair = shopData.checkItemStackIsInData(itemStack);
-                if(pair != null){
-                    ShopSlot slot = pair.getSecond();
-                    if(pair.getFirst() != ItemType.THROWABLE){
-                        slot.unlock(itemStack.getCount());
-                        shop.syncShopData((ServerPlayer) event.getPlayer(),pair.getFirst().name(),slot);
-                    }
-                }
-            });
-        }
-
-        DropType type = DropType.getItemDropType(itemStack);
-        if(map instanceof CSGameMap && !event.isCanceled() && type != DropType.MISC){
-            FPSMUtil.playerDropMatchItem((ServerPlayer) event.getPlayer(),itemStack);
-            event.setCanceled(true);
+            if(itemStack.getItem() instanceof BombDisposalKit){
+                event.setCanceled(true);
+                event.getPlayer().displayClientMessage(Component.translatable("blockoffensive.item.bomb_disposal_kit.drop.message").withStyle(ChatFormatting.RED),true);
+                event.getPlayer().getInventory().add(new ItemStack(BOItemRegister.BOMB_DISPOSAL_KIT.get(),1));
+            }
         }
     }
 
@@ -406,9 +320,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
                                             .findAny()
                                             .flatMap(entry -> cs.getMapTeams().getTeamByPlayer(entry.getKey())
                                                     .flatMap(team -> team.getPlayerData(entry.getKey()))).ifPresent(playerData -> {
-                                                        if (!attacker.getUUID().equals(playerData.getOwner())){
-                                                            builder.setAssist(playerData.name(), playerData.getOwner());
-                                                        }
+                                                if (!attacker.getUUID().equals(playerData.getOwner())){
+                                                    builder.setAssist(playerData.name(), playerData.getOwner());
+                                                }
                                             });
                                 }
                                 DeathMessageS2CPacket killMessageS2CPacket = new DeathMessageS2CPacket(builder.build());
@@ -469,25 +383,28 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
         FPSMCore.getInstance().getMapByClass(CSGameMap.class)
                 .forEach((map -> {
                     map.saveConfig();
-                    manager.saveData(map,map.getMapName());
+                    manager.saveData(map,map.getMapName(),false);
                 }));
     }
 
     /**
      * 添加队伍并初始化商店系统
-     * @param teamName 队伍名称（如"ct"/"t"）
-     * @param playerLimit 队伍人数限制
+     * @param data 队伍数据
      * @see FPSMShop 每个队伍拥有独立商店实例
      */
     @Override
-    public BaseTeam addTeam(String teamName,int playerLimit){
-        BaseTeam team = super.addTeam(teamName,playerLimit);
+    public ServerTeam addTeam(TeamData data){
+        ServerTeam team = super.addTeam(data);
         PlayerTeam playerTeam = team.getPlayerTeam();
         playerTeam.setNameTagVisibility(Team.Visibility.HIDE_FOR_OTHER_TEAMS);
         playerTeam.setAllowFriendlyFire(allowFriendlyFire.get());
         playerTeam.setSeeFriendlyInvisibles(false);
         playerTeam.setDeathMessageVisibility(Team.Visibility.NEVER);
-        this.shop.put(teamName, new FPSMShop<>(ItemType.class,this.getMapName(),ItemType.getRawData(),startMoney.get()));
+
+        CapabilityMap.getTeamCapability(this,ShopCapability.class).forEach((t,opt)->{
+                opt.ifPresent(cap -> cap.initialize("cs",startMoney.get()));
+        });
+
         return team;
     }
 
@@ -513,55 +430,24 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
         }
     }
 
-    /**
-     * 获取队伍商店实例
-     * @param shopName 队伍名称（ct/t）
-     * @return 对应队伍的商店对象
-     * @see FPSMShop 商店数据结构
-     */
-    @Override
-    public Optional<FPSMShop<?>> getShop(String shopName) {
-        return Optional.ofNullable(this.shop.get(shopName));
-    }
-
-    @Override
-    public Optional<FPSMShop<?>> getShop(Player player) {
-        if (player == null) {
-            return Optional.empty();
-        }
-
-        Optional<BaseTeam> team = this.getMapTeams().getTeamByPlayer(player);
-        if (team.isPresent()) {
-            return this.getShop(team.get().name);
-        }
-
-        return Optional.empty();
-    }
-
-    @Override
-    public List<FPSMShop<?>> getShops() {
-        return List.copyOf(this.shop.values());
-    }
-
-    @Override
-    public List<String> getShopNames() {
-        return this.shop.keySet().stream().toList();
-    }
-
     public void syncShopInfo(boolean enable, int closeTime){
-        for (BaseTeam team : this.getMapTeams().getTeams()){
+        for (ServerTeam team : this.getMapTeams().getNormalTeams()){
             int next = this.getNextRoundMinMoney(team);
             var packet = new ShopStatesS2CPacket(enable,next,closeTime);
             this.sendPacketToTeamLivingPlayer(team,packet);
         }
     }
 
-    public int getNextRoundMinMoney(BaseTeam team){
+    public int getNextRoundMinMoney(ServerTeam team){
         int defaultEconomy = 1400;
         int compensation = 500;
-        int compensationFactor = Math.min(4, team.getCompensationFactor() + 1);
+        int compensationFactor = Math.min(4, getCompensationFactor(team) + 1);
         // 计算失败补偿
         return defaultEconomy + compensation * compensationFactor;
+    }
+
+    public static int getCompensationFactor(ServerTeam team){
+        return team.getCapabilityMap().get(CompensationCapability.class).map(CompensationCapability::getCompensationFactor).orElse(0);
     }
 
     /**
@@ -604,7 +490,6 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
                 }
             }
         }
-        this.checkErrorPlayerTeam();
         this.voteLogic();
         this.autoStartLogic();
     }
@@ -638,7 +523,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
     }
 
     private void clearOfflinePlayers(){
-        for(BaseTeam team : this.getMapTeams().getTeams()){
+        for(ServerTeam team : this.getMapTeams().getNormalTeams()){
             for (UUID offline : team.getOfflinePlayers()) {
                 this.getMapTeams().leaveTeam(offline);
             }
@@ -709,7 +594,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
                 .withStyle(ChatFormatting.YELLOW);
         sendTitleToAllPlayers(title);
         resetAutoStartState();
-        this.startGame();
+        this.start();
     }
 
     private void sendTitleToAllPlayers(Component title) {
@@ -762,14 +647,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
     @Override
     public void leave(ServerPlayer player) {
         this.sendPacketToAllPlayer(new CSTabRemovalS2CPacket(player.getUUID()));
-        this.getShop(player).ifPresent(shop -> shop.clearPlayerShopData(player.getUUID()));
         super.leave(player);
-    }
-
-    @Override
-    public void pullGameInfo(ServerPlayer player){
-        super.pullGameInfo(player);
-        this.getShop(player).ifPresent(shop -> shop.syncShopData(player));
     }
 
     @Override
@@ -796,40 +674,83 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
         }
     }
 
-    private void checkErrorPlayerTeam() {
-        this.getMapTeams().getTeams().forEach(team-> team.teamUnableToSwitch.forEach(uuid -> this.getPlayerByUUID(uuid).ifPresent(player -> {
-            player.getScoreboard().addPlayerToTeam(player.getScoreboardName(), team.getPlayerTeam());
-            team.teamUnableToSwitch.remove(uuid);
-        })));
+    /**
+     * 开始新游戏（初始化所有玩家状态）
+     * 核心优化：拆分职责、复用Setting配置、消除魔法值、简化嵌套逻辑
+     * @see #giveAllPlayersKits() 发放初始装备
+     * @see #giveBlastTeamBomb() 给爆破方分配C4
+     */
+    public boolean start() {
+        if (!super.start()) {
+            return false;
+        }
+
+        // 2. 提取重复依赖（减少多次get调用，提升性能）
+        MapTeams mapTeams = getMapTeams();
+        ServerLevel serverLevel = getServerLevel();
+
+        // 3. 基础配置与状态初始化
+        setTeamNameColors();
+        if (this.isError) return false;
+
+        configureGameRules(serverLevel); // 配置游戏规则
+        resetGameCoreState();
+
+        //出生点校验
+        if (!validateAndSetSpawnPoints()) {
+            this.reset();
+            return false;
+        }
+
+        // 5. 地图与队伍初始化
+        cleanupMap(); // 复用已优化的地图清理方法
+        mapTeams.startNewRound();
+        mapTeams.resetLivingPlayers();
+        initializeTeams(mapTeams); // 拆分队伍初始化逻辑
+
+        // 6. 玩家状态初始化（拆分独立处理）
+        initializeAllJoinedPlayers(mapTeams);
+
+        // 7. 刀具选择阶段处理（复用Setting配置，拆分逻辑）
+        handleKnifeSelectionPhase();
+
+        // 8. 同步游戏启动消息
+        syncNormalRoundStartMessage();
+
+        return true;
     }
 
     /**
-     * 开始新游戏（初始化所有玩家状态）
-     * @see #giveAllPlayersKits() 发放初始装备
-     * @see #giveBlastTeamBomb() 给爆破方分配C4
-     * @see #syncShopData() 同步商店数据
+     * 设置队伍名称颜色（CT蓝、T黄）
      */
-    public void startGame(){
-        this.getMapTeams().setTeamNameColor(this,"ct",ChatFormatting.BLUE);
-        this.getMapTeams().setTeamNameColor(this,"t",ChatFormatting.YELLOW);
-        if (this.isError) return;
-        // 应用配置的游戏规则
-        this.getServerLevel().getGameRules().getRule(GameRules.RULE_KEEPINVENTORY)
-                .set(BOConfig.common.keepInventory.get(), null);
-        this.getServerLevel().getGameRules().getRule(GameRules.RULE_DO_IMMEDIATE_RESPAWN)
-                .set(BOConfig.common.immediateRespawn.get(), null);
-        this.getServerLevel().getGameRules().getRule(GameRules.RULE_DAYLIGHT)
-                .set(BOConfig.common.daylightCycle.get(), null);
-        this.getServerLevel().getGameRules().getRule(GameRules.RULE_WEATHER_CYCLE)
-                .set(BOConfig.common.weatherCycle.get(), null);
-        this.getServerLevel().getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING)
-                .set(BOConfig.common.mobSpawning.get(), null);
-        this.getServerLevel().getGameRules().getRule(GameRules.RULE_NATURAL_REGENERATION)
-                .set(BOConfig.common.naturalRegeneration.get(), null);
-        // 设置难度
+    private void setTeamNameColors() {
+        MapTeams mapTeams = getMapTeams();
+        mapTeams.setTeamNameColor(this, "ct", ChatFormatting.BLUE);
+        mapTeams.setTeamNameColor(this, "t", ChatFormatting.YELLOW);
+    }
+
+    /**
+     * 配置游戏规则（基于BOConfig配置）
+     */
+    private void configureGameRules(ServerLevel serverLevel) {
+        GameRules gameRules = serverLevel.getGameRules();
+        gameRules.getRule(GameRules.RULE_KEEPINVENTORY).set(BOConfig.common.keepInventory.get(), null);
+        gameRules.getRule(GameRules.RULE_DO_IMMEDIATE_RESPAWN).set(BOConfig.common.immediateRespawn.get(), null);
+        gameRules.getRule(GameRules.RULE_DAYLIGHT).set(BOConfig.common.daylightCycle.get(), null);
+        gameRules.getRule(GameRules.RULE_WEATHER_CYCLE).set(BOConfig.common.weatherCycle.get(), null);
+        gameRules.getRule(GameRules.RULE_DOMOBSPAWNING).set(BOConfig.common.mobSpawning.get(), null);
+        gameRules.getRule(GameRules.RULE_NATURAL_REGENERATION).set(BOConfig.common.naturalRegeneration.get(), null);
+
         if (BOConfig.common.hardDifficulty.get()) {
-            this.getServerLevel().getServer().setDifficulty(Difficulty.HARD, true);
+            serverLevel.getServer().setDifficulty(Difficulty.HARD, true);
         }
+    }
+
+
+    /**
+     * 重置游戏核心状态（加时、计数、等待状态等）
+     */
+    private void resetGameCoreState() {
         this.isOvertime = false;
         this.overCount = 0;
         this.isWaitingOverTimeVote = false;
@@ -838,40 +759,84 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
         this.isWaitingWinner = false;
         this.currentPauseTime = 0;
         this.isShopLocked = false;
-        boolean spawnCheck = this.getMapTeams().setTeamsSpawnPoints();
-        if(!spawnCheck){
-            this.resetGame();
-            return;
-        }
-        this.cleanupMap();
-        this.getMapTeams().startNewRound();
-        this.getMapTeams().resetLivingPlayers();
-        this.getMapTeams().getTeams().forEach(team -> {
+        this.isKnifeSelected = false;
+    }
+
+    /**
+     * 校验并设置队伍出生点
+     * @return 出生点设置是否成功
+     */
+    private boolean validateAndSetSpawnPoints() {
+        return this.setTeamSpawnPoints();
+    }
+
+    /**
+     * 初始化队伍状态（分数、补偿因子、玩家数据重置）
+     */
+    private void initializeTeams(MapTeams mapTeams) {
+        mapTeams.getNormalTeams().forEach(team -> {
             team.setScores(0);
-            team.setCompensationFactor(0);
-            team.getPlayers().forEach((uuid,data)-> data.reset());
+            setCompensationFactor(team, 0); // 重置补偿因子
+            // 重置队伍内所有玩家数据
+            team.getPlayers().forEach((uuid, data) -> data.reset());
         });
-        this.getMapTeams().getJoinedPlayers().forEach((data -> {
-            data.reset();
-            data.getPlayer().ifPresent(player->{
-                player.removeAllEffects();
-                player.addEffect(new MobEffectInstance(MobEffects.SATURATION,-1,2,false,false,false));
-                player.heal(player.getMaxHealth());
-                player.setGameMode(GameType.ADVENTURE);
-                this.clearPlayerInventory(player);
-                this.teleportPlayerToReSpawnPoint(player);
-            });
-        }));
-        boolean knife = knifeSelection.get() && !isKnifeSelected;
-        this.isShopLocked = knife;
-        syncShopInfo(!knife,getShopCloseTime());
+    }
+
+    /**
+     * 初始化所有已加入队伍的玩家状态
+     */
+    private void initializeAllJoinedPlayers(MapTeams mapTeams) {
+        mapTeams.getJoinedPlayers().forEach(this::initializeSinglePlayer);
+    }
+
+    /**
+     * 初始化单个玩家状态
+     */
+    private void initializeSinglePlayer(PlayerData data) {
+        data.reset();
+        data.getPlayer().ifPresent(player -> {
+            player.removeAllEffects();
+            player.addEffect(new MobEffectInstance(
+                    MobEffects.SATURATION,
+                    -1,
+                    2,
+                    false,
+                    false,
+                    false
+            ));
+            player.heal(player.getMaxHealth());
+            player.setGameMode(GameType.ADVENTURE);
+            this.clearPlayerInventory(player);
+            this.teleportPlayerToReSpawnPoint(player);
+        });
+    }
+
+    /**
+     * 处理刀具选择阶段逻辑（商店锁定、装备发放、C4分配、金钱设置）
+     */
+    private void handleKnifeSelectionPhase() {
+        // 刀具选择阶段判断（复用Setting配置，语义化命名）
+        boolean isKnifeSelectionPhase = knifeSelection.get() && !isKnifeSelected;
+        this.isShopLocked = isKnifeSelectionPhase;
+
+        // 同步商店信息（关闭时间复用Setting配置）
+        int shopCloseTime = this.closeShopTime.get();
+        syncShopInfo(!isKnifeSelectionPhase, shopCloseTime);
+
+        // 发放初始装备
         this.giveAllPlayersKits();
-        if(!knife){
+
+        // 非刀具选择阶段：分配C4、设置初始金钱并同步商店数据
+        if (!isKnifeSelectionPhase) {
             this.giveBlastTeamBomb();
-            this.syncShopData();
-            this.getMapTeams().getJoinedPlayers().forEach((data -> this.setPlayerMoney(data.getOwner(),800)));
+            // 使用配置的初始金钱（消除魔法值800）
+            ShopCapability.setPlayerMoney(this, this.startMoney.get());
+            ShopCapability.syncShopData(this);
         }
-        syncNormalRoundStartMessage();
+    }
+
+    public void setCompensationFactor(ServerTeam team, int factor){
+        team.getCapabilityMap().get(CompensationCapability.class).ifPresent(cap->cap.setCompensationFactor(factor));
     }
 
     public boolean canRestTime(){
@@ -915,16 +880,19 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
 
             this.currentPauseTime++;
             boolean b = false;
-            Iterator<BaseTeam> teams = this.getMapTeams().getTeams().iterator();
+            Iterator<ServerTeam> teams = new ArrayList<>(this.getMapTeams().getNormalTeams()).iterator();
             while (teams.hasNext()){
-                BaseTeam baseTeam = teams.next();
-                if(!b){
-                    b = baseTeam.needPause();
-                    if(b){
-                        baseTeam.setNeedPause(false);
+                ServerTeam team = teams.next();
+                PauseCapability cap = team.getCapabilityMap().get(PauseCapability.class).orElse(null);
+                if(cap != null){
+                    if(!b){
+                        b = cap.needPause();
+                        if(b){
+                            cap.setNeedPause(false);
+                        }
+                    }else{
+                        cap.resetPauseIfNeed();
                     }
-                }else{
-                    baseTeam.resetPauseIfNeed();
                 }
                 teams.remove();
             }
@@ -953,9 +921,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
 
     public void checkRoundVictory(){
         if(isWaitingWinner) return;
-        Map<BaseTeam, List<UUID>> teamsLiving = this.getMapTeams().getTeamsLiving();
+        Map<ServerTeam, List<UUID>> teamsLiving = this.getMapTeams().getTeamsLiving();
         if(teamsLiving.size() == 1){
-            BaseTeam winnerTeam = teamsLiving.keySet().stream().findFirst().get();
+            ServerTeam winnerTeam = teamsLiving.keySet().stream().findFirst().get();
             this.roundVictory(winnerTeam, WinnerReason.ACED);
         }
 
@@ -966,9 +934,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
 
     public void checkBlastingVictory(){
         if(isWaitingWinner) return;
-        Map<BaseTeam, List<UUID>> teamsLiving = this.getMapTeams().getTeamsLiving();
+        Map<ServerTeam, List<UUID>> teamsLiving = this.getMapTeams().getTeamsLiving();
         if(teamsLiving.size() == 1){
-            BaseTeam winnerTeam = teamsLiving.keySet().stream().findFirst().get();
+            ServerTeam winnerTeam = teamsLiving.keySet().stream().findFirst().get();
             boolean flag = this.checkCanPlacingBombs(winnerTeam.getFixedName());
             if(flag){
                 this.roundVictory(winnerTeam,WinnerReason.ACED);
@@ -1024,131 +992,281 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
     }
 
     /**
+     * 安全获取玩家商店数据（避免重复的Optional链式调用）
+     */
+    private Optional<ShopData<?>> getShopDataSafely(UUID playerUuid) {
+        return ShopCapability.getPlayerShopData(this, playerUuid);
+    }
+
+    /**
+     * 统一发送金钱奖励消息（避免重复构建Component）
+     */
+    private void sendMoneyRewardMessage(ServerPlayer player, int amount, String reasonDesc) {
+        player.sendSystemMessage(Component.translatable(
+                "blockoffensive.map.cs.reward.money",
+                amount,
+                reasonDesc
+        ));
+    }
+
+    /**
+     * 安全获取补偿系数（避免team为null时的NPE）
+     */
+    private int getCompensationFactorSafely(ServerTeam team) {
+        return team != null ? getCompensationFactor(team) : 0;
+    }
+
+
+    /**
      * 处理回合胜利逻辑
      * @param winnerTeam 获胜队伍
      * @param reason 胜利原因（如炸弹拆除/爆炸）
-     * @see #checkLoseStreaks(BaseTeam) 计算经济奖励
+     * @see #checkLoseStreaks(ServerTeam) 计算经济奖励
      * @see #checkMatchPoint() 检查赛点状态
      * @see MVPMusicManager MVP音乐播放逻辑
      */
-    private void roundVictory(@NotNull BaseTeam winnerTeam, @NotNull WinnerReason reason) {
-        // 刀局模式特殊处理
+    private void roundVictory(@NotNull ServerTeam winnerTeam, @NotNull WinnerReason reason) {
+        //刀局特殊处理（提前返回，减少嵌套）
+        if (handleKnifeRoundSpecialCase(winnerTeam)) {
+            return;
+        }
+
+        //状态检查：已在等待胜利者则直接返回
+        if (isWaitingWinner) {
+            return;
+        }
+
+        MapTeams mapTeams = getMapTeams();
+        isWaitingWinner = true;
+
+        //处理MVP逻辑
+        MvpReason mvpReason = processMvpLogic(winnerTeam, mapTeams);
+
+        //发送MVP数据包/发布回合结束事件
+        sendPacketToAllPlayer(new MvpMessageS2CPacket(mvpReason));
+        MinecraftForge.EVENT_BUS.post(new CSGameRoundEndEvent(this, winnerTeam, reason));
+
+        //处理比分更新和加时投票
+        processRoundScoreAndOvertimeVote(winnerTeam, mapTeams);
+
+        //处理所有经济奖励（拆分胜利方、失败方、CT额外奖励）
+        processEconomicRewards(winnerTeam, reason, mapTeams);
+
+        //同步商店金钱数据
+        ShopCapability.syncShopData(this);
+    }
+
+    /**
+     * 处理刀局特殊情况
+     * @return 是否触发刀局逻辑（是则返回true，中断主流程）
+     */
+    private boolean handleKnifeRoundSpecialCase(@NotNull ServerTeam winnerTeam) {
         if (knifeSelection.get() && !isKnifeSelected) {
             knifeRoundVictory(winnerTeam);
             this.isWaitingWinner = true;
-            return;
+            return true;
         }
-        // 如果已经在等待胜利者，则直接返回
-        if(isWaitingWinner) return;
-        // 设置为等待胜利者状态
-        this.isWaitingWinner = true;
-        MapTeams.RawMVPData mvpData = this.getMapTeams().getRoundMvpPlayer(winnerTeam);
-        MvpReason mvpReason = null;
-
-        if(mvpData != null){
-            Optional<ServerPlayer> player = this.getPlayerByUUID(mvpData.uuid());
-            if (player.isPresent()) {
-                CSGamePlayerGetMvpEvent event = new CSGamePlayerGetMvpEvent(player.get(),this,
-                        new MvpReason.Builder(mvpData.uuid())
-                                .setMvpReason(Component.literal(mvpData.reason()))
-                                .setPlayerName(this.getMapTeams().playerName.get(mvpData.uuid()))
-                                .setTeamName(Component.literal(winnerTeam.name.toUpperCase(Locale.ROOT))).build());
-                MinecraftForge.EVENT_BUS.post(event);
-                mvpReason = event.getReason();
-
-                if(MVPMusicManager.getInstance().playerHasMvpMusic(mvpData.uuid().toString())){
-                    this.sendPacketToAllPlayer(new FPSMusicPlayS2CPacket(MVPMusicManager.getInstance().getMvpMusic(mvpData.uuid().toString())));
-                }
-            }
-        }
-
-        if(mvpReason == null){
-            mvpReason = new MvpReason.Builder(UUID.randomUUID())
-                    .setTeamName(Component.literal(winnerTeam.name.toUpperCase(Locale.ROOT))).build();
-        }
-        this.sendPacketToAllPlayer(new MvpMessageS2CPacket(mvpReason));
-        MinecraftForge.EVENT_BUS.post(new CSGameRoundEndEvent(this,winnerTeam,reason));
-        int currentScore = winnerTeam.getScores();
-        int target = currentScore + 1;
-        List<BaseTeam> baseTeams =this.getMapTeams().getTeams();
-        if(target == 12 && baseTeams.remove(winnerTeam) && baseTeams.get(0).getScores() == 12 && !this.isOvertime){
-            this.isWaitingOverTimeVote = true;
-        }
-        winnerTeam.setScores(target);
-
-        // 获取胜利队伍和失败队伍列表
-        List<BaseTeam> lostTeams = this.getMapTeams().getTeams();
-        lostTeams.remove(winnerTeam);
-
-        // 处理胜利经济奖励
-        int reward = reason.winMoney;
-
-        // 检查连败情况
-        this.checkLoseStreaks(winnerTeam);
-        // 遍历所有玩家，更新经济
-        this.getMapTeams().getTeams().forEach(team -> {
-            if(team.equals(winnerTeam)){
-                team.getPlayerList().forEach(uuid -> this.getPlayerByUUID(uuid).ifPresentOrElse(player->{
-                    this.addPlayerMoney(uuid, reward);
-                    player.sendSystemMessage(Component.translatable("blockoffensive.map.cs.reward.money", reward, reason.name()));
-                },()-> this.addPlayerMoney(uuid, reward)));
-            }else{
-                team.getPlayerList().forEach(uuid -> {
-                    int defaultEconomy = 1400;
-                    if(this.checkCanPlacingBombs(team.getFixedName()) && reason == WinnerReason.DEFUSE_BOMB){
-                        defaultEconomy += 600;
-                    }
-                    int compensation = 500;
-                    int compensationFactor = team.getCompensationFactor();
-                    // 计算失败补偿
-                    int loss = defaultEconomy + compensation * compensationFactor;
-
-                    int finalDefaultEconomy = defaultEconomy;
-                    this.getPlayerByUUID(uuid).ifPresentOrElse(player->{
-                        // 如果玩家没有活着，则给予失败补偿
-                        if(reason != WinnerReason.TIME_OUT){
-                            this.addPlayerMoney(uuid, loss);
-                            player.sendSystemMessage(Component.translatable("blockoffensive.map.cs.reward.money", loss, finalDefaultEconomy + " + " + compensation + " * " + compensationFactor));
-                        }else{
-                            team.getPlayerData(uuid).ifPresent(data->{
-                                if(!data.isLiving()){
-                                    this.addPlayerMoney(uuid, loss);
-                                    player.sendSystemMessage(Component.translatable("blockoffensive.map.cs.reward.money", loss, finalDefaultEconomy + " + " + compensation + " * " + compensationFactor));
-                                }else{
-                                    player.sendSystemMessage(Component.translatable("blockoffensive.map.cs.reward.money", 0, "timeout living"));
-                                }
-                            });
-                        }
-                    },()-> this.addPlayerMoney(uuid, loss));
-                });
-            }
-        });
-        int deadT = (int) getTTeam().getPlayersData().stream().filter(data -> data.isOnline() && !data.isLiving()).count();
-        getCTTeam().getPlayerList().forEach(uuid -> {
-            this.addPlayerMoney(uuid, deadT*50);
-            Component message = Component.translatable("blockoffensive.map.cs.reward.team", deadT*50,deadT);
-            this.getPlayerByUUID(uuid).ifPresent(player-> player.sendSystemMessage(message));
-        });
-        // 同步商店金钱数据
-        this.getShops().forEach(FPSMShop::syncShopMoneyData);
+        return false;
     }
 
-    private void checkLoseStreaks(BaseTeam winnerTeam) {
-        // 遍历所有队伍，检查连败情况
-        this.getMapTeams().getTeams().forEach(team -> {
-            int compensationFactor = team.getCompensationFactor();
-            if (team.equals(winnerTeam)) {
-                team.setCompensationFactor(Math.max(compensationFactor - 2, 0));
-            } else {
-                team.setCompensationFactor(Math.min(compensationFactor + 1, 4));
+    /**
+     * 处理MVP相关逻辑（提取MVP数据、发布事件、播放MVP音乐）
+     * @return 处理后的MVP原因（为空时返回默认实例）
+     */
+    private MvpReason processMvpLogic(@NotNull ServerTeam winnerTeam, @NotNull MapTeams mapTeams) {
+        MapTeams.RawMVPData mvpData = mapTeams.getRoundMvpPlayer(winnerTeam);
+        if (mvpData == null) {
+            return new MvpReason.Builder(UUID.nameUUIDFromBytes(winnerTeam.name.getBytes()))
+                    .setTeamName(Component.literal(winnerTeam.name.toUpperCase(Locale.ROOT)))
+                    .build();
+        }
+
+        Optional<ServerPlayer> mvpPlayer = getPlayerByUUID(mvpData.uuid());
+        if (mvpPlayer.isEmpty()) {
+            return new MvpReason.Builder(UUID.randomUUID())
+                    .setTeamName(Component.literal(winnerTeam.name.toUpperCase(Locale.ROOT)))
+                    .build();
+        }
+
+        // 构建MVP事件并发布
+        MvpReason originalMvpReason = new MvpReason.Builder(mvpData.uuid())
+                .setMvpReason(Component.literal(mvpData.reason()))
+                .setPlayerName(mapTeams.playerName.get(mvpData.uuid()))
+                .setTeamName(Component.literal(winnerTeam.name.toUpperCase(Locale.ROOT)))
+                .build();
+
+        CSGamePlayerGetMvpEvent mvpEvent = new CSGamePlayerGetMvpEvent(mvpPlayer.get(), this, originalMvpReason);
+        MinecraftForge.EVENT_BUS.post(mvpEvent);
+
+        // 播放MVP专属音乐
+        String mvpPlayerUuid = mvpData.uuid().toString();
+        if (MVPMusicManager.getInstance().playerHasMvpMusic(mvpPlayerUuid)) {
+            sendPacketToAllPlayer(new FPSMusicPlayS2CPacket(
+                    MVPMusicManager.getInstance().getMvpMusic(mvpPlayerUuid)
+            ));
+        }
+
+        return mvpEvent.getReason();
+    }
+
+    /**
+     * 处理比分更新和加时投票逻辑
+     */
+    private void processRoundScoreAndOvertimeVote(@NotNull ServerTeam winnerTeam, @NotNull MapTeams mapTeams) {
+        int currentScore = winnerTeam.getScores();
+        int newScore = currentScore + 1;
+        int targetForOvertime = winnerRound.get() - 1;
+        winnerTeam.setScores(newScore);
+
+        // 仅当双方比分均为targetForOvertime且未进入加时时，触发加时投票
+        List<ServerTeam> normalTeams = mapTeams.getNormalTeams();
+        if (newScore == targetForOvertime && !isOvertime) {
+            List<ServerTeam> otherTeams = normalTeams.stream()
+                    .filter(team -> !team.equals(winnerTeam))
+                    .toList();
+
+            if (!otherTeams.isEmpty() && otherTeams.get(0).getScores() == targetForOvertime) {
+                this.isWaitingOverTimeVote = true;
             }
+        }
+    }
+
+    /**
+     * 统一处理所有经济奖励（胜利方 + 失败方 + CT额外奖励）
+     */
+    private void processEconomicRewards(@NotNull ServerTeam winnerTeam, @NotNull WinnerReason reason, @NotNull MapTeams mapTeams) {
+        List<ServerTeam> normalTeams = mapTeams.getNormalTeams();
+        List<ServerTeam> loserTeams = normalTeams.stream()
+                .filter(team -> !team.equals(winnerTeam))
+                .toList();
+
+        // 检查连胜情况
+        checkLoseStreaks(winnerTeam);
+
+        //胜利方经济奖励
+        processWinnerEconomicReward(winnerTeam, reason);
+
+        //失败方经济奖励
+        loserTeams.forEach(loserTeam -> processLoserEconomicReward(loserTeam, reason));
+
+        //CT队伍额外奖励（基于死亡的T数量）
+        processCTTeamExtraReward();
+    }
+
+    /**
+     * 处理胜利方经济奖励
+     */
+    private void processWinnerEconomicReward(@NotNull ServerTeam winnerTeam,WinnerReason reason) {
+        winnerTeam.getPlayerList().forEach(uuid -> {
+            // 安全获取商店数据（封装工具方法，减少重复）
+            getShopDataSafely(uuid).ifPresent(shopData -> {
+                shopData.addMoney(reason.winMoney);
+            });
+
+            // 发送奖励消息（封装工具方法，统一格式）
+            getPlayerByUUID(uuid).ifPresent(player ->
+                    sendMoneyRewardMessage(player, reason.winMoney, reason.name())
+            );
+        });
+    }
+
+    /**
+     * 处理失败方经济奖励（含连败补偿计算）
+     */
+    private void processLoserEconomicReward(@NotNull ServerTeam loserTeam, @NotNull WinnerReason reason) {
+        int compensationFactor = getCompensationFactorSafely(loserTeam);
+        boolean isDefuseBonusApplicable = checkCanPlacingBombs(loserTeam.getFixedName())
+                && reason == WinnerReason.DEFUSE_BOMB;
+
+        // 基础经济 + 拆弹额外奖励（如有）
+        int baseEconomy = defaultLoserEconomy.get() + (isDefuseBonusApplicable ? defuseBonus.get() : 0);
+        // 总失败补偿 = 基础经济 + 连败补偿
+        int totalLossCompensation = baseEconomy + (compensationBase.get() * compensationFactor);
+        String rewardDesc = baseEconomy + " + " + compensationBase.get() + " * " + compensationFactor;
+
+        loserTeam.getPlayerList().forEach(uuid -> {
+            // 仅在符合条件时发放补偿
+            boolean shouldGiveCompensation = shouldLoserGetCompensation(loserTeam, uuid, reason);
+            int finalReward = shouldGiveCompensation ? totalLossCompensation : 0;
+            String finalDesc = shouldGiveCompensation ? rewardDesc : "timeout living";
+
+            // 更新商店数据
+            getShopDataSafely(uuid).ifPresent(shopData -> {
+                shopData.addMoney(finalReward);
+            });
+
+            // 发送奖励消息
+            getPlayerByUUID(uuid).ifPresent(player ->
+                    sendMoneyRewardMessage(player, finalReward, finalDesc)
+            );
+        });
+    }
+
+    /**
+     * 检查失败方玩家是否符合补偿发放条件
+     */
+    private boolean shouldLoserGetCompensation(@NotNull ServerTeam loserTeam, UUID uuid, @NotNull WinnerReason reason) {
+        // 非超时情况：直接发放
+        if (reason != WinnerReason.TIME_OUT) {
+            return true;
+        }
+
+        // 超时情况：仅给死亡玩家发放
+        return loserTeam.getPlayerData(uuid)
+                .map(data -> !data.isLiving())
+                .orElse(false); // 无玩家数据时不发放
+    }
+
+    /**
+     * 处理CT队伍额外奖励（每死亡1个T奖励50）
+     */
+    private void processCTTeamExtraReward() {
+        ServerTeam tTeam = getTTeam();
+        ServerTeam ctTeam = getCTTeam();
+
+        // 统计死亡的T数量（在线且非存活）
+        long deadTCount = tTeam.getPlayersData().stream()
+                .filter(data -> data.isOnline() && !data.isLiving())
+                .count();
+
+        int extraReward = (int) deadTCount * tDeathRewardPer.get();
+        if (extraReward <= 0) {
+            return; // 无奖励时直接跳过
+        }
+
+        ctTeam.getPlayerList().forEach(uuid -> {
+            // 更新商店数据
+            getShopDataSafely(uuid).ifPresent(shopData -> {
+                shopData.addMoney(extraReward);
+            });
+
+            // 发送团队奖励消息
+            ctTeam.sendMessage(Component.translatable(
+                    "blockoffensive.map.cs.reward.team",
+                    extraReward,
+                    deadTCount
+            ));
+        });
+    }
+
+    private void checkLoseStreaks(ServerTeam winnerTeam) {
+        // 遍历所有队伍，检查连败情况
+        this.getMapTeams().getNormalTeams().forEach(team -> {
+            team.getCapabilityMap().get(CompensationCapability.class).ifPresent(cap -> {
+                int compensationFactor = cap.getCompensationFactor();
+                if (team.equals(winnerTeam)) {
+                    cap.setCompensationFactor(compensationFactor - 2);
+                } else {
+                    cap.setCompensationFactor(compensationFactor + 1);
+                }
+            });
         });
     }
 
     public void startNewRound() {
-        boolean check = this.getMapTeams().setTeamsSpawnPoints();
+        boolean check = this.setTeamSpawnPoints();
         if(!check){
-            this.resetGame();
+            this.reset();
         }else{
             this.isStart = true;
             this.isWaiting = true;
@@ -1166,7 +1284,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
             }else {
                 syncShopInfo(true,getShopCloseTime());
                 this.giveBlastTeamBomb();
-                this.syncShopData();
+                ShopCapability.syncShopData(this);
                 this.checkMatchPoint();
             }
             syncNormalRoundStartMessage();
@@ -1192,16 +1310,10 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
     }
 
     private void syncNormalRoundStartMessage() {
-        var mvpHUDClosePacket = new MvpHUDCloseS2CPacket();
-        var fpsMusicStopPacket = new FPSMusicStopS2CPacket();
-        var bombResetPacket = new BombDemolitionProgressS2CPacket(0);
-
-        this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> this.getPlayerByUUID(uuid).ifPresent(player->{
-            this.sendPacketToJoinedPlayer(player, mvpHUDClosePacket,true);
-            this.sendPacketToJoinedPlayer(player, fpsMusicStopPacket,true);
-            this.sendPacketToJoinedPlayer(player, bombResetPacket, true);
-            this.syncInventory(player);
-        })));
+        this.sendPacketToAllPlayer(new MvpHUDCloseS2CPacket());
+        this.sendPacketToAllPlayer(new FPSMusicStopS2CPacket());
+        this.sendPacketToAllPlayer(new BombDemolitionProgressS2CPacket(0));
+        this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> this.getPlayerByUUID(uuid).ifPresent(this::syncInventory)));
     }
 
     private void syncInventory(ServerPlayer player) {
@@ -1211,7 +1323,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
 
     @Override
     public void victory() {
-        resetGame();
+        reset();
     }
 
     @Override
@@ -1220,15 +1332,12 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
         if(this.isWaitingOverTimeVote){
             return false;
         }
-        this.getMapTeams().getTeams().forEach((team) -> {
-            if (team.getScores() >= (isOvertime ? winnerRound.get() - 1 + (this.overCount * 3) + 4 : winnerRound.get())) {
+        this.getMapTeams().getNormalTeams().forEach((team) -> {
+            int overTimeRound = this.overtimeRound.get();
+            if (team.getScores() >= (isOvertime ? winnerRound.get() - 1 + (this.overCount * overTimeRound) + overTimeRound + 1 : winnerRound.get())) {
                 isVictory.set(true);
-                boolean flag = team.name.equals("t");
-                MinecraftForge.EVENT_BUS.post(new GameWinnerEvent(this,
-                        flag ? this.getTTeam(): this.getCTTeam(),
-                        flag ? this.getCTTeam() : this.getTTeam(),
-                        this.getServerLevel()));
-                this.getMapTeams().getJoinedPlayers().forEach((data -> data.getPlayer().ifPresent(player-> player.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("blockoffensive.map.cs.winner." + team.name + ".message").withStyle(team.name.equals("ct") ? ChatFormatting.DARK_AQUA : ChatFormatting.YELLOW))))));
+                MinecraftForge.EVENT_BUS.post(new FPSMapEvent.VictoryEvent(this));
+                this.sendAllPlayerTitle(Component.translatable("blockoffensive.map.cs.winner." + team.name + ".title").withStyle(team.name.equals("ct") ? ChatFormatting.DARK_AQUA : ChatFormatting.YELLOW),null);
             }
         });
         return isVictory.get() && !this.isDebug();
@@ -1243,7 +1352,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
                 20,
                 0.6F,
                 this::startOvertime,
-                this::resetGame,
+                this::reset,
                 this.getMapTeams().getJoinedUUID()
         );
 
@@ -1255,95 +1364,224 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
         this.isWaitingOverTimeVote = false;
         this.isPause = false;
         this.currentPauseTime = 0;
-        this.clearAndSyncShopData();
-        this.getMapTeams().getTeams().forEach(team-> team.getPlayers().forEach((uuid, playerData)->{
-            playerData.setLiving(false);
-            this.setPlayerMoney(uuid, 10000);
-        }));
+
+        this.getMapTeams().getNormalTeams().forEach(team-> {
+
+            team.getPlayers().forEach((uuid, playerData) -> {
+                playerData.setLiving(false);
+            });
+
+            team.getCapabilityMap().get(ShopCapability.class)
+                    .flatMap(ShopCapability::getShopSafe).ifPresent(shop -> {
+                        shop.setStartMoney(10000);
+                        shop.resetPlayerData();
+            });
+        });
         this.startNewRound();
     }
 
-    // TODO 重要方法
-    @Override
-    public void cleanupMap() {
-        super.cleanupMap();
-        AreaData areaData = this.getMapArea();
-        ServerLevel serverLevel = this.getServerLevel();
-        if(ModList.get().isLoaded("physicsmod")){
-            this.sendPacketToAllPlayer(new PxResetCompatS2CPacket());
-        }
-        for (Entity entity : serverLevel.getEntitiesOfClass(Entity.class,areaData.getAABB())){
-            if(entity instanceof ItemEntity || entity instanceof CompositionC4Entity || entity instanceof MatchDropEntity)
-            {
-                entity.discard();
-            }
-        }
-        this.getMap().getMap().getMapTeams().getSpecPlayers().forEach((pUUID)->{
-            Optional<ServerPlayer> receiver = FPSMCore.getInstance().getPlayerByUUID(pUUID);
-            receiver.ifPresent(player -> BlockOffensive.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new BombFuseS2CPacket(0,BOConfig.common.fuseTime.get())));
-        });
-        AtomicInteger atomicInteger = new AtomicInteger(0);
-        int ctScore = this.getCTTeam().getScores();
-        int tScore = this.getTTeam().getScores();
-        boolean switchFlag;
-        if (!isOvertime) {
-            // 发起加时赛投票
-            if (ctScore == 12 && tScore == 12) {
-                this.startOvertimeVote();
-                this.setBombEntity(null);
-                this.currentRoundTime = 0;
-                this.isPause = true;
-                this.currentPauseTime = 0;
-                return;
-            }else{
-                this.getMapTeams().getTeams().forEach((team)-> atomicInteger.addAndGet(team.getScores()));
-                if(atomicInteger.get() == 12){
-                    switchFlag = true;
-                    this.switchTeams();
-                } else {
-                    switchFlag = false;
-                }
-                this.currentPauseTime = 0;
-            }
-        }else{
-            // 加时赛换边判断 打满3局换边
-            int total = ctScore + tScore;
-            int check = total - 24 - 6 * this.overCount;
-            if(check % 3 == 0 && check > 0){
-                switchFlag = true;
-                this.switchTeams();
-                this.getMapTeams().getJoinedPlayers().forEach((data -> this.setPlayerMoney(data.getOwner(), 10000)));
-                if (check == 6 && ctScore < 12 + 3 * this.overCount + 4 && tScore < 12 + 3 * this.overCount + 4 ) {
-                    this.overCount++;
-                }
-            } else {
-                switchFlag = false;
-            }
-            this.currentPauseTime = 0;
+    /**
+     * 地图清理核心方法优化：拆分职责、提取常量、简化逻辑、提升可维护性
+     */
+    public boolean cleanupMap() {
+        // 1. 执行父类清理逻辑（前置校验）
+        if (!super.cleanupMap()) {
+            return false;
         }
 
-        this.setBombEntity(null);
-        this.currentRoundTime = 0;
-        this.isShopLocked = false;
-        this.getMapTeams().getJoinedPlayers().forEach((data -> data.getPlayer().ifPresent(player->{
-            player.heal(player.getMaxHealth());
-            player.setGameMode(GameType.ADVENTURE);
-            if(switchFlag){
-                this.clearPlayerInventory(player);
-                this.givePlayerKits(player);
-                this.sendPacketToJoinedPlayer(player,new ClientboundSetTitleTextPacket(Component.translatable("blockoffensive.map.cs.team.switch").withStyle(ChatFormatting.GREEN)),true);
-            }else{
-                if(!data.isLiving()){
-                    this.clearPlayerInventory(player);
-                    this.givePlayerKits(player);
-                }else{
-                    this.resetGunAmmon();
-                }
-                this.getShop(player).ifPresent(shop -> shop.getPlayerShopData(player.getUUID()).lockShopSlots(player));
+        // 2. 初始化核心依赖
+        AreaData areaData = getMapArea();
+        ServerLevel serverLevel = getServerLevel();
+        MapTeams mapTeams = getMapTeams(); // 提取重复调用的对象，提升性能
+        int ctScore = getCTTeam().getScores();
+        int tScore = getTTeam().getScores();
+
+        // 3. 拆分独立职责：发送物理模组兼容包
+        sendPhysicsModCompatPacket();
+        // 4. 拆分独立职责：清理特定实体（物品、C4、掉落物）
+        cleanupSpecificEntities(serverLevel, areaData);
+        // 5. 拆分独立职责：通知观察者玩家炸弹引信状态
+        notifySpectatorsOfBombFuse();
+
+        // 6. 拆分独立职责：处理加时赛与队伍切换逻辑
+        boolean shouldSwitchTeams = handleOvertimeAndTeamSwitch(ctScore, tScore, mapTeams);
+
+        // 7. 拆分独立职责：重置地图基础状态
+        resetMapBaseState();
+
+        // 8. 拆分独立职责：重置玩家状态（回血、模式、背包等）
+        resetAllJoinedPlayersState(mapTeams, shouldSwitchTeams);
+
+        // 9. 拆分独立职责：清理刀具缓存与同步商店数据
+        clearKnifeCacheAndSyncShopData();
+
+        return true;
+    }
+
+    /**
+     * 发送物理模组兼容包（仅当模组加载时）
+     */
+    private void sendPhysicsModCompatPacket() {
+        if (ModList.get().isLoaded("physicsmod")) {
+            sendPacketToAllPlayer(new PxResetCompatS2CPacket());
+        }
+    }
+
+    /**
+     * 清理指定区域内的特定实体（物品、C4、比赛掉落物）
+     */
+    private void cleanupSpecificEntities(ServerLevel serverLevel, AreaData areaData) {
+        // 过滤条件提取为方法引用，提升可读性
+        serverLevel.getEntitiesOfClass(Entity.class, areaData.getAABB())
+                .stream()
+                .filter(this::shouldDiscardEntity)
+                .forEach(Entity::discard);
+    }
+
+    /**
+     * 判断实体是否需要被清理
+     */
+    private boolean shouldDiscardEntity(Entity entity) {
+        return entity instanceof ItemEntity
+                || entity instanceof CompositionC4Entity
+                || entity instanceof MatchDropEntity;
+    }
+
+    /**
+     * 通知所有观察者玩家炸弹引信状态
+     */
+    private void notifySpectatorsOfBombFuse() {
+        int initialFuse = 0;
+        int maxFuseTime = BOConfig.common.fuseTime.get();
+        BombFuseS2CPacket fusePacket = new BombFuseS2CPacket(initialFuse, maxFuseTime);
+
+        getMapTeams().getSpecPlayers().forEach(pUUID ->
+                FPSMCore.getInstance().getPlayerByUUID(pUUID)
+                        .ifPresent(player -> BlockOffensive.INSTANCE.send(
+                                PacketDistributor.PLAYER.with(() -> player),
+                                fusePacket
+                        ))
+        );
+    }
+
+    /**
+     * 处理加时赛投票与队伍切换逻辑
+     * @return 是否需要切换队伍
+     */
+    private boolean handleOvertimeAndTeamSwitch(int ctScore, int tScore, MapTeams mapTeams) {
+        // 非加时赛逻辑
+        int maxNormalScore = winnerRound.get() - 1;
+        int overtimeBaseScore = maxNormalScore * 2;
+        int overtimeRound = this.overtimeRound.get();
+        if (!isOvertime) {
+            // 双方均达12分，发起加时投票
+            if (ctScore == maxNormalScore && tScore == maxNormalScore) {
+                startOvertimeVote();
+                setBombEntity(null);
+                currentRoundTime = 0;
+                isPause = true;
+                currentPauseTime = 0;
+                return false;
             }
-        })));
-        this.knifeCache.clear();
-        this.getShops().forEach(FPSMShop::syncShopData);
+
+            // 计算正常队伍总分数，判断是否需要换边
+            int totalNormalTeamScores = mapTeams.getNormalTeams().stream()
+                    .mapToInt(BaseTeam::getScores)
+                    .sum();
+
+            boolean shouldSwitch = totalNormalTeamScores == maxNormalScore;
+            if (shouldSwitch) {
+                switchTeams();
+            }
+            currentPauseTime = 0;
+            return shouldSwitch;
+        }
+
+        // 加时赛逻辑：每3局换边
+        int totalRounds = ctScore + tScore;
+        int roundOffset = totalRounds - overtimeBaseScore - (overtimeRound * overCount);
+        boolean shouldSwitch = roundOffset > 0 && roundOffset % overtimeRound == 0;
+
+        if (shouldSwitch) {
+            switchTeams();
+            // 满足条件时递增加时赛计数
+            if (roundOffset == overtimeRound) {
+                int currentOvertimeScoreCap = maxNormalScore + (overtimeRound * overCount) + (maxNormalScore + 1);
+                if (ctScore < currentOvertimeScoreCap && tScore < currentOvertimeScoreCap) {
+                    overCount++;
+                }
+            }
+        }
+        currentPauseTime = 0;
+        return shouldSwitch;
+    }
+
+    /**
+     * 重置地图基础状态（炸弹、回合时间、商店锁定）
+     */
+    private void resetMapBaseState() {
+        setBombEntity(null);
+        currentRoundTime = 0;
+        isShopLocked = false;
+    }
+
+    /**
+     * 重置所有已加入队伍的玩家状态
+     */
+    private void resetAllJoinedPlayersState(MapTeams mapTeams, boolean shouldSwitchTeams) {
+        // 提前创建团队切换提示文本（避免重复创建对象）
+        Component teamSwitchTitle = Component.translatable("blockoffensive.map.cs.team.switch")
+                .withStyle(ChatFormatting.GREEN);
+
+        mapTeams.getJoinedPlayers().forEach(data ->
+                data.getPlayer().ifPresent(player -> processJoinedPlayer(data, player, shouldSwitchTeams, teamSwitchTitle))
+        );
+    }
+
+    /**
+     * 处理单个已加入队伍的玩家状态重置
+     */
+    private void processJoinedPlayer(PlayerData data, ServerPlayer player, boolean shouldSwitchTeams, Component teamSwitchTitle) {
+        // 基础状态重置：回血 + 冒险模式
+        player.heal(player.getMaxHealth());
+        player.setGameMode(GameType.ADVENTURE);
+
+        // 队伍切换时：清空背包 + 发放工具包 + 发送提示
+        if (shouldSwitchTeams) {
+            clearPlayerInventory(player);
+            givePlayerKits(player);
+            sendPacketToJoinedPlayer(player, new ClientboundSetTitleTextPacket(teamSwitchTitle), true);
+            return;
+        }
+
+        // 非切换时：死亡玩家重置背包，存活玩家重置弹药
+        if (!data.isLiving()) {
+            clearPlayerInventory(player);
+            givePlayerKits(player);
+        } else {
+            resetGunAmmon(); // 注：原拼写Ammon可能为笔误（应为Ammo），保留原有逻辑
+        }
+
+        // 锁定商店槽位
+        ShopCapability.getPlayerShopData(this, player.getUUID())
+                .ifPresent(shopData -> shopData.lockShopSlots(player));
+    }
+
+    /**
+     * 清理刀具缓存并同步商店数据
+     */
+    private void clearKnifeCacheAndSyncShopData() {
+        knifeCache.clear();
+        ShopCapability.syncShopData(this);
+    }
+
+    private void givePlayerKits(ServerPlayer player) {
+        CapabilityMap.getTeamCapability(this,StartKitsCapability.class)
+                .forEach((team, opt) -> {
+                    if(team.hasPlayer(player.getUUID())){
+                        opt.ifPresent(cap -> cap.givePlayerKits(player));
+                    }
+        });
     }
 
     public void teleportPlayerToMatchEndPoint(){
@@ -1361,87 +1599,68 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
      * @see #cleanupMap() 回合结束清理残留C4
      */
     public void giveBlastTeamBomb() {
-        BaseTeam team = this.getMapTeams().getTeamByComplexName(this.blastTeam);
-        if (team == null) {
-            return;
-        }
-
-        // 获取在线玩家列表
-        List<UUID> onlinePlayers = team.getOnlinePlayers();
-        if (onlinePlayers.isEmpty()) {
-            return;
-        }
-
-        // 清理队伍所有成员的C4
-        team.getPlayerList().forEach(uuid ->
-                clearPlayerInventory(uuid, itemStack -> itemStack.getItem() instanceof CompositionC4)
-        );
-
-        // 随机选择一名在线玩家
-        UUID selectedUuid = onlinePlayers.get(new Random().nextInt(onlinePlayers.size()));
-        this.getPlayerByUUID(selectedUuid).ifPresent(player -> {
-            // 添加C4并更新库存
-            player.getInventory().add(BOItemRegister.C4.get().getDefaultInstance());
-            team.sendMessage(Component.translatable("blockoffensive.map.cs.team.giveBomb",player.getDisplayName()).withStyle(ChatFormatting.GREEN));
-            FPSMUtil.sortPlayerInventory(player);
-            this.syncInventory(player);
-        });
-    }
-
-    @Override
-    public Map<String, List<ItemStack>> getStartKits() {
-        return this.startKits;
-    }
-
-    @Override
-    public void giveAllPlayersKits() {
-        for (PlayerData data : this.getMap().getMapTeams().getJoinedPlayers()) {
-            data.getPlayer().ifPresent(player->
-                    this.getMapTeams().getTeamByPlayer(player).ifPresent(team->{
-                        ArrayList<ItemStack> items = this.getKits(team);
-                        player.getInventory().clearContent();
-                        for (ItemStack item : items) {
-                            ItemStack copy = item.copy();
-                            DropType type = DropType.getItemDropType(copy);
-                            if(knifeSelection.get() && !isKnifeSelected && type != DropType.THIRD_WEAPON){
-                                continue;
-                            }
-                            if(copy.getItem() instanceof ArmorItem armorItem){
-                                player.setItemSlot(armorItem.getEquipmentSlot(),copy);
-                            }else{
-                                player.getInventory().add(copy);
-                            }
-                        }
-                        FPSMUtil.sortPlayerInventory(player);
-                    })
-            );
-        }
-    }
-
-    @Override
-    public void setStartKits(Map<String, ArrayList<ItemStack>> kits) {
-        kits.forEach((s, list) -> list.forEach((itemStack) -> {
-            if(itemStack.getItem() instanceof IGun iGun){
-                FPSMUtil.fixGunItem(itemStack, iGun);
+        this.getCapabilityMap().get(DemolitionModeCapability.class)
+                .flatMap(cap -> this.getMapTeams().getTeamByFixedName(cap.getDemolitionTeam())).ifPresent((team) -> {
+            List<UUID> onlinePlayers = team.getOnlinePlayers();
+            if (onlinePlayers.isEmpty()) {
+                return;
             }
-        }));
+            // 清理队伍所有成员的C4
+            team.getPlayerList().forEach(uuid ->
+                    clearPlayerInventory(uuid, itemStack -> itemStack.getItem() instanceof CompositionC4)
+            );
 
-        this.startKits.clear();
-        this.startKits.putAll(kits);
+            // 随机选择一名在线玩家
+            UUID selectedUuid = onlinePlayers.get(new Random().nextInt(onlinePlayers.size()));
+            this.getPlayerByUUID(selectedUuid).ifPresent(player -> {
+                // 添加C4并更新库存
+                player.getInventory().add(BOItemRegister.C4.get().getDefaultInstance());
+                team.sendMessage(Component.translatable("blockoffensive.map.cs.team.giveBomb", player.getDisplayName()).withStyle(ChatFormatting.GREEN));
+                FPSMUtil.sortPlayerInventory(player);
+                this.syncInventory(player);
+            });
+        });
+
+
+    }
+
+    public void giveAllPlayersKits() {
+        CapabilityMap.getTeamCapability(this,StartKitsCapability.class)
+                .forEach((team, opt) -> opt.ifPresent(cap -> {
+                    team.getPlayersData().forEach(playerData -> {
+                        playerData.getPlayer().ifPresent(player -> {
+                            ArrayList<ItemStack> items = cap.getTeamKits();
+                            player.getInventory().clearContent();
+                            for (ItemStack item : items) {
+                                ItemStack copy = item.copy();
+                                DropType type = DropType.getItemDropType(copy);
+                                if(knifeSelection.get() && !isKnifeSelected && type != DropType.THIRD_WEAPON){
+                                    continue;
+                                }
+                                if(copy.getItem() instanceof ArmorItem armorItem){
+                                    player.setItemSlot(armorItem.getEquipmentSlot(),copy);
+                                }else{
+                                    player.getInventory().add(copy);
+                                }
+                            }
+                            FPSMUtil.sortPlayerInventory(player);
+                        });
+                    });
+                }));
     }
 
     public void setPauseState(ServerPlayer player){
         if(!this.isStart) return;
-        this.getMapTeams().getTeamByPlayer(player).ifPresent(team->{
-            if(team.canPause() && !this.isPause){
-                team.addPause();
-                if(!this.isWaiting){
-                    this.sendAllPlayerMessage(Component.translatable("blockoffensive.map.cs.pause.nextRound.success").withStyle(ChatFormatting.GOLD),false);
-                }else{
-                    this.sendAllPlayerMessage(Component.translatable("blockoffensive.map.cs.pause.success").withStyle(ChatFormatting.GOLD),false);
+        this.getMapTeams().getTeamByPlayer(player).flatMap(team -> team.getCapabilityMap().get(PauseCapability.class)).ifPresent(cap -> {
+            if (cap.canPause() && !this.isPause) {
+                cap.addPause();
+                if (!this.isWaiting) {
+                    this.sendAllPlayerMessage(Component.translatable("blockoffensive.map.cs.pause.nextRound.success").withStyle(ChatFormatting.GOLD), false);
+                } else {
+                    this.sendAllPlayerMessage(Component.translatable("blockoffensive.map.cs.pause.success").withStyle(ChatFormatting.GOLD), false);
                 }
-            }else{
-                player.displayClientMessage(Component.translatable("blockoffensive.map.cs.pause.fail").withStyle(ChatFormatting.RED),false);
+            } else {
+                player.displayClientMessage(Component.translatable("blockoffensive.map.cs.pause.fail").withStyle(ChatFormatting.RED), false);
             }
         });
     }
@@ -1487,8 +1706,9 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
         this.getMapTeams().getJoinedPlayers().forEach(data -> data.getPlayer().ifPresent(player -> player.displayClientMessage(message,actionBar)));
     }
 
-    public void resetGame() {
-        this.getMapTeams().getTeams().forEach(baseTeam -> baseTeam.setScores(0));
+    @Override
+    public void reset() {
+        super.reset();
         this.isOvertime = false;
         this.isWaitingOverTimeVote = false;
         this.overCount = 0;
@@ -1512,82 +1732,24 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
         this.currentPauseTime = 0;
         this.isKnifeSelected = false;
         this.getMapTeams().getJoinedPlayers().forEach(data-> data.getPlayer().ifPresent(this::resetPlayerClientData));
-        this.getShops().forEach(FPSMShop::clearPlayerShopData);
         this.getMapTeams().reset();
     }
 
-    public final void setBlastTeam(BaseTeam team){
-        this.blastTeam = team.getFixedName();
-    }
-
     public boolean checkCanPlacingBombs(String team){
-        if(this.blastTeam == null) return false;
-        return this.blastTeam.equals(team);
+        return CapabilityMap.getMapCapability(this,DemolitionModeCapability.class)
+                .map(cap -> cap.getDemolitionTeam().equals(team))
+                .orElse(false);
     }
 
-    /**
-     * 检查玩家是否在炸弹安放区域
-     * @param player 目标玩家
-     * @return 是否在有效炸弹区域
-     * @see AreaData 区域检测逻辑
-     */
-    public boolean checkPlayerIsInBombArea(Player player){
-        AtomicBoolean a = new AtomicBoolean(false);
-        this.bombAreaData.forEach(area->{
-            if(!a.get()) a.set(area.isPlayerInArea(player));
-        });
-        return a.get();
-    }
-
-    @Override
-    public ArrayList<ItemStack> getKits(BaseTeam team) {
-        return (ArrayList<ItemStack>) this.startKits.getOrDefault(team.getFixedName(),new ArrayList<>());
-    }
-
-    @Override
-    public void addKits(BaseTeam team, ItemStack itemStack) {
-        Objects.requireNonNull(team, "Team cannot be null");
-        Objects.requireNonNull(itemStack, "ItemStack cannot be null");
-        this.startKits.computeIfAbsent(team.getFixedName(), t -> new ArrayList<>()).add(itemStack);
-    }
-
-    @Override
-    public void clearTeamKits(BaseTeam team){
-        if(this.startKits.containsKey(team.getFixedName())){
-            this.startKits.get(team.getFixedName()).clear();
-        }
-    }
-
-    @Override
-    public void setAllTeamKits(ItemStack itemStack) {
-        this.startKits.values().forEach((v) -> v.add(itemStack));
-    }
-
-    public void addBombArea(AreaData area){
-        this.bombAreaData.add(area);
-    }
-
-    public List<AreaData> getBombAreaData() {
-        return bombAreaData;
-    }
-
-    @Override
     public void setBombEntity(@Nullable BlastBombEntity bomb) {
-        if(bomb instanceof CompositionC4Entity c){
-            this.c4 = c;
-        }else{
-            if(bomb == null){
-                if(this.c4 != null && !this.c4.isRemoved()){
-                    this.c4.discard();
-                }
-                this.c4 = null;
-            }
-        }
+        CapabilityMap.getMapCapability(this,DemolitionModeCapability.class)
+                .ifPresent(cap -> cap.setBombEntity(bomb));
     }
 
-    @Override
     public BlastBombState blastState() {
-        return this.c4 == null ? BlastBombState.NONE : this.c4.getState();
+        return CapabilityMap.getMapCapability(this,DemolitionModeCapability.class)
+                .map(DemolitionModeCapability::blastState)
+                .orElse(BlastBombState.NONE);
     }
 
     public int getClientTime(){
@@ -1617,8 +1779,8 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
      * @see CSGameSettingsS2CPacket
      */
     public void syncToClient() {
-        BaseTeam ct = this.getCTTeam();
-        BaseTeam t = this.getTTeam();
+        ServerTeam ct = this.getCTTeam();
+        ServerTeam t = this.getTTeam();
         CSGameSettingsS2CPacket packet = new CSGameSettingsS2CPacket(
                 ct.getScores(),t.getScores(),
                 this.getClientTime(),
@@ -1634,7 +1796,7 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
         for(UUID uuid : this.getMapTeams().getJoinedPlayersWithSpec()){
             this.getPlayerByUUID(uuid).ifPresent(player-> {
                 this.sendPacketToJoinedPlayer(player, packet, true);
-                for (BaseTeam team : this.getMapTeams().getTeamsWithSpec()) {
+                for (ServerTeam team : this.getMapTeams().getTeamsWithSpec()) {
                     for (UUID existingPlayerId : team.getPlayers().keySet()) {
                         team.getPlayerData(existingPlayerId).ifPresent(playerData -> {
                             var p1 = new GameTabStatsS2CPacket(existingPlayerId, playerData, team.name);
@@ -1766,20 +1928,24 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
     public void giveEco(ServerPlayer player, Player attacker, ItemStack itemStack) {
         if (knifeSelection.get() && !isKnifeSelected) return;
 
-        BaseTeam killerTeam = this.getMapTeams().getTeamByPlayer(attacker).orElse(null);
-        BaseTeam deadTeam = this.getMapTeams().getTeamByPlayer(player).orElse(null);
+        ServerTeam killerTeam = this.getMapTeams().getTeamByPlayer(attacker).orElse(null);
+        ServerTeam deadTeam = this.getMapTeams().getTeamByPlayer(player).orElse(null);
         if(killerTeam == null || deadTeam == null) {
             FPSMatch.LOGGER.error("CSGameMap {} -> killerTeam or deadTeam are null! : killer {} , dead {}",this.getMapName(),attacker.getDisplayName(),player.getDisplayName());
             return;
         }
 
         if (killerTeam.getFixedName().equals(deadTeam.getFixedName())){
-            this.removePlayerMoney(attacker.getUUID(),300);
-            attacker.displayClientMessage(Component.translatable("blockoffensive.kill.message.teammate",300),false);
+            ShopCapability.getPlayerShopData(this,player.getUUID()).ifPresent(shopData -> {
+                shopData.reduceMoney(300);
+                attacker.displayClientMessage(Component.translatable("blockoffensive.kill.message.teammate",300),false);
+            });
         }else{
             int reward = getRewardByItem(itemStack);
-            this.addPlayerMoney(attacker.getUUID(),reward);
-            attacker.displayClientMessage(Component.translatable("blockoffensive.kill.message.enemy",reward),false);
+            ShopCapability.getPlayerShopData(this,player.getUUID()).ifPresent(shopData -> {
+                shopData.addMoney(reward);
+                attacker.displayClientMessage(Component.translatable("blockoffensive.kill.message.enemy",reward),false);
+            });
         }
     }
 
@@ -1799,7 +1965,10 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
         if(this.isStart) {
             MapTeams teams = this.getMapTeams();
             teams.getTeamByPlayer(player).ifPresent(deadPlayerTeam->{
-                this.getShop(player).ifPresent(shop-> shop.getDefaultAndPutData(player.getUUID()));
+                CapabilityMap.getTeamCapability(deadPlayerTeam, ShopCapability.class)
+                        .flatMap(ShopCapability::getShopSafe).ifPresent(shop -> {
+                            shop.getDefaultAndPutData(player.getUUID());
+                });
 
                 this.sendPacketToJoinedPlayer(player,new ShopStatesS2CPacket(false,0,0),true);
                 deadPlayerTeam.getPlayerData(player.getUUID()).ifPresent(data->{
@@ -1867,18 +2036,20 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
         return this;
     }
 
-    public @NotNull BaseTeam getTTeam(){
+    public @NotNull ServerTeam getTTeam(){
         return this.tTeam;
     }
 
-    public @NotNull BaseTeam getCTTeam(){
+    public @NotNull ServerTeam getCTTeam(){
         return this.ctTeam;
     }
 
     @Override
-    public void reload(){
-        resetGame();
+    public boolean reload(){
+        if (!super.reload()) return false;
+        reset();
         loadConfig();
+        return true;
     }
 
     @Override
@@ -1928,6 +2099,39 @@ public class CSGameMap extends BaseMap implements BlastModeMap<CSGameMap> ,
         }else{
             return 300;
         }
+    }
+
+    public Map<String,List<SpawnPointData>> getAllSpawnPoints(){
+        Map<String,List<SpawnPointData>> allSpawnPoints = new HashMap<>();
+
+        for (ServerTeam team : this.getMapTeams().getNormalTeams()){
+            team.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(cap->{
+                allSpawnPoints.put(team.name,cap.getSpawnPointsData());
+            });
+        }
+
+        return allSpawnPoints;
+    }
+
+    public boolean setTeamSpawnPoints(){
+        for (ServerTeam team : this.getMapTeams().getNormalTeams()){
+            Optional<SpawnPointCapability> capability = team.getCapabilityMap().get(SpawnPointCapability.class);
+            if(capability.isPresent()){
+                SpawnPointCapability cap = capability.get();
+                if(!cap.randomSpawnPoints()){
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public List<AreaData> getBombAreaData() {
+        return this.getCapabilityMap().get(DemolitionModeCapability.class).map(DemolitionModeCapability::getBombAreaData).orElse(Collections.emptyList());
+    }
+
+    public boolean checkPlayerIsInBombArea(@NotNull Player player) {
+        return this.getCapabilityMap().get(DemolitionModeCapability.class).map(cap->cap.checkPlayerIsInBombArea(player)).orElse(false);
     }
 
 

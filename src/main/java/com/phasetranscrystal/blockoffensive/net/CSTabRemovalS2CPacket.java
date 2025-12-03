@@ -18,7 +18,9 @@ public record CSTabRemovalS2CPacket(UUID uuid) {
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            FPSMClient.getGlobalData().removeTabData(uuid);
+            FPSMClient.getGlobalData().getTeamByUUID(uuid).ifPresent(team-> {
+                team.delPlayer(uuid);
+            });
         });
         ctx.get().setPacketHandled(true);
     }

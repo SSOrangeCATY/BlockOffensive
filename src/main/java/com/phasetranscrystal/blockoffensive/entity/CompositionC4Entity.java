@@ -3,6 +3,7 @@ package com.phasetranscrystal.blockoffensive.entity;
 import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
+import com.phasetranscrystal.blockoffensive.map.CSGameMap;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombActionS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombDemolitionProgressS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.spec.BombFuseS2CPacket;
@@ -11,7 +12,6 @@ import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.entity.BlastBombEntity;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.BlastBombState;
-import com.phasetranscrystal.fpsmatch.core.map.BlastModeMap;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -44,7 +44,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
     private int demolitionProgress = 0;
     private int fuse = DEFAULT_FUSE_TIME;
     private BlastBombState state = BlastBombState.TICKING;
-    private BlastModeMap<?> map;
+    private CSGameMap map;
 
     public CompositionC4Entity(EntityType<?> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -53,7 +53,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
         this.setDeleteTime(0);
     }
 
-    public CompositionC4Entity(Level pLevel, double pX, double pY, double pZ, Player pOwner, @NotNull BlastModeMap<?> map) {
+    public CompositionC4Entity(Level pLevel, double pX, double pY, double pZ, Player pOwner, @NotNull CSGameMap map) {
         this(BOEntityRegister.C4.get(), pLevel);
         this.map = map;
         this.setFuse(BOConfig.common.fuseTime.get());
@@ -63,7 +63,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
         this.map.setBombEntity(this);
     }
 
-    public CompositionC4Entity(Level pLevel, Vec3 pos, Player pOwner, @NotNull BlastModeMap<?> map, int fuseTime, int explosionRadius) {
+    public CompositionC4Entity(Level pLevel, Vec3 pos, Player pOwner, @NotNull CSGameMap map, int fuseTime, int explosionRadius) {
         this(BOEntityRegister.C4.get(), pLevel);
         this.map = map;
         this.setFuse(fuseTime);
@@ -73,7 +73,7 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
         this.map.setBombEntity(this);
     }
 
-    public CompositionC4Entity(Level pLevel, Vec3 pos, Player pOwner, @NotNull BlastModeMap<?> map, int fuseTime, int explosionRadius, Level.ExplosionInteraction explosionInteraction) {
+    public CompositionC4Entity(Level pLevel, Vec3 pos, Player pOwner, @NotNull CSGameMap map, int fuseTime, int explosionRadius, Level.ExplosionInteraction explosionInteraction) {
         this(BOEntityRegister.C4.get(), pLevel);
         this.map = map;
         this.setExplosionInteraction(explosionInteraction);

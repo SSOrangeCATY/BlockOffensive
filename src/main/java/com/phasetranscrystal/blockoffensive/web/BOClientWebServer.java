@@ -8,6 +8,7 @@ import com.phasetranscrystal.blockoffensive.client.data.WeaponData;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.data.FPSMClientGlobalData;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
+import com.phasetranscrystal.fpsmatch.core.team.ClientTeam;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
@@ -80,22 +81,24 @@ public class BOClientWebServer {
             response.put("bombTotalFuse", CSClientData.bombTotalFuse);
 
             Map<String, Object> tabData = new HashMap<>();
-            for (UUID uuid : globalData.tabData.keySet()) {
-                Pair<String, PlayerData> pair = globalData.tabData.get(uuid);
-                String team = pair.getFirst();
+            for (ClientTeam clientTeam : globalData.clientTeamData.values()) {
+
+                String team = clientTeam.name;
                 if(team.equals("spectator")) continue;
-                PlayerData data = pair.getSecond();
-                Map<String, Object> playerData = new HashMap<>();
-                playerData.put("name", data.name().getString());
-                playerData.put("team", team);
-                playerData.putAll(data.mappedInfo());
-                playerData.put("money", globalData.getPlayerMoney(uuid));
-                playerData.put("health",data.healthPercent() * 100);
-                WeaponData weaponData = CSClientData.getWeaponData(uuid);
-                playerData.put("items", weaponData.weaponData());
-                playerData.put("bpAttributeHasHelmet", weaponData.bpAttributeHasHelmet());
-                playerData.put("bpAttributeDurability", weaponData.bpAttributeDurability());
-                tabData.put(uuid.toString(), playerData);
+                for (PlayerData data : clientTeam.players.values()){
+                    UUID uuid = data.getOwner();
+                    Map<String, Object> playerData = new HashMap<>();
+                    playerData.put("name", data.name().getString());
+                    playerData.put("team", team);
+                    playerData.putAll(data.mappedInfo());
+                    playerData.put("money", globalData.getPlayerMoney(uuid));
+                    playerData.put("health",data.healthPercent() * 100);
+                    WeaponData weaponData = CSClientData.getWeaponData(uuid);
+                    playerData.put("items", weaponData.weaponData());
+                    playerData.put("bpAttributeHasHelmet", weaponData.bpAttributeHasHelmet());
+                    playerData.put("bpAttributeDurability", weaponData.bpAttributeDurability());
+                    tabData.put(uuid.toString(), playerData);
+                }
             }
             response.put("tabData", tabData);
 

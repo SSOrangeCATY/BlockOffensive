@@ -4,7 +4,7 @@ import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.map.CSGameMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import com.phasetranscrystal.fpsmatch.core.map.BaseTeam;
+import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -43,9 +43,9 @@ public abstract class StepSoundMixin extends LivingEntity {
         if (optional.isEmpty()) return;
         BaseMap map = optional.get();
         if (map instanceof CSGameMap && !this.isSilent() && !this.isCrouching()){
-            Optional<BaseTeam> team = map.getMapTeams().getTeamByPlayer(me);
+            Optional<ServerTeam> team = map.getMapTeams().getTeamByPlayer(me);
             if (team.isPresent()) {
-                BaseTeam joined = team.get();
+                ServerTeam joined = team.get();
                 ci.cancel();
                 if (this.isInWater()) {
                     this.waterSwimSound();
@@ -70,20 +70,20 @@ public abstract class StepSoundMixin extends LivingEntity {
     }
 
     @Unique
-    protected void blockoffensive$playCombinationStepSounds(BlockState pPrimaryState, BlockState pSecondaryState, BlockPos primaryPos, BlockPos secondaryPos, BaseTeam joined) {
+    protected void blockoffensive$playCombinationStepSounds(BlockState pPrimaryState, BlockState pSecondaryState, BlockPos primaryPos, BlockPos secondaryPos, ServerTeam joined) {
         SoundType soundtype = pPrimaryState.getSoundType(this.level(), primaryPos, this);
         blockoffensive$playStepSound(soundtype,joined,false);
         blockoffensive$playMuffledStepSound(pSecondaryState, secondaryPos,joined);
     }
 
     @Unique
-    protected void blockoffensive$playMuffledStepSound(BlockState pState, BlockPos pos, BaseTeam joined) {
+    protected void blockoffensive$playMuffledStepSound(BlockState pState, BlockPos pos, ServerTeam joined) {
         SoundType soundtype = pState.getSoundType(this.level(), pos, this);
         blockoffensive$playStepSound(soundtype,joined,true);
     }
 
     @Unique
-    protected void blockoffensive$playStepSound(SoundType soundtype, BaseTeam joined, boolean isMuffled) {
+    protected void blockoffensive$playStepSound(SoundType soundtype, ServerTeam joined, boolean isMuffled) {
         List<ServerPlayer> players = Objects.requireNonNull(this.level().getServer()).getPlayerList().getPlayers();
         Holder<SoundEvent> sound = BuiltInRegistries.SOUND_EVENT.wrapAsHolder(soundtype.getStepSound());
         BOConfig.Common config = BOConfig.common;
@@ -93,7 +93,7 @@ public abstract class StepSoundMixin extends LivingEntity {
         for (ServerPlayer player : players) {
             Optional<BaseMap> optional = FPSMCore.getInstance().getMapByPlayer(player);
             if (optional.isPresent() && optional.get() instanceof CSGameMap map){
-                Optional<BaseTeam> team = map.getMapTeams().getTeamByPlayer(player);
+                Optional<ServerTeam> team = map.getMapTeams().getTeamByPlayer(player);
                 if (team.isPresent() && team.get().getFixedName().equals(joined.getFixedName())) {
                     player.connection.send(teammate);
                 }else{

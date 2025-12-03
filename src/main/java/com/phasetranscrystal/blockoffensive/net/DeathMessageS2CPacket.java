@@ -67,10 +67,14 @@ public class DeathMessageS2CPacket {
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             CSGameHud.getInstance().getDeathMessageHud().addKillMessage(deathMessage);
-            boolean isLocalPlayer = Minecraft.getInstance().player != null &&
+            boolean isLocalKill = Minecraft.getInstance().player != null &&
                     deathMessage.getKillerUUID().equals(Minecraft.getInstance().player.getUUID());
-            if(isLocalPlayer && !deathMessage.getDeadUUID().equals(Minecraft.getInstance().player.getUUID())) {
+            boolean isLocalDead = deathMessage.getDeadUUID().equals(Minecraft.getInstance().player.getUUID());
+            if(isLocalKill && !isLocalDead) {
                 CSGameHud.getInstance().addKill(deathMessage);
+            }
+            if(isLocalDead){
+
             }
         });
         ctx.get().setPacketHandled(true);

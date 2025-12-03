@@ -2,10 +2,13 @@ package com.phasetranscrystal.blockoffensive.item;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
+import com.phasetranscrystal.blockoffensive.map.CSGameMap;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
+import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.item.BlastBombItem;
 import com.phasetranscrystal.fpsmatch.core.map.*;
+import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
@@ -121,7 +124,7 @@ public class CompositionC4 extends Item implements BlastBombItem {
 		}
 		BaseMap baseMap = optional.get();
 
-		if (!(baseMap instanceof BlastModeMap<?> map)) {
+		if (!(baseMap instanceof CSGameMap map)) {
 			player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.noMap"), true);
 			return InteractionResultHolder.pass(stack);
 		}
@@ -131,7 +134,7 @@ public class CompositionC4 extends Item implements BlastBombItem {
 			return InteractionResultHolder.pass(stack);
 		}
 
-		BaseTeam team = baseMap.getMapTeams().getTeamByPlayer(player).orElse(null);
+		ServerTeam team = baseMap.getMapTeams().getTeamByPlayer(player).orElse(null);
 		if (team == null) {
 			player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.team.notInTeam"), true);
 			return InteractionResultHolder.pass(stack);
@@ -217,7 +220,7 @@ public class CompositionC4 extends Item implements BlastBombItem {
 		if (optional.isEmpty()) return stack;
 		BaseMap baseMap = optional.get();
 
-		if (!(baseMap instanceof BlastModeMap<?> map)) return stack;
+		if (!(baseMap instanceof CSGameMap map)) return stack;
 
 		if (!map.checkPlayerIsInBombArea(player)) {
 			player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.notInArea"), true);
@@ -235,11 +238,11 @@ public class CompositionC4 extends Item implements BlastBombItem {
 				BOSoundRegister.PLANTED.get(), SoundSource.PLAYERS, 3.0F, 1.0F);
 
 		// 经济奖励
-		if (baseMap instanceof ShopMap<?> shopMap) {
-			baseMap.getMapTeams().getTeamByPlayer(player).ifPresent(team -> {
-				shopMap.addPlayerMoney(player.getUUID(), 300);
-			});
-		}
+		baseMap.getMapTeams().getTeamByPlayer(player)
+				.flatMap(team -> team.getCapabilityMap().get(ShopCapability.class)
+						.flatMap(ShopCapability::getShopSafe)).ifPresent(shop -> {
+							shop.getPlayerShopData(player.getUUID()).addMoney(300);
+        });
 
 		// 通知所有玩家
 		Component message = Component.translatable("blockoffensive.item.c4.planted").withStyle(ChatFormatting.RED);
