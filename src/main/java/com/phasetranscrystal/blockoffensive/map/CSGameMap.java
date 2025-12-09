@@ -115,11 +115,11 @@ public class CSGameMap extends BaseMap implements IConfigureMap<CSGameMap>{
             Codec.STRING.fieldOf("mapName").forGetter(CSGameMap::getMapName),
             AreaData.CODEC.fieldOf("mapArea").forGetter(CSGameMap::getMapArea),
             ResourceLocation.CODEC.fieldOf("serverLevel").forGetter(map -> map.getServerLevel().dimension().location()),
-            CapabilityMap.CapabilityMapWrapper.DATA_CODEC.fieldOf("capabilities").forGetter(csGameMap -> csGameMap.getCapabilityMap().getData().data()),
+            CapabilityMap.Wrapper.DATA_CODEC.fieldOf("capabilities").forGetter(csGameMap -> csGameMap.getCapabilityMap().getData().data()),
             // 队伍数据
             Codec.unboundedMap(
                     Codec.STRING,
-                    CapabilityMap.CapabilityMapWrapper.CODEC
+                    CapabilityMap.Wrapper.CODEC
             ).fieldOf("teams").forGetter(csGameMap -> csGameMap.getMapTeams().getData())
     ).apply(instance, (mapName, mapArea, serverLevel, capability, teamsData) -> {
         // 创建新的CSGameMap实例
