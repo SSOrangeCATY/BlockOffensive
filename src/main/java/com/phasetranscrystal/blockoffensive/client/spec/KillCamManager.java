@@ -63,7 +63,7 @@ public final class KillCamManager {
 
     /** 灰度后处理 */
     private static final ResourceLocation DESAT =
-            new ResourceLocation("minecraft:shaders/post/desaturate.json");
+            ResourceLocation.tryBuild("minecraft", "shaders/post/desaturate.json");
 
     /* ===== 状态机 ===== */
     private enum Phase { NONE, PULL, FADE }

@@ -15,8 +15,8 @@ import java.util.List;
 
 public class EnderKillAnimator implements KillAnimator {
     // 资源常量
-    private static final ResourceLocation ENDER_EYE = new ResourceLocation("minecraft", "textures/item/ender_eye.png");
-    private static final ResourceLocation ENDER_PEARL = new ResourceLocation("minecraft", "textures/item/ender_pearl.png");
+    private static final ResourceLocation ENDER_EYE = ResourceLocation.tryBuild("minecraft", "textures/item/ender_eye.png");
+    private static final ResourceLocation ENDER_PEARL = ResourceLocation.tryBuild("minecraft", "textures/item/ender_pearl.png");
 
     // 动画参数
     private static final int ANIMATION_DURATION = 3500;

@@ -29,23 +29,24 @@ public class CSDeathMessageHud{
     public final Minecraft minecraft;
     private final Map<String, ResourceLocation> specialKillIcons = new HashMap<>();
     private final Map<ResourceLocation, String> itemToIcon = new HashMap<>();
+
     public CSDeathMessageHud() {
         minecraft = Minecraft.getInstance();
         // 注册特殊击杀图标
-        registerSpecialKillIcon("headshot", new ResourceLocation(BlockOffensive.MODID, "textures/ui/cs/message/headshot.png"));
-        registerSpecialKillIcon("throw_wall", new ResourceLocation(BlockOffensive.MODID, "textures/ui/cs/message/throw_wall.png"));
-        registerSpecialKillIcon("throw_smoke", new ResourceLocation(BlockOffensive.MODID, "textures/ui/cs/message/throw_smoke.png"));
-        registerSpecialKillIcon("explode", new ResourceLocation(BlockOffensive.MODID, "textures/ui/cs/message/explode.png"));
-        registerSpecialKillIcon("suicide", new ResourceLocation(BlockOffensive.MODID, "textures/ui/cs/message/suicide.png"));
-        registerSpecialKillIcon("fire", new ResourceLocation(BlockOffensive.MODID, "textures/ui/cs/message/fire.png"));
-        registerSpecialKillIcon("blindness", new ResourceLocation(BlockOffensive.MODID, "textures/ui/cs/message/blindness.png"));
-        registerSpecialKillIcon("no_zoom", new ResourceLocation(BlockOffensive.MODID, "textures/ui/cs/message/no_zoom.png"));
-        registerSpecialKillIcon("ct_incendiary_grenade", new ResourceLocation(BlockOffensive.MODID, "textures/ui/cs/message/ct_incendiary_grenade.png"));
-        registerSpecialKillIcon("grenade", new ResourceLocation(BlockOffensive.MODID, "textures/ui/cs/message/grenade.png"));
-        registerSpecialKillIcon("t_incendiary_grenade", new ResourceLocation(BlockOffensive.MODID, "textures/ui/cs/message/t_incendiary_grenade.png"));
-        registerSpecialKillIcon("flash_bomb", new ResourceLocation(BlockOffensive.MODID, "textures/ui/cs/message/flash_bomb.png"));
-        registerSpecialKillIcon("smoke_shell", new ResourceLocation(BlockOffensive.MODID, "textures/ui/cs/message/smoke_shell.png"));
-        registerSpecialKillIcon("hand", new ResourceLocation(BlockOffensive.MODID, "textures/ui/cs/message/hand.png"));
+        registerSpecialKillIcon("headshot", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/headshot.png"));
+        registerSpecialKillIcon("throw_wall", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/throw_wall.png"));
+        registerSpecialKillIcon("throw_smoke", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/throw_smoke.png"));
+        registerSpecialKillIcon("explode", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/explode.png"));
+        registerSpecialKillIcon("suicide", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/suicide.png"));
+        registerSpecialKillIcon("fire", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/fire.png"));
+        registerSpecialKillIcon("blindness", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/blindness.png"));
+        registerSpecialKillIcon("no_zoom", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/no_zoom.png"));
+        registerSpecialKillIcon("ct_incendiary_grenade", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/ct_incendiary_grenade.png"));
+        registerSpecialKillIcon("grenade", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/grenade.png"));
+        registerSpecialKillIcon("t_incendiary_grenade", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/t_incendiary_grenade.png"));
+        registerSpecialKillIcon("flash_bomb", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/flash_bomb.png"));
+        registerSpecialKillIcon("smoke_shell", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/smoke_shell.png"));
+        registerSpecialKillIcon("hand", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/hand.png"));
 
         registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(Items.AIR),"hand");
         registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(FPSMItemRegister.CT_INCENDIARY_GRENADE.get()),"ct_incendiary_grenade");
@@ -73,22 +74,17 @@ public class CSDeathMessageHud{
         int yOffset = getHudPositionYOffset();
 
         synchronized(queueLock) {
-            // 移除过期消息
             messageQueue.removeIf(messageData ->
                     currentTime - messageData.displayStartTime >= BOConfig.client.messageShowTime.get() * 1000);
 
-            // 渲染剩余消息
             for (MessageData messageData : messageQueue) {
                 DeathMessage message = messageData.message;
 
-                // 计算X坐标
                 int width = calculateMessageWidth(message);
                 int x = getHudPositionXOffset(width);
 
-                // 渲染消息
                 renderKillMessage(guiGraphics, message, x, yOffset);
 
-                // 更新Y偏移
                 yOffset += 14;
             }
         }
@@ -98,16 +94,13 @@ public class CSDeathMessageHud{
         synchronized(queueLock) {
             long currentTime = System.currentTimeMillis();
 
-            // 移除过期消息
             messageQueue.removeIf(messageData ->
                     currentTime - messageData.displayStartTime >= BOConfig.client.messageShowTime.get() * 1000);
 
-            // 如果队列已满，移除最旧的消息
             if (messageQueue.size() >= BOConfig.client.maxShowCount.get()) {
                 messageQueue.removeFirst();
             }
 
-            // 添加新消息
             messageQueue.add(new MessageData(message, currentTime));
         }
     }
@@ -140,7 +133,6 @@ public class CSDeathMessageHud{
         UUID local = minecraft.player.getUUID();
         boolean isLocalPlayer = message.getKillerUUID().equals(local) || message.getAssistUUID().equals(local);
 
-        // 背景尺寸计算
         int width = calculateMessageWidth(message);
         int height = 16;
         int bgColor = 0x80000000;
@@ -156,10 +148,10 @@ public class CSDeathMessageHud{
 
         int currentX = x + 5;
         int rightPadding = x + width - 5;
-        // 致盲图标
+
         if (message.isBlinded()) {
             renderIcon(guiGraphics, specialKillIcons.get("blindness"), currentX, y + 2, 12, 12);
-            currentX += 14; // 图标12px + 间距2px
+            currentX += 14;
         }
 
         MutableComponent component = message.getKiller().copy();
@@ -168,11 +160,9 @@ public class CSDeathMessageHud{
             component.append(message.getAssist());
         };
 
-        // 击杀者名字
         guiGraphics.drawString(font, component, currentX, y + 4, -1, true);
         currentX += font.width(component) + 2;
 
-        // 武器图标
         ResourceLocation weaponIcon = message.getWeaponIcon();
         poseStack.pushPose();
         poseStack.translate(currentX, y + 1, 0);
@@ -198,13 +188,11 @@ public class CSDeathMessageHud{
             }
         }
 
-        // 其他图标（爆头/穿烟等）
         if (message.isHeadShot()) currentX = renderConditionalIcon(guiGraphics, "headshot", currentX, y);
         if (message.isThroughSmoke()) currentX = renderConditionalIcon(guiGraphics, "throw_smoke", currentX, y);
         if (message.isThroughWall()) currentX = renderConditionalIcon(guiGraphics, "throw_wall", currentX, y);
         if (message.isNoScope()) currentX = renderConditionalIcon(guiGraphics, "no_zoom", currentX, y);
 
-        // 被击杀者名字（自动右对齐）
         int deadNameWidth = font.width(message.getDead());
         currentX = Math.min(currentX, rightPadding - deadNameWidth);
         guiGraphics.drawString(font, message.getDead(), currentX, y + 4, -1, true);
@@ -212,7 +200,7 @@ public class CSDeathMessageHud{
 
     private int renderConditionalIcon(GuiGraphics guiGraphics, String iconKey, int currentX, int y) {
         renderIcon(guiGraphics, specialKillIcons.get(iconKey), currentX, y + 2, 12, 12);
-        return currentX + 14; // 统一图标间距
+        return currentX + 14;
     }
 
     private void renderIcon(GuiGraphics guiGraphics, ResourceLocation icon, int x, int y, int width, int height) {
@@ -224,40 +212,39 @@ public class CSDeathMessageHud{
     }
 
     private int calculateMessageWidth(DeathMessage message) {
-        int width = 10; // 初始边距5px*2
+        Font font = minecraft.font;
+        int width = 10;
 
-        // 致盲图标
-        if (message.isBlinded()) width += 14;
-
-        // 击杀者名字 + 间距
-        width += minecraft.font.width(message.getKiller()) + 2;
-        MutableComponent component = message.getKiller().copy();
-        if(!message.getAssistUUID().equals(message.getKillerUUID())){
-            component.append(" + ");
-            component.append(message.getAssist());
-        };
-
-        width += minecraft.font.width(component) + 2;
-        // 武器图标
-        if (message.getWeaponIcon() != null) {
-            width += (int)(117 * (14.0f / 44.0f)) + 2; // 武器宽度 + 间距2px
+        if (message.isBlinded()) {
+            width += 14;
         }
 
-        // 特殊击杀图标
-        String icon = this.itemToIcon.getOrDefault(message.getItemRL(),null);
-        if(icon != null){
-            if(this.specialKillIcons.getOrDefault(icon,null) != null) {
-                width += 14;
+        MutableComponent killerComponent = message.getKiller().copy();
+        if (!message.getAssistUUID().equals(message.getKillerUUID())) {
+            killerComponent.append(" + ").append(message.getAssist());
+        }
+        width += font.width(killerComponent) + 2;
+
+        ResourceLocation weaponIcon = message.getWeaponIcon();
+        if (weaponIcon != null) {
+            width += 39;
+        } else {
+            if (!this.itemToIcon.containsKey(message.getItemRL())) {
+                width += 16;
             }
         }
-        // 其他图标
+
+        String specialIcon = this.itemToIcon.getOrDefault(message.getItemRL(), null);
+        if (specialIcon != null && this.specialKillIcons.containsKey(specialIcon)) {
+            width += 14;
+        }
+
         if (message.isHeadShot()) width += 14;
         if (message.isThroughSmoke()) width += 14;
         if (message.isThroughWall()) width += 14;
         if (message.isNoScope()) width += 14;
 
-        // 被击杀者名字（不需要额外间距）
-        width += minecraft.font.width(message.getDead());
+        width += font.width(message.getDead());
 
         return width;
     }

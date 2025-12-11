@@ -46,9 +46,9 @@ public class CSGameHud implements IHudRenderer {
     private final CSMvpHud mvpHud = new CSMvpHud();
     private final CSDeathMessageHud deathMessageHud = new CSDeathMessageHud();
     private final CSGameOverlay gameOverlay = new CSGameOverlay();
-    private static final ResourceLocation SEMI = new ResourceLocation("tacz", "textures/hud/fire_mode_semi.png");
-    private static final ResourceLocation AUTO = new ResourceLocation("tacz", "textures/hud/fire_mode_auto.png");
-    private static final ResourceLocation BURST = new ResourceLocation("tacz", "textures/hud/fire_mode_burst.png");
+    private static final ResourceLocation SEMI = ResourceLocation.tryBuild("tacz", "textures/hud/fire_mode_semi.png");
+    private static final ResourceLocation AUTO = ResourceLocation.tryBuild("tacz", "textures/hud/fire_mode_auto.png");
+    private static final ResourceLocation BURST = ResourceLocation.tryBuild("tacz", "textures/hud/fire_mode_burst.png");
     private static final int MOVE_DURATION = 500; // 移动动画时长（毫秒）
     private static final int FADE_DURATION = 500; // 淡出动画时长（毫秒）
     private static final int SELECTED_BG_COLOR = RenderUtil.color(255,255,255,65); // 选中时的背景颜色（半透明白）

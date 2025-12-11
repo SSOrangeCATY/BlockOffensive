@@ -35,6 +35,7 @@ import com.phasetranscrystal.fpsmatch.common.packet.*;
 import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
+import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.core.*;
 import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
 import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
@@ -175,7 +176,6 @@ public class CSGameMap extends BaseMap implements IConfigureMap<CSGameMap>{
     private int overCount = 0;
     private boolean isWaitingOverTimeVote = false;
     private VoteObj voteObj = null;
-    private SpawnPointData matchEndTeleportPoint = null;
     private int autoStartTimer = 0;
     private boolean autoStartFirstMessageFlag = false;
 
@@ -348,7 +348,6 @@ public class CSGameMap extends BaseMap implements IConfigureMap<CSGameMap>{
                     csGameMap.sendPacketToAllPlayer(new PxDeathCompatS2CPacket(player.getId()));
                 }
                 csGameMap.handlePlayerDeathMessage(player,event.getSource());
-                csGameMap.handlePlayerDeath(player,event.getSource().getEntity());
                 csGameMap.sendPacketToJoinedPlayer(player,new FPSMatchRespawnS2CPacket(),true);
                 event.setCanceled(true);
             }
@@ -1091,7 +1090,7 @@ public class CSGameMap extends BaseMap implements IConfigureMap<CSGameMap>{
         // 构建MVP事件并发布
         MvpReason originalMvpReason = new MvpReason.Builder(mvpData.uuid())
                 .setMvpReason(Component.literal(mvpData.reason()))
-                .setPlayerName(mapTeams.playerName.get(mvpData.uuid()))
+                .setPlayerName(mapTeams.playerName.get(mvpData.uuid()).copy())
                 .setTeamName(Component.literal(winnerTeam.name.toUpperCase(Locale.ROOT)))
                 .build();
 
@@ -1585,12 +1584,13 @@ public class CSGameMap extends BaseMap implements IConfigureMap<CSGameMap>{
     }
 
     public void teleportPlayerToMatchEndPoint(){
-        if (this.matchEndTeleportPoint == null ) return;
-        SpawnPointData data = this.matchEndTeleportPoint;
-        this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> this.getPlayerByUUID(uuid).ifPresent(player->{
-            teleportToPoint(player, data);
-            player.setGameMode(GameType.ADVENTURE);
-        })));
+        getCapabilityMap().get(GameEndTeleportCapability.class).ifPresent(cap->{
+                    SpawnPointData data = cap.getPoint();
+            this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> this.getPlayerByUUID(uuid).ifPresent(player->{
+                teleportToPoint(player, data);
+                player.setGameMode(FPSMConfig.common.autoAdventureMode.get() ? GameType.ADVENTURE : GameType.SURVIVAL);
+            })));
+        });
     }
 
     /**
@@ -1793,19 +1793,9 @@ public class CSGameMap extends BaseMap implements IConfigureMap<CSGameMap>{
                         this.isWaitingWinner
                 )
         );
-        for(UUID uuid : this.getMapTeams().getJoinedPlayersWithSpec()){
-            this.getPlayerByUUID(uuid).ifPresent(player-> {
-                this.sendPacketToJoinedPlayer(player, packet, true);
-                for (ServerTeam team : this.getMapTeams().getTeamsWithSpec()) {
-                    for (UUID existingPlayerId : team.getPlayers().keySet()) {
-                        team.getPlayerData(existingPlayerId).ifPresent(playerData -> {
-                            var p1 = new GameTabStatsS2CPacket(existingPlayerId, playerData, team.name);
-                            this.sendPacketToJoinedPlayer(player, p1, true);
-                        });
-                    }
-                }
-            });
-        }
+
+        this.getMapTeams().syncToAll(packet);
+        this.getMapTeams().sync();
 
         Map<UUID, WeaponData> weaponDataMap = new HashMap<>();
 
@@ -1867,15 +1857,6 @@ public class CSGameMap extends BaseMap implements IConfigureMap<CSGameMap>{
         this.getMapTeams().getJoinedPlayers().forEach((data)-> data.getPlayer().ifPresent(FPSMUtil::resetAllGunAmmo));
     }
 
-    @Nullable
-    public SpawnPointData getMatchEndTeleportPoint() {
-        return matchEndTeleportPoint;
-    }
-
-    public void setMatchEndTeleportPoint(SpawnPointData matchEndTeleportPoint) {
-        this.matchEndTeleportPoint = matchEndTeleportPoint;
-    }
-
     public void handlePlayerDeathMessage(ServerPlayer player, DamageSource source) {
         Player attacker;
         if (source.getEntity() instanceof Player p) {
@@ -1886,6 +1867,7 @@ public class CSGameMap extends BaseMap implements IConfigureMap<CSGameMap>{
         } else {
             attacker = null;
         }
+        handlePlayerDeath(player,attacker);
 
         if (attacker == null) return;
 
@@ -1906,21 +1888,6 @@ public class CSGameMap extends BaseMap implements IConfigureMap<CSGameMap>{
         giveEco(player, attacker, itemStack);
 
         DeathMessage.Builder builder = new DeathMessage.Builder(attacker, player, itemStack);
-        Map<UUID, Float> hurtDataMap = this.getMapTeams().getDamageMap().get(player.getUUID());
-
-        if (hurtDataMap != null && !hurtDataMap.isEmpty()) {
-            hurtDataMap.entrySet().stream()
-                    .filter(entry -> entry.getValue() > player.getMaxHealth() / 4)
-                    .max(Map.Entry.comparingByValue())
-                    .flatMap(entry -> this.getMapTeams().getTeamByPlayer(entry.getKey())
-                            .flatMap(team -> team.getPlayerData(entry.getKey())))
-                    .ifPresent(playerData -> {
-                        if (!attacker.getUUID().equals(playerData.getOwner())) {
-                            builder.setAssist(playerData.name(), playerData.getOwner());
-                        }
-                    });
-        }
-
         DeathMessageS2CPacket killMessageS2CPacket = new DeathMessageS2CPacket(builder.build());
         this.sendPacketToAllPlayer(killMessageS2CPacket);
     }
@@ -1935,14 +1902,16 @@ public class CSGameMap extends BaseMap implements IConfigureMap<CSGameMap>{
             return;
         }
 
+        if(attacker.getUUID().equals(player.getUUID())) return;
+
         if (killerTeam.getFixedName().equals(deadTeam.getFixedName())){
-            ShopCapability.getPlayerShopData(this,player.getUUID()).ifPresent(shopData -> {
+            ShopCapability.getPlayerShopData(this,attacker.getUUID()).ifPresent(shopData -> {
                 shopData.reduceMoney(300);
                 attacker.displayClientMessage(Component.translatable("blockoffensive.kill.message.teammate",300),false);
             });
         }else{
             int reward = getRewardByItem(itemStack);
-            ShopCapability.getPlayerShopData(this,player.getUUID()).ifPresent(shopData -> {
+            ShopCapability.getPlayerShopData(this,attacker.getUUID()).ifPresent(shopData -> {
                 shopData.addMoney(reward);
                 attacker.displayClientMessage(Component.translatable("blockoffensive.kill.message.enemy",reward),false);
             });
@@ -1996,7 +1965,6 @@ public class CSGameMap extends BaseMap implements IConfigureMap<CSGameMap>{
                     this.syncInventory(player);
                 });
             });
-
             Map<UUID, Float> hurtDataMap = teams.getDamageMap().get(player.getUUID());
             if (hurtDataMap != null && !hurtDataMap.isEmpty()) {
                 hurtDataMap.entrySet().stream()
@@ -2015,7 +1983,7 @@ public class CSGameMap extends BaseMap implements IConfigureMap<CSGameMap>{
 
             }
 
-            if(from == null) return;
+            if(from == null || from.getUUID().equals(player.getUUID())) return;
             teams.getTeamByPlayer(from)
                     .flatMap(killerPlayerTeam -> killerPlayerTeam.getPlayerData(from.getUUID()))
                     .ifPresent(PlayerData::addKills);

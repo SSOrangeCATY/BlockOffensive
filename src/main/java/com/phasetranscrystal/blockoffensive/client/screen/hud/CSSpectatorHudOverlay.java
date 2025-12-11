@@ -281,7 +281,7 @@ public final class CSSpectatorHudOverlay {
             // 加载新名片
             File namecardFile = NamecardResolver.resolve(targetUuid);
             if (namecardFile != null && namecardFile.isFile()) {
-                ResourceLocation textureId = new ResourceLocation(FPSMatch.MODID, "namecard/" + targetUuid);
+                ResourceLocation textureId = ResourceLocation.tryBuild(FPSMatch.MODID, "namecard/" + targetUuid);
                 NamecardTexture texture = new NamecardTexture(namecardFile, textureId);
 
                 minecraft.execute(() -> {

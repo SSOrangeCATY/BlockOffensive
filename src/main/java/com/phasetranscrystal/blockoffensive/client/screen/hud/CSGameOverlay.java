@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -78,7 +79,7 @@ public class CSGameOverlay {
 
         // 渲染CT存活信息（左侧）
         int ctLivingCount = CSClientData.getLivingWithTeam("ct");
-        String ctLivingStr = String.valueOf(ctLivingCount);
+        Component ctLivingStr = Component.literal(String.valueOf(ctLivingCount)).withStyle(ChatFormatting.BOLD);
 
         // CT背景渐变
         int gradientStartY = (int)(startY + timeBarHeight + scaleFactor);
@@ -120,7 +121,7 @@ public class CSGameOverlay {
 
         // CT "存活" 文字
         float smallScale = numberScale * 0.5f; // 恢复为数字大小的一半
-        String livingText = "存活";
+        Component livingText = Component.literal("存活").withStyle(ChatFormatting.BOLD);
         int smallTextWidth = font.width(livingText);
 
         guiGraphics.pose().pushPose();
@@ -139,7 +140,7 @@ public class CSGameOverlay {
 
         // 渲染T存活信息（右侧）
         int tLivingCount = CSClientData.getLivingWithTeam("t");
-        String tLivingStr = String.valueOf(tLivingCount);
+        Component tLivingStr = Component.literal(String.valueOf(tLivingCount)).withStyle(ChatFormatting.BOLD);
 
         // T背景渐变
         // 上半部分
@@ -193,7 +194,7 @@ public class CSGameOverlay {
         guiGraphics.pose().popPose();
 
         // 渲染时间
-        String roundTime = getRoundTimeString();
+        Component roundTime = getRoundTimeString();
         float timeScale = scaleFactor * 1.2f;
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(centerX, startY + (float) timeBarHeight /2, 0);
@@ -209,7 +210,7 @@ public class CSGameOverlay {
         float scoreScale = scaleFactor * 1.2f;
 
         // CT比分
-        String ctScore = String.valueOf(CSClientData.cTWinnerRounds);
+        Component ctScore = Component.literal(String.valueOf(CSClientData.cTWinnerRounds)).withStyle(ChatFormatting.BOLD);
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(
                 centerX - (float) timeAreaWidth /2 - scaleFactor, // 左侧分数栏中心，向左偏移1px
@@ -226,7 +227,7 @@ public class CSGameOverlay {
         guiGraphics.pose().popPose();
 
         // T比分
-        String tScore = String.valueOf(CSClientData.tWinnerRounds);
+        Component tScore = Component.literal(String.valueOf(CSClientData.tWinnerRounds)).withStyle(ChatFormatting.BOLD);
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(
                 centerX + (float) timeAreaWidth /2 + scaleFactor, // 右侧分数栏中心，向右偏移1px
@@ -258,21 +259,24 @@ public class CSGameOverlay {
 
         boolean showInfo = CSClientData.isWaiting;
 
-        renderAvatarRow(guiGraphics, teamPlayers.get("ct"),
-                ctBoxX - offset, startY, boxWidth,
-                avatarSize, avatarGap, true,showInfo,
-                localTeam, "ct",scaleFactor);
+        if(teamPlayers.containsKey("ct")) {
+            renderAvatarRow(guiGraphics, teamPlayers.get("ct"),
+                    ctBoxX - offset, startY, boxWidth,
+                    avatarSize, avatarGap, true,showInfo,
+                    localTeam, "ct",scaleFactor);
+        }
 
-        renderAvatarRow(guiGraphics, teamPlayers.get("t"),
-                tBoxX + offset, startY, boxWidth,
-                avatarSize, avatarGap, false,showInfo,
-                localTeam, "t",scaleFactor);
+        if(teamPlayers.containsKey("t")) {
+            renderAvatarRow(guiGraphics, teamPlayers.get("t"),
+                    tBoxX + offset, startY, boxWidth,
+                    avatarSize, avatarGap, false,showInfo,
+                    localTeam, "t",scaleFactor);
+        }
     }
 
-    private String getRoundTimeString() {
+    private Component getRoundTimeString() {
         if(CSClientData.time == -1 && !CSClientData.isWaitingWinner) {
-            textRoundTimeColor = color(240,40,40);
-            return "--:--";
+            return Component.literal("——:——").withStyle(ChatFormatting.BOLD);
         }
         return getCSGameTime();
     }
@@ -334,11 +338,6 @@ public class CSGameOverlay {
         guiGraphics.pose().scale(2,2,0);
         guiGraphics.drawString(font, "$ "+CSClientData.getMoney(), 0,0, FPSMClient.getGlobalData().equalsTeam("ct") ? textCTWinnerRoundsColor : textTWinnerRoundsColor);
         guiGraphics.pose().popPose();
-    }
-
-    public static boolean getDemolitionProgressTextStyle(int index){
-        float i = (float) index / 7;
-        return CSClientData.dismantleBombProgress >= i;
     }
 
     private int getColorIndexForPlayer(UUID uuid) {
@@ -432,27 +431,30 @@ public class CSGameOverlay {
         float textScale = 0.8f * scale;
         int xCenter = avX + (smallAvSize/2);
         int nameY = avY - 8;
-        int maxWidth = avX+width - 1;
-        guiGraphics.fill(avX-1, nameY, maxWidth,nameY+6, -1072689136);
+        guiGraphics.fill(avX-1, nameY, avX + width - 1, nameY+6, -1072689136);
 
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(xCenter, nameY - 1, 0);
         guiGraphics.pose().scale(textScale, textScale, 1f);
+
         int nameWidth = font.width(nameStr);
         if(nameWidth < width) {
-            guiGraphics.drawString(font, nameStr, -nameWidth/2, 0, isCT ? textCTWinnerRoundsColor:textTWinnerRoundsColor, false);
+            guiGraphics.drawString(font, nameStr, -nameWidth/2, 0,
+                    isCT ? textCTWinnerRoundsColor:textTWinnerRoundsColor, false);
         }else{
             StringBuilder modified = new StringBuilder();
             for (char c : nameStr.toCharArray()){
-                int fw = font.width(modified.toString());
-                if(font.width(modified.toString()) + 2 < width) {
+                int currentWidth = font.width(modified.toString());
+                if(currentWidth + font.width(String.valueOf(c)) + 2 < width) {
                     modified.append(c);
                 }else{
                     modified.append("..");
-                    guiGraphics.drawString(font, modified.toString(), -fw/2, 0, isCT ? textCTWinnerRoundsColor:textTWinnerRoundsColor, false);
                     break;
                 }
             }
+            int truncatedWidth = font.width(modified.toString());
+            guiGraphics.drawString(font, modified.toString(), -truncatedWidth/2, 0,
+                    isCT ? textCTWinnerRoundsColor:textTWinnerRoundsColor, false);
         }
         guiGraphics.pose().popPose();
     }
@@ -485,7 +487,7 @@ public class CSGameOverlay {
                                  int centerX, int startY ,float scaleFactor)
     {
         int moneyValue = FPSMClient.getGlobalData().getPlayerMoney(uuid);
-        String moneyStr = "$" + moneyValue;
+        Component moneyStr = Component.literal("$" + moneyValue).withStyle(ChatFormatting.BOLD);
 
         float textScale = 0.8f * scaleFactor;
 
@@ -539,8 +541,8 @@ public class CSGameOverlay {
         gg.fill(startX, startY, startX+fillW, endY, RenderUtil.color(255,255,255));
     }
 
-    public static String getCSGameTime(){
-        return formatTime(CSClientData.time / 20);
+    public static Component getCSGameTime(){
+        return Component.literal(formatTime(CSClientData.time / 20)).withStyle(ChatFormatting.BOLD);
     }
 
     /**

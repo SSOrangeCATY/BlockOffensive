@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 
 public class CSGameTabRenderer implements TabRenderer {
-    public static final ResourceLocation GUI_ICONS_LOCATION = new ResourceLocation("textures/gui/icons.png");
+    public static final ResourceLocation GUI_ICONS_LOCATION = ResourceLocation.tryBuild("minecraft","textures/gui/icons.png");
     private final Minecraft minecraft = Minecraft.getInstance();
 
     @Override
@@ -95,35 +95,35 @@ public class CSGameTabRenderer implements TabRenderer {
         currentHeaderX += avatarSize + nameWidth + padding;
 
         // 金钱
-        Component moneyText = Component.translatable("fpsmatch.tab.header.money");
+        Component moneyText = Component.translatable("blockoffensive.tab.header.money");
         guiGraphics.drawString(minecraft.font, moneyText,
                 currentHeaderX + (moneyWidth - minecraft.font.width(moneyText)) / 2, headerY, 0xFFFFFFFF);
         currentHeaderX += moneyWidth;
 
         // K/D/A
-        Component killsText = Component.translatable("fpsmatch.tab.header.kills");
+        Component killsText = Component.translatable("blockoffensive.tab.header.kills");
         guiGraphics.drawString(minecraft.font, killsText,
                 currentHeaderX + (killWidth - minecraft.font.width(killsText)) / 2, headerY, 0xFFFFFFFF);
         currentHeaderX += killWidth;
 
-        Component deathsText = Component.translatable("fpsmatch.tab.header.deaths");
+        Component deathsText = Component.translatable("blockoffensive.tab.header.deaths");
         guiGraphics.drawString(minecraft.font, deathsText,
                 currentHeaderX + (deathWidth - minecraft.font.width(deathsText)) / 2, headerY, 0xFFFFFFFF);
         currentHeaderX += deathWidth;
 
-        Component assistsText = Component.translatable("fpsmatch.tab.header.assists");
+        Component assistsText = Component.translatable("blockoffensive.tab.header.assists");
         guiGraphics.drawString(minecraft.font, assistsText,
                 currentHeaderX + (assistWidth - minecraft.font.width(assistsText)) / 2, headerY, 0xFFFFFFFF);
         currentHeaderX += assistWidth;
 
         // 爆头率
-        Component headshotText = Component.translatable("fpsmatch.tab.header.headshot");
+        Component headshotText = Component.translatable("blockoffensive.tab.header.headshot");
         guiGraphics.drawString(minecraft.font, headshotText,
                 currentHeaderX + (headshotWidth - minecraft.font.width(headshotText)) / 2, headerY, 0xFFFFFFFF);
         currentHeaderX += headshotWidth;
 
         // 伤害（直接跟在爆头率后面）
-        Component damageText = Component.translatable("fpsmatch.tab.header.damage");
+        Component damageText = Component.translatable("blockoffensive.tab.header.damage");
         guiGraphics.drawString(minecraft.font, damageText,
                 currentHeaderX + (damageWidth - minecraft.font.width(damageText)) / 2, headerY, 0xFFFFFFFF);
 

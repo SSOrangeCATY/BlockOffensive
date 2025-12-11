@@ -18,12 +18,12 @@ import org.joml.Vector3d;
 public class HitIndicationCompat {
 
     public static class Renderer {
-        private static final ResourceLocation INDICATOR = new ResourceLocation("hitindication", "textures/hit/indicator.png");
-        private static final ResourceLocation EDGE_INDICATOR = new ResourceLocation("hitindication", "textures/hit/edge_indicator.png");
-        private static final ResourceLocation INDICATOR_BLOCK = new ResourceLocation("hitindication", "textures/hit/indicator_block.png");
-        private static final ResourceLocation ND_INDICATOR = new ResourceLocation("hitindication", "textures/hit/nd_person_damage.png");
-        private static final ResourceLocation[] MARKER_CRIT = new ResourceLocation[]{new ResourceLocation("hitindication", "textures/hit/marker_crit1.png"), new ResourceLocation("hitindication", "textures/hit/marker_crit2.png"), new ResourceLocation("hitindication", "textures/hit/marker_crit3.png"), new ResourceLocation("hitindication", "textures/hit/marker_crit4.png")};
-        private static final ResourceLocation[] MARKER_KILL = new ResourceLocation[]{new ResourceLocation("hitindication", "textures/hit/marker_kill1.png"), new ResourceLocation("hitindication", "textures/hit/marker_kill2.png"), new ResourceLocation("hitindication", "textures/hit/marker_kill3.png"), new ResourceLocation("hitindication", "textures/hit/marker_kill4.png")};
+        private static final ResourceLocation INDICATOR = ResourceLocation.tryBuild("hitindication", "textures/hit/indicator.png");
+        private static final ResourceLocation EDGE_INDICATOR = ResourceLocation.tryBuild("hitindication", "textures/hit/edge_indicator.png");
+        private static final ResourceLocation INDICATOR_BLOCK = ResourceLocation.tryBuild("hitindication", "textures/hit/indicator_block.png");
+        private static final ResourceLocation ND_INDICATOR = ResourceLocation.tryBuild("hitindication", "textures/hit/nd_person_damage.png");
+        private static final ResourceLocation[] MARKER_CRIT = new ResourceLocation[]{ResourceLocation.tryBuild("hitindication", "textures/hit/marker_crit1.png"), ResourceLocation.tryBuild("hitindication", "textures/hit/marker_crit2.png"), ResourceLocation.tryBuild("hitindication", "textures/hit/marker_crit3.png"), ResourceLocation.tryBuild("hitindication", "textures/hit/marker_crit4.png")};
+        private static final ResourceLocation[] MARKER_KILL = new ResourceLocation[]{ResourceLocation.tryBuild("hitindication", "textures/hit/marker_kill1.png"), ResourceLocation.tryBuild("hitindication", "textures/hit/marker_kill2.png"), ResourceLocation.tryBuild("hitindication", "textures/hit/marker_kill3.png"), ResourceLocation.tryBuild("hitindication", "textures/hit/marker_kill4.png")};
         private static String lastHitColorString = "FF0000";
         private static String lastBlockColorString = "0000FF";
         private static float hitColorR = 1.0F;

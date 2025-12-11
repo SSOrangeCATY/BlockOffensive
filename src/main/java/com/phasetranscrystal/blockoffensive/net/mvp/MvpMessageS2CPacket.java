@@ -26,11 +26,11 @@ public class MvpMessageS2CPacket {
 
     public static MvpMessageS2CPacket decode(FriendlyByteBuf buf) {
         return new MvpMessageS2CPacket(new MvpReason.Builder(buf.readUUID())
-                .setTeamName(buf.readComponent())
-                .setPlayerName(buf.readComponent())
-                .setMvpReason(buf.readComponent())
-                .setExtraInfo1(buf.readComponent())
-                .setExtraInfo2(buf.readComponent())
+                .setTeamName(buf.readComponent().copy())
+                .setPlayerName(buf.readComponent().copy())
+                .setMvpReason(buf.readComponent().copy())
+                .setExtraInfo1(buf.readComponent().copy())
+                .setExtraInfo2(buf.readComponent().copy())
                 .build());
     }
 

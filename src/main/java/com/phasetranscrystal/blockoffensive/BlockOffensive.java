@@ -32,7 +32,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 public class BlockOffensive {
     public static final String MODID = "blockoffensive";
     private static final String PROTOCOL_VERSION = "1.3.0";
-    private static final NetworkPacketRegister PACKET_REGISTER = new NetworkPacketRegister(new ResourceLocation(MODID, "main"),PROTOCOL_VERSION);
+    private static final NetworkPacketRegister PACKET_REGISTER = new NetworkPacketRegister(ResourceLocation.tryBuild(MODID, "main"),PROTOCOL_VERSION);
     public static final SimpleChannel INSTANCE = PACKET_REGISTER.getChannel();
 
     @SuppressWarnings("removal")

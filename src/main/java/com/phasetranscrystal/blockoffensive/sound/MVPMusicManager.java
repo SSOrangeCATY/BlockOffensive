@@ -40,7 +40,7 @@ public class MVPMusicManager {
     }
 
     public ResourceLocation getMvpMusic(String uuid){
-        return this.mvpMusicMap.getOrDefault(uuid, new ResourceLocation("fpsmatch:empty"));
+        return this.mvpMusicMap.getOrDefault(uuid, ResourceLocation.tryBuild("fpsmatch", "empty"));
     }
 
     public boolean playerHasMvpMusic(String uuid){
