@@ -14,3 +14,8 @@ plugins {
 }
 
 rootProject.name = 'blockoffensive'
+includeBuild("FPSMatch"){
+    dependencySubstitution {
+        substitute module('com.phasetranscrystal:fpsmatch') using project(':')
+    }
+}

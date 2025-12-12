@@ -129,9 +129,15 @@ dependencies {
     implementation fg.deobf("icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_forge_version}")
     implementation fg.deobf("maven.modrinth:timeless-and-classics-zero:${tacz_version}")
     implementation fg.deobf("curse.maven:tacz-lesraisins-tactical-equipements-1273094:6584599")
-    implementation fg.deobf("com.phasetranscrystal:fpsmatch:${fpsm_version}"){
+    implementation(fg.deobf("com.phasetranscrystal:fpsmatch:unobf") {
         transitive = false
-    }
+        attributes {
+            attribute(
+                    Usage.USAGE_ATTRIBUTE,
+                    objects.named(Usage, "java-runtime-unobf")
+            )
+        }
+    })
 
     implementation fg.deobf("maven.modrinth:counterstrikegrenade:${cs_grenade_version}")
     runtimeOnly fg.deobf("maven.modrinth:kotlin-for-forge:${kotlin_forge_version}")
@@ -148,7 +154,7 @@ tasks.named('processResources', ProcessResources).configure {
     var replaceProperties = [minecraft_version   : minecraft_version, minecraft_version_range: minecraft_version_range,
                              forge_version       : forge_version, forge_version_range: forge_version_range,
                              loader_version_range: loader_version_range,
-                             fpsm_version_range: fpsm_version_range,
+                             fpsm_version_range  : fpsm_version_range,
                              mod_id              : mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
                              mod_authors         : mod_authors, mod_description: mod_description,]
 
