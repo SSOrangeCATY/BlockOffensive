@@ -197,6 +197,7 @@ public class CSGameMap extends BaseMap implements IConfigureMap<CSGameMap>{
         this.tTeam.setColor(T_COLOR);
         CapabilityMap.getMapCapability(this, DemolitionModeCapability.class).ifPresent(cap -> cap.setDemolitionTeam(this.tTeam));
     }
+
     /**
      * 切换两个队伍的阵营
      */
@@ -1702,7 +1703,7 @@ public class CSGameMap extends BaseMap implements IConfigureMap<CSGameMap>{
         }
     }
 
-    public void sendAllPlayerMessage(Component message,boolean actionBar){
+    public void sendAllPlayerMessage(Component message, boolean actionBar){
         this.getMapTeams().getJoinedPlayers().forEach(data -> data.getPlayer().ifPresent(player -> player.displayClientMessage(message,actionBar)));
     }
 
