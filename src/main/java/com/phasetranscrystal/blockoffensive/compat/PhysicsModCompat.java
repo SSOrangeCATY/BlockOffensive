@@ -23,6 +23,16 @@ public class PhysicsModCompat {
         Entity entity = world.getEntity(EntityId);
         if (entity instanceof LivingEntity living && RenderSystem.isOnRenderThread() && ConfigMobs.getMobSetting(entity).getType() != MobPhysicsType.OFF) {
             PhysicsMod.blockifyEntity(living.getCommandSenderWorld(), living);
+            frozenAll();
+        }
+    }
+
+    public static void frozenAll(){
+        for(PhysicsMod physicsMod : PhysicsMod.instances.values()){
+            PhysicsWorld world = physicsMod.getPhysicsWorld();
+            for (Ragdoll ragdoll : world.getRagdolls()) {
+                ragdoll.setFrozen(true);
+            }
         }
     }
 
