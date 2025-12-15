@@ -1379,6 +1379,7 @@ public class CSGameMap extends CSMap{
      * 同步游戏设置到客户端（比分/时间等）
      * @see CSGameSettingsS2CPacket
      */
+    @Override
     public void syncToClient() {
         this.syncToClient(true);
     }

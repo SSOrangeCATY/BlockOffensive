@@ -81,7 +81,7 @@ public abstract class CSMap extends BaseMap implements IConfigureMap<CSMap> {
     private final ServerTeam ctTeam;
     private final ServerTeam tTeam;
 
-    private VoteObj voteObj = null;
+    private VoteObj voteObj;
 
     private int autoStartTimer = 0;
     private boolean autoStartFirstMessageFlag = false;
