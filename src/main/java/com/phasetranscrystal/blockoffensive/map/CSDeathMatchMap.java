@@ -444,7 +444,7 @@ public class CSDeathMatchMap extends CSMap {
     /**
      * 写入地图数据到数据管理器
      */
-    public static void write(FPSMDataManager manager) {
+    public static void save(FPSMDataManager manager) {
         FPSMCore.getInstance().getMapByClass(CSDeathMatchMap.class)
                 .forEach((map -> {
                     map.saveConfig();

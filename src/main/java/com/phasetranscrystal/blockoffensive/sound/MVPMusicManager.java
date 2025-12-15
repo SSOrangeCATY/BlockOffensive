@@ -6,7 +6,6 @@ import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMSaveDataEvent;
 import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.persistence.SaveHolder;
-import com.phasetranscrystal.fpsmatch.core.persistence.datafixer.DataFixer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -51,8 +50,8 @@ public class MVPMusicManager {
     public static void onDataRegister(RegisterFPSMSaveDataEvent event){
         event.registerData(MVPMusicManager.class,"MvpMusicData",
                 new SaveHolder.Builder<>(CODEC)
-                        .withReadHandler(MVPMusicManager::read)
-                        .withWriteHandler(MVPMusicManager::write)
+                        .withLoadHandler(MVPMusicManager::read)
+                        .withSaveHandler(MVPMusicManager::write)
                         .withMergeHandler(MVPMusicManager::merge)
                         .withVersion(0)
                         .isGlobal(true)

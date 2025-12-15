@@ -3,7 +3,6 @@ package com.phasetranscrystal.blockoffensive.map;
 import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.client.data.WeaponData;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
-import com.phasetranscrystal.blockoffensive.event.CSGamePlayerJoinEvent;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.item.CompositionC4;
 import com.phasetranscrystal.blockoffensive.net.CSGameSettingsS2CPacket;
@@ -59,7 +58,6 @@ import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Team;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
@@ -416,7 +414,6 @@ public abstract class CSMap extends BaseMap {
         MapTeams mapTeams = this.getMapTeams();
         mapTeams.joinTeam(teamName, player);
         mapTeams.getTeamByPlayer(player).ifPresent(team -> {
-            MinecraftForge.EVENT_BUS.post(new CSGamePlayerJoinEvent(this,team,player));
             // 同步游戏类型和地图信息
             this.pullGameInfo(player);
 
@@ -650,10 +647,6 @@ public abstract class CSMap extends BaseMap {
 
         CSGameWeaponDataS2CPacket weaponDataS2CPacket = new CSGameWeaponDataS2CPacket(weaponDataMap);
         this.sendPacketToSpecPlayer(weaponDataS2CPacket);
-    }
-
-    public void read() {
-        FPSMCore.getInstance().registerMap(this.getGameType(),this);
     }
 
     @Override

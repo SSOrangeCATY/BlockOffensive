@@ -31,15 +31,15 @@ public class MapRegister {
 
         event.registerData(CSGameMap.class,"CSGameMaps",
                 new SaveHolder.Builder<>(CSGameMap.CODEC)
-                        .withReadHandler(CSGameMap::read)
-                        .withWriteHandler(CSGameMap::write)
+                        .withLoadHandler(CSGameMap::load)
+                        .withSaveHandler(CSGameMap::save)
                         .build()
         );
 
         event.registerData(CSDeathMatchMap.class,"CSDeathMatchMaps",
                 new SaveHolder.Builder<>(CSDeathMatchMap.CODEC)
-                        .withReadHandler(CSDeathMatchMap::read)
-                        .withWriteHandler(CSDeathMatchMap::write)
+                        .withLoadHandler(CSDeathMatchMap::load)
+                        .withSaveHandler(CSDeathMatchMap::save)
                         .build()
         );
     }

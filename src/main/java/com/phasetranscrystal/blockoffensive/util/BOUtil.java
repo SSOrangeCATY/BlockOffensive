@@ -119,6 +119,8 @@ public class BOUtil {
     }
 
     public static boolean isFrozen(Vector3d vector3d) {
+        if(vector3d == null) return false;
+
         final double EPSILON = 1e-6f;
 
         return Math.abs(vector3d.x) < EPSILON &&

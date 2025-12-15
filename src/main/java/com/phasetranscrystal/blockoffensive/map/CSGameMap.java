@@ -7,7 +7,6 @@ import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.data.MvpReason;
 import com.phasetranscrystal.blockoffensive.event.CSGamePlayerGetMvpEvent;
-import com.phasetranscrystal.blockoffensive.event.CSGamePlayerJoinEvent;
 import com.phasetranscrystal.blockoffensive.event.CSGameRoundEndEvent;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.item.BombDisposalKit;
@@ -25,21 +24,18 @@ import com.phasetranscrystal.fpsmatch.common.capability.map.GameEndTeleportCapab
 import com.phasetranscrystal.fpsmatch.common.capability.team.*;
 import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
 import com.phasetranscrystal.fpsmatch.common.packet.*;
-import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.core.*;
 import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
 import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
-import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.entity.BlastBombEntity;
 import com.phasetranscrystal.fpsmatch.core.event.FPSMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.*;
 import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
-import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
@@ -96,7 +92,7 @@ public class CSGameMap extends CSMap{
             ).fieldOf("teams").forGetter(csGameMap -> csGameMap.getMapTeams().getData())
     ).apply(instance, CSGameMap::new));
 
-    public static void write(FPSMDataManager manager){
+    public static void save(FPSMDataManager manager){
         FPSMCore.getInstance().getMapByClass(CSGameMap.class)
                 .forEach((map -> {
                     map.saveConfig();
@@ -262,21 +258,7 @@ public class CSGameMap extends CSMap{
 
     @Override
     public void join(String teamName, ServerPlayer player) {
-        FPSMCore.checkAndLeaveTeam(player);
-        MapTeams mapTeams = this.getMapTeams();
-        mapTeams.joinTeam(teamName, player);
-        mapTeams.getTeamByPlayer(player).ifPresent(team -> {
-            MinecraftForge.EVENT_BUS.post(new CSGamePlayerJoinEvent(this,team,player));
-            // 同步游戏类型和地图信息
-            this.pullGameInfo(player);
-
-            // 如果游戏已经开始，设置玩家为旁观者
-            if(this.isStart){
-                player.setGameMode(GameType.SPECTATOR);
-                team.getPlayerData(player.getUUID()).ifPresent(data -> data.setLiving(false));
-                setBystander(player);
-            }
-        });
+        super.join(teamName, player);
     }
 
     @Override
