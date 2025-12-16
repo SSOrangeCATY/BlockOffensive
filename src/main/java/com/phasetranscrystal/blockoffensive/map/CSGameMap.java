@@ -84,6 +84,7 @@ import java.util.function.Function;
  */
 @Mod.EventBusSubscriber(modid = BlockOffensive.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CSGameMap extends CSMap{
+    public static final String TYPE = "cs";
     /**
      * Codec序列化配置（用于地图数据保存/加载）
      */
@@ -297,7 +298,7 @@ public class CSGameMap extends CSMap{
 
     @Override
     public String getGameType() {
-        return "cs";
+        return TYPE;
     }
 
 
