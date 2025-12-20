@@ -18,14 +18,15 @@ public class MapRegister {
 
     @SubscribeEvent
     public static void onMapRegister(RegisterFPSMapEvent event){
-        event.registerGameType("cs", CSGameMap::new);
-        event.registerGameType("csdm", CSDeathMatchMap::new);
-    }
-    @SubscribeEvent
-    public static void onDataRegister(RegisterFPSMSaveDataEvent event){
         FPSMShop.registerShopType("cs", ItemType.class);
         FPSMShop.registerShopType("csdm", ItemType.class);
 
+        event.registerGameType("cs", CSGameMap::new);
+        event.registerGameType("csdm", CSDeathMatchMap::new);
+    }
+
+    @SubscribeEvent
+    public static void onDataRegister(RegisterFPSMSaveDataEvent event){
         DataFixer.getInstance().registerJsonFixer(CSGameMap.class,0, new CSGameMapFixer.OldV0());
 
         event.registerData(CSGameMap.class,"CSGameMaps",

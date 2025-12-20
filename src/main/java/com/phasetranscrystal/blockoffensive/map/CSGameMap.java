@@ -1,11 +1,11 @@
 package com.phasetranscrystal.blockoffensive.map;
 
+import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.data.MvpReason;
-import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.blockoffensive.event.CSGamePlayerGetMvpEvent;
 import com.phasetranscrystal.blockoffensive.event.CSGamePlayerJoinEvent;
 import com.phasetranscrystal.blockoffensive.event.CSGameRoundEndEvent;
@@ -24,7 +24,6 @@ import com.phasetranscrystal.fpsmatch.common.capability.map.DemolitionModeCapabi
 import com.phasetranscrystal.fpsmatch.common.capability.map.GameEndTeleportCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.team.*;
 import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
-import com.phasetranscrystal.fpsmatch.common.entity.drop.MatchDropEntity;
 import com.phasetranscrystal.fpsmatch.common.packet.*;
 import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.core.*;
@@ -57,18 +56,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.world.Difficulty;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.scores.Team;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
@@ -99,19 +94,7 @@ public class CSGameMap extends CSMap{
                     Codec.STRING,
                     CapabilityMap.Wrapper.CODEC
             ).fieldOf("teams").forGetter(csGameMap -> csGameMap.getMapTeams().getData())
-    ).apply(instance, (mapName, mapArea, serverLevel, capability, teamsData) -> {
-        // 创建新的CSGameMap实例
-        CSGameMap gameMap = new CSGameMap(
-                FPSMCore.getInstance().getServer().getLevel(ResourceKey.create(Registries.DIMENSION,serverLevel)),
-                mapName,
-                mapArea
-        );
-
-        gameMap.getCapabilityMap().write(capability);
-        gameMap.getMapTeams().writeData(teamsData);
-
-        return gameMap;
-    }));
+    ).apply(instance, CSGameMap::new));
 
     public static void write(FPSMDataManager manager){
         FPSMCore.getInstance().getMapByClass(CSGameMap.class)
@@ -164,6 +147,12 @@ public class CSGameMap extends CSMap{
         super(serverLevel,mapName,areaData, MAP_CAPABILITIES,TEAM_CAPABILITIES);
         this.registerCommands();
         CapabilityMap.getMapCapability(this, DemolitionModeCapability.class).ifPresent(cap -> cap.setDemolitionTeam(this.getT()));
+    }
+
+    private CSGameMap(String mapName,AreaData areaData,ResourceLocation serverLevel, Map<String, JsonElement> capabilities, Map<String, CapabilityMap.Wrapper> teams) {
+        this(FPSMCore.getInstance().getServer().getLevel(ResourceKey.create(Registries.DIMENSION,serverLevel)), mapName, areaData);
+        this.getCapabilityMap().write(capabilities);
+        this.getMapTeams().writeData(teams);
     }
 
     private void registerCommands(){
@@ -318,7 +307,6 @@ public class CSGameMap extends CSMap{
         setTeamNameColors();
         if (this.isError) return false;
 
-        configureGameRules(serverLevel);
         resetGameCoreState();
 
         if (!this.setTeamSpawnPoints()) {
@@ -347,23 +335,6 @@ public class CSGameMap extends CSMap{
         MapTeams mapTeams = getMapTeams();
         mapTeams.setTeamNameColor(this, "ct", ChatFormatting.BLUE);
         mapTeams.setTeamNameColor(this, "t", ChatFormatting.YELLOW);
-    }
-
-    /**
-     * 配置游戏规则（基于BOConfig配置）
-     */
-    private void configureGameRules(ServerLevel serverLevel) {
-        GameRules gameRules = serverLevel.getGameRules();
-        gameRules.getRule(GameRules.RULE_KEEPINVENTORY).set(BOConfig.common.keepInventory.get(), null);
-        gameRules.getRule(GameRules.RULE_DO_IMMEDIATE_RESPAWN).set(BOConfig.common.immediateRespawn.get(), null);
-        gameRules.getRule(GameRules.RULE_DAYLIGHT).set(BOConfig.common.daylightCycle.get(), null);
-        gameRules.getRule(GameRules.RULE_WEATHER_CYCLE).set(BOConfig.common.weatherCycle.get(), null);
-        gameRules.getRule(GameRules.RULE_DOMOBSPAWNING).set(BOConfig.common.mobSpawning.get(), null);
-        gameRules.getRule(GameRules.RULE_NATURAL_REGENERATION).set(BOConfig.common.naturalRegeneration.get(), null);
-
-        if (BOConfig.common.hardDifficulty.get()) {
-            serverLevel.getServer().setDifficulty(Difficulty.HARD, true);
-        }
     }
 
 
@@ -629,13 +600,6 @@ public class CSGameMap extends CSMap{
     }
 
     /**
-     * 安全获取玩家商店数据
-     */
-    private Optional<ShopData<?>> getShopDataSafely(UUID playerUuid) {
-        return ShopCapability.getPlayerShopData(this, playerUuid);
-    }
-
-    /**
      * 统一发送金钱奖励消息
      */
     private void sendMoneyRewardMessage(ServerPlayer player, int amount, String reasonDesc) {
@@ -833,7 +797,7 @@ public class CSGameMap extends CSMap{
     }
 
     /**
-     * 处理失败方经济奖励（含连败补偿计算）
+     * 处理失败方经济奖励
      */
     private void processLoserEconomicReward(@NotNull ServerTeam loserTeam, @NotNull WinnerReason reason) {
         int compensationFactor = getCompensationFactorSafely(loserTeam);
@@ -1043,7 +1007,7 @@ public class CSGameMap extends CSMap{
         int ctScore = getCT().getScores();
         int tScore = getT().getScores();
 
-        sendPhysicsModCompatPacket();
+        sendPhysicsRagdollRemovalPacket();
         cleanupSpecificEntities(serverLevel, areaData);
         notifySpectatorsOfBombFuse();
 
@@ -1059,34 +1023,6 @@ public class CSGameMap extends CSMap{
         return true;
     }
 
-    /**
-     * 发送物理模组兼容包（仅当模组加载时）
-     */
-    private void sendPhysicsModCompatPacket() {
-        if (ModList.get().isLoaded("physicsmod")) {
-            sendPacketToAllPlayer(new PxResetCompatS2CPacket());
-        }
-    }
-
-    /**
-     * 清理指定区域内的特定实体（物品、C4、比赛掉落物）
-     */
-    private void cleanupSpecificEntities(ServerLevel serverLevel, AreaData areaData) {
-        // 过滤条件提取为方法引用，提升可读性
-        serverLevel.getEntitiesOfClass(Entity.class, areaData.getAABB())
-                .stream()
-                .filter(this::shouldDiscardEntity)
-                .forEach(Entity::discard);
-    }
-
-    /**
-     * 判断实体是否需要被清理
-     */
-    private boolean shouldDiscardEntity(Entity entity) {
-        return entity instanceof ItemEntity
-                || entity instanceof CompositionC4Entity
-                || entity instanceof MatchDropEntity;
-    }
 
     /**
      * 通知所有观察者玩家炸弹引信状态

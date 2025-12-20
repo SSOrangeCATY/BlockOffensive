@@ -1,7 +1,11 @@
 package com.phasetranscrystal.blockoffensive.map;
 
+import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.phasetranscrystal.blockoffensive.BOConfig;
+import com.phasetranscrystal.blockoffensive.event.CSGamePlayerJoinEvent;
+import com.phasetranscrystal.fpsmatch.common.capability.map.GameEndTeleportCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.team.StartKitsCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.team.SpawnPointCapability;
@@ -14,6 +18,7 @@ import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
+import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import net.minecraft.core.registries.Registries;
@@ -21,11 +26,13 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.scores.Team;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.*;
@@ -33,23 +40,6 @@ import java.util.function.Function;
 
 @Mod.EventBusSubscriber
 public class CSDeathMatchMap extends CSMap {
-    public static final String TYPE = "csdm";
-    private static final List<Class<? extends MapCapability>> MAP_CAPABILITIES = List.of();
-    private static final List<Class<? extends TeamCapability>> TEAM_CAPABILITIES = List.of(ShopCapability.class, StartKitsCapability.class, SpawnPointCapability.class);
-    
-    // 死斗模式设置
-    private final Setting<Boolean> isTDM = this.addSetting("isTDM", false);
-    private final Setting<Integer> matchTimeLimit = this.addSetting("matchTimeLimit", 18000); // 15 minutes in ticks
-    private final Setting<Integer> spawnProtectionTime = this.addSetting("spawnProtectionTime", 100);
-    
-    // 游戏状态
-    private int currentMatchTime = 0;
-    private boolean isShopLockedAfterAction = false;
-    
-    // 重生保护映射
-    private final Map<UUID, Integer> spawnProtectionMap = new HashMap<>();
-    private final Map<UUID, Boolean> hasFiredMap = new HashMap<>();
-    
     /**
      * Codec序列化配置（用于地图数据保存/加载）
      */
@@ -64,18 +54,24 @@ public class CSDeathMatchMap extends CSMap {
                     Codec.STRING,
                     CapabilityMap.Wrapper.CODEC
             ).fieldOf("teams").forGetter(csGameMap -> csGameMap.getMapTeams().getData())
-    ).apply(instance, (mapName, mapArea, serverLevel, capability, teamsData) -> {
-        CSDeathMatchMap gameMap = new CSDeathMatchMap(
-                FPSMCore.getInstance().getServer().getLevel(ResourceKey.create(Registries.DIMENSION,serverLevel)),
-                mapName,
-                mapArea
-        );
+    ).apply(instance, CSDeathMatchMap::new));
 
-        gameMap.getCapabilityMap().write(capability);
-        gameMap.getMapTeams().writeData(teamsData);
+    public static final String TYPE = "csdm";
+    private static final List<Class<? extends MapCapability>> MAP_CAPABILITIES = List.of(GameEndTeleportCapability.class);
+    private static final List<Class<? extends TeamCapability>> TEAM_CAPABILITIES = List.of(ShopCapability.class, StartKitsCapability.class, SpawnPointCapability.class);
+    
+    // 死斗模式设置
+    private final Setting<Boolean> isTDM = this.addSetting("isTDM", false);
+    private final Setting<Integer> matchTimeLimit = this.addSetting("matchTimeLimit", 18000); // 15 minutes in ticks
+    private final Setting<Integer> spawnProtectionTime = this.addSetting("spawnProtectionTime", 100);
+    
+    // 游戏状态
+    private int currentMatchTime = 0;
 
-        return gameMap;
-    }));
+    // 重生保护映射
+    private final Map<UUID, DMPlayerData> playerData = new HashMap<>();
+    private final List<SpawnPointData> spawnPoints = new ArrayList<>();
+
     private boolean isError = false;
 
     /**
@@ -86,6 +82,12 @@ public class CSDeathMatchMap extends CSMap {
      */
     public CSDeathMatchMap(ServerLevel serverLevel, String mapName, AreaData areaData) {
         super(serverLevel, mapName, areaData, MAP_CAPABILITIES, TEAM_CAPABILITIES);
+    }
+
+    private CSDeathMatchMap(String mapName, AreaData areaData, ResourceLocation serverLevel, Map<String, JsonElement> capabilities, Map<String, CapabilityMap.Wrapper> teams) {
+        this(FPSMCore.getInstance().getServer().getLevel(ResourceKey.create(Registries.DIMENSION,serverLevel)), mapName, areaData);
+        this.getCapabilityMap().write(capabilities);
+        this.getMapTeams().writeData(teams);
     }
 
     @Override
@@ -102,6 +104,17 @@ public class CSDeathMatchMap extends CSMap {
     public String getGameType() {
         return TYPE;
     }
+
+    @Override
+    public void join(String teamName, ServerPlayer player){
+        super.join(teamName,player);
+        getMapTeams().getTeamByPlayer(player).ifPresent(team -> {
+            this.playerData.put(player.getUUID(), new DMPlayerData(player.getUUID()));
+            if(isStart){
+                respawnPlayer(player);
+            }
+        });
+    }
     
     @Override
     public boolean start() {
@@ -110,14 +123,10 @@ public class CSDeathMatchMap extends CSMap {
         }
         
         MapTeams mapTeams = getMapTeams();
-        ServerLevel serverLevel = getServerLevel();
-        
-        configureGameRules(serverLevel);
+
         this.isStart = true;
         this.currentMatchTime = 0;
-        this.isShopLockedAfterAction = false;
-        this.spawnProtectionMap.clear();
-        this.hasFiredMap.clear();
+        this.resetAllPlayerData();
         
         if (!this.setTeamSpawnPoints()) {
             this.reset();
@@ -132,13 +141,11 @@ public class CSDeathMatchMap extends CSMap {
         
         return true;
     }
-    
-    private void configureGameRules(ServerLevel serverLevel) {
-        GameRules gameRules = serverLevel.getGameRules();
-        gameRules.getRule(GameRules.RULE_KEEPINVENTORY).set(true, null);
-        gameRules.getRule(GameRules.RULE_DO_IMMEDIATE_RESPAWN).set(true, null);
+
+    public void resetAllPlayerData(){
+        this.playerData.values().forEach(DMPlayerData::reset);
     }
-    
+
     private void initializePlayers(MapTeams mapTeams) {
         mapTeams.getJoinedPlayersMap().forEach(this::initializePlayer);
     }
@@ -153,42 +160,22 @@ public class CSDeathMatchMap extends CSMap {
                 player.heal(player.getMaxHealth());
                 player.setGameMode(GameType.ADVENTURE);
                 this.clearInventory(player);
-            this.teleportPlayerToReSpawnPoint(player);
-            givePlayerKits(player);
+                this.givePlayerKits(player);
         });
     });
     }
+
     @Override
     public void tick() {
         super.tick();
         
         if (isStart) {
             updateMatchTime();
-            updateSpawnProtection();
         }
     }
     
     private void updateMatchTime() {
         this.currentMatchTime++;
-        
-        // 检查是否到达时间限制
-        if (currentMatchTime >= matchTimeLimit.get()) {
-            this.victory();
-        }
-    }
-    
-    private void updateSpawnProtection() {
-        // 更新重生保护时间
-        Iterator<Map.Entry<UUID, Integer>> iterator = spawnProtectionMap.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<UUID, Integer> entry = iterator.next();
-            int timeLeft = entry.getValue() - 1;
-            if (timeLeft <= 0) {
-                iterator.remove();
-            } else {
-                entry.setValue(timeLeft);
-            }
-        }
     }
     
     @Override
@@ -210,33 +197,18 @@ public class CSDeathMatchMap extends CSMap {
         player.setGameMode(GameType.ADVENTURE);
         
         // 随机选择重生点
-        SpawnPointData spawnPoint = getRandomSpawnPoint(player);
+        SpawnPointData spawnPoint = getRandomSpawnPoint();
         if (spawnPoint != null) {
             teleportToPoint(player, spawnPoint);
         }
+
+        givePlayerKits(player);
         
         // 给予重生保护
-        spawnProtectionMap.put(player.getUUID(), spawnProtectionTime.get());
-        hasFiredMap.put(player.getUUID(), false);
-        
-        // 重置商店锁定状态
-        isShopLockedAfterAction = false;
+        getDMPlayerData(player.getUUID()).ifPresent(DMPlayerData::respawn);
     }
     
-    private SpawnPointData getRandomSpawnPoint(ServerPlayer player) {
-        // 获取玩家所在队伍
-        Optional<ServerTeam> teamOpt = this.getMapTeams().getTeamByPlayer(player);
-        if (teamOpt.isEmpty()) {
-            return null;
-        }
-        
-        ServerTeam team = teamOpt.get();
-        Optional<SpawnPointCapability> spawnCapOpt = team.getCapabilityMap().get(SpawnPointCapability.class);
-        if (spawnCapOpt.isEmpty()) {
-            return null;
-        }
-        
-        List<SpawnPointData> spawnPoints = spawnCapOpt.get().getSpawnPointsData();
+    private SpawnPointData getRandomSpawnPoint() {
         if (spawnPoints.isEmpty()) {
             return null;
         }
@@ -344,12 +316,20 @@ public class CSDeathMatchMap extends CSMap {
     @Override
     public boolean setTeamSpawnPoints() {
         for (ServerTeam team : this.getMapTeams().getNormalTeams()) {
+            Optional<SpawnPointCapability> spawnCapOpt = team.getCapabilityMap().get(SpawnPointCapability.class);
+            spawnCapOpt.ifPresent(cap -> {
+                spawnPoints.addAll(cap.getSpawnPointsData());
+            });
+        }
+
+        if(spawnPoints.isEmpty()) return false;
+
+        for (ServerTeam team : this.getMapTeams().getNormalTeams()) {
             for (ServerPlayer player : team.getOnline()) {
-                SpawnPointData spawnPoint = getRandomSpawnPoint(player);
+                SpawnPointData spawnPoint = getRandomSpawnPoint();
                 if (spawnPoint != null) {
-                    team.getPlayerData(player.getUUID()).ifPresent(playerData ->
-                            playerData.setSpawnPointsData(spawnPoint)
-                    );
+                    team.getPlayerData(player.getUUID()).ifPresent(playerData -> playerData.setSpawnPointsData(spawnPoint));
+                    teleportToPoint(player, spawnPoint);
                 }else{
                     return false;
                 }
@@ -360,7 +340,7 @@ public class CSDeathMatchMap extends CSMap {
     
     @Override
     public Function<ServerPlayer, Boolean> getPlayerCanOpenShop() {
-        return player -> !isShopLockedAfterAction;
+        return player -> getDMPlayerData(player.getUUID()).map(DMPlayerData::canOpenShop).orElse(false);
     }
     
     @Override
@@ -379,30 +359,30 @@ public class CSDeathMatchMap extends CSMap {
         // 死斗模式下，新回合直接开始
         this.start();
     }
+
+    public Optional<DMPlayerData> getDMPlayerData(UUID uuid){
+        return Optional.ofNullable(playerData.getOrDefault(uuid, null));
+    }
     
     /**
      * 检查玩家是否处于重生保护状态
      */
-    public boolean isInSpawnProtection(UUID playerUUID) {
-        return spawnProtectionMap.containsKey(playerUUID);
+    public boolean isInSpawnProtection(UUID uuid) {
+        return this.getDMPlayerData(uuid).map(d -> System.currentTimeMillis() - d.lastProtectionTime < (spawnProtectionTime.get() * 1000L)).orElse(false);
     }
     
     /**
      * 处理玩家开枪事件，取消重生保护
      */
-    public void handlePlayerFire(UUID playerUUID) {
-        hasFiredMap.put(playerUUID, true);
-        spawnProtectionMap.remove(playerUUID);
-        isShopLockedAfterAction = true;
+    public void handlePlayerFire(UUID uuid) {
+        this.getDMPlayerData(uuid).ifPresent(DMPlayerData::setFired);
     }
     
     /**
      * 处理玩家移动事件，取消重生保护
      */
-    public void handlePlayerMove(UUID playerUUID) {
-        // 移动超过一定距离时取消保护
-        spawnProtectionMap.remove(playerUUID);
-        isShopLockedAfterAction = true;
+    public void handlePlayerMove(UUID uuid) {
+        this.getDMPlayerData(uuid).ifPresent(DMPlayerData::setMoved);
     }
     
     /**
@@ -419,5 +399,43 @@ public class CSDeathMatchMap extends CSMap {
     @Override
     public CSDeathMatchMap getMap() {
         return this;
+    }
+
+     public static class DMPlayerData{
+        UUID owner;
+        boolean needRespawnProtection = false;
+        long lastProtectionTime = 0;
+
+        boolean isMoved = false;
+        boolean isFired = false;
+
+        private DMPlayerData(UUID owner){
+            this.owner = owner;
+        }
+
+        public boolean canOpenShop(){
+            return !isFired && !isMoved;
+        }
+
+        public void setFired(){
+            isFired = true;
+        }
+
+        public void setMoved(){
+            isMoved = true;
+        }
+
+        public void reset(){
+            isFired = false;
+            isMoved = false;
+            needRespawnProtection = false;
+            lastProtectionTime = 0;
+        }
+
+        public void respawn(){
+            reset();
+            needRespawnProtection = true;
+            lastProtectionTime = System.currentTimeMillis();
+        }
     }
 }

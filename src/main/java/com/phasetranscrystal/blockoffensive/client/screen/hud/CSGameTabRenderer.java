@@ -20,7 +20,7 @@ import java.util.Objects;
 
 public class CSGameTabRenderer implements TabRenderer {
     public static final ResourceLocation GUI_ICONS_LOCATION = ResourceLocation.tryBuild("minecraft","textures/gui/icons.png");
-    private final Minecraft minecraft = Minecraft.getInstance();
+    protected final Minecraft minecraft = Minecraft.getInstance();
 
     @Override
     public String getGameType() {
@@ -47,11 +47,36 @@ public class CSGameTabRenderer implements TabRenderer {
         int playerGap = 2;
         // 减小队伍间隔
         int headerHeight = 12;
+        int teamGap = 10; // 队伍之间的间隔
+
+        // 过滤并排序玩家
+        Map<String, List<PlayerInfo>> teamPlayers = RenderUtil.getTeamsPlayerInfo(playerInfoList);
+
+        // 按伤害排序
+        Comparator<PlayerInfo> damageComparator = (p1, p2) -> {
+            PlayerData t1 = FPSMClient.getGlobalData().getPlayerTabData(p1.getProfile().getId()).get();
+            PlayerData t2 = FPSMClient.getGlobalData().getPlayerTabData(p2.getProfile().getId()).get();
+            return Float.compare(t2.getDamage(), t1.getDamage());
+        };
+
+        teamPlayers.get("ct").sort(damageComparator);
+        teamPlayers.get("t").sort(damageComparator);
+
+        // 计算实际玩家数量
+        int ctPlayerCount = teamPlayers.get("ct").size();
+        int tPlayerCount = teamPlayers.get("t").size();
+
+        // 计算每个队伍的内容高度
+        int ctContentHeight = ctPlayerCount > 0 ? (playerRowHeight + playerGap) * ctPlayerCount - playerGap : 0;
+        int tContentHeight = tPlayerCount > 0 ? (playerRowHeight + playerGap) * tPlayerCount - playerGap : 0;
+
+        // 计算总内容高度
+        int totalContentHeight = headerHeight + ctContentHeight + teamGap + tContentHeight;
 
         // 背景尺寸（玩家信息栏+边距）
         int bgPadding = 10;
         int bgWidth = playerAreaWidth + bgPadding * 2;
-        int bgHeight = 280; // 保持280px高度
+        int bgHeight = totalContentHeight + bgPadding * 2;
 
         // 背景位置（屏幕居中）
         int bgX = (windowWidth - bgWidth) / 2;
@@ -60,26 +85,18 @@ public class CSGameTabRenderer implements TabRenderer {
         // 渲染背景
         guiGraphics.fill(bgX, bgY, bgX + bgWidth, bgY + bgHeight, 0x80000000);
 
-        // 添加中间分割线
-        int dividerY = bgY + bgHeight/2;
+        // 表头位置
+        int headerY = bgY + bgPadding;
+
+        // 计算CT玩家起始Y坐标（表头下方）
+        int ctStartY = headerY + headerHeight + 2;
+
+        // 添加中间分割线（CT和T队伍之间）
+        int dividerY = ctStartY + ctContentHeight + teamGap / 2;
         guiGraphics.fill(bgX, dividerY, bgX + bgWidth, dividerY + 1, 0x40FFFFFF);
 
-        // 计算玩家信息区域
-        int teamContentHeight = (playerRowHeight + playerGap) * 5 - playerGap; // 5行玩家的总高度
-
-        // 计算上半部分中心点
-        int upperCenterY = bgY + bgHeight/4;
-        // 计算下半部分中心点
-        int lowerCenterY = bgY + bgHeight*3/4;
-
-        // 计算CT玩家起始Y坐标（上半部分居中）
-        int ctStartY = upperCenterY - teamContentHeight/2;
-
-        // 计算T玩家起始Y坐标（下半部分居中）
-        int tStartY = lowerCenterY - teamContentHeight/2;
-
-        // 表头位置（在CT第一行上方）
-        int headerY = ctStartY - headerHeight - 2;
+        // 计算T玩家起始Y坐标（分割线下方）
+        int tStartY = ctStartY + ctContentHeight + teamGap;
 
         // 渲染表头
         int currentHeaderX = bgX + bgPadding;
@@ -127,40 +144,19 @@ public class CSGameTabRenderer implements TabRenderer {
         guiGraphics.drawString(minecraft.font, damageText,
                 currentHeaderX + (damageWidth - minecraft.font.width(damageText)) / 2, headerY, 0xFFFFFFFF);
 
-        // 过滤并排序玩家
-        Map<String, List<PlayerInfo>> teamPlayers = RenderUtil.getTeamsPlayerInfo(playerInfoList);
-
-        // 按伤害排序
-        Comparator<PlayerInfo> damageComparator = (p1, p2) -> {
-            PlayerData t1 = FPSMClient.getGlobalData().getPlayerTabData(p1.getProfile().getId()).get();
-            PlayerData t2 = FPSMClient.getGlobalData().getPlayerTabData(p2.getProfile().getId()).get();
-            return Float.compare(t2.getDamage(), t1.getDamage());
-        };
-
-        teamPlayers.get("ct").sort(damageComparator);
-        teamPlayers.get("t").sort(damageComparator);
-
         // 渲染CT玩家（从顶部开始）
         int currentY = ctStartY;
         List<PlayerInfo> ctPlayers = teamPlayers.get("ct");
-        for (int i = 0; i < 5; i++) {
-            if (i < ctPlayers.size()) {
-                renderPlayerRow(guiGraphics, ctPlayers.get(i), bgX + bgPadding, currentY, playerAreaWidth, playerRowHeight, CSGameOverlay.textCTWinnerRoundsColor);
-            } else {
-                renderEmptyPlayerRow(guiGraphics, bgX + bgPadding, currentY, playerAreaWidth, playerRowHeight, CSGameOverlay.textCTWinnerRoundsColor);
-            }
+        for (PlayerInfo ctPlayer : ctPlayers) {
+            renderPlayerRow(guiGraphics, ctPlayer, bgX + bgPadding, currentY, playerAreaWidth, playerRowHeight, CSGameOverlay.textCTWinnerRoundsColor);
             currentY += playerRowHeight + playerGap;
         }
 
         // 渲染T玩家（从中间往下）
         currentY = tStartY;
         List<PlayerInfo> tPlayers = teamPlayers.get("t");
-        for (int i = 0; i < 5; i++) {
-            if (i < tPlayers.size()) {
-                renderPlayerRow(guiGraphics, tPlayers.get(i), bgX + bgPadding, currentY, playerAreaWidth, playerRowHeight, CSGameOverlay.textTWinnerRoundsColor);
-            } else {
-                renderEmptyPlayerRow(guiGraphics, bgX + bgPadding, currentY, playerAreaWidth, playerRowHeight, CSGameOverlay.textTWinnerRoundsColor);
-            }
+        for (PlayerInfo tPlayer : tPlayers) {
+            renderPlayerRow(guiGraphics, tPlayer, bgX + bgPadding, currentY, playerAreaWidth, playerRowHeight, CSGameOverlay.textTWinnerRoundsColor);
             currentY += playerRowHeight + playerGap;
         }
     }
@@ -284,7 +280,7 @@ public class CSGameTabRenderer implements TabRenderer {
         guiGraphics.fill(damageX, y, damageX + damageWidth, y + height, 0x40FFFFFF);
     }
 
-    private Component getNameForDisplay(PlayerInfo info) {
+    protected Component getNameForDisplay(PlayerInfo info) {
         return info.getTabListDisplayName() != null ? info.getTabListDisplayName() : Component.literal(info.getProfile().getName());
     }
 } 

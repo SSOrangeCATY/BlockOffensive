@@ -1,12 +1,15 @@
 package com.phasetranscrystal.blockoffensive.map;
 
+import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.client.data.WeaponData;
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
+import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.blockoffensive.event.CSGamePlayerJoinEvent;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.item.CompositionC4;
 import com.phasetranscrystal.blockoffensive.net.CSGameSettingsS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.DeathMessageS2CPacket;
+import com.phasetranscrystal.blockoffensive.net.PxResetCompatS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.shop.ShopStatesS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.spec.CSGameWeaponDataS2CPacket;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
@@ -15,6 +18,7 @@ import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.team.SpawnPointCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.team.StartKitsCapability;
 import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
+import com.phasetranscrystal.fpsmatch.common.entity.drop.MatchDropEntity;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
 import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
@@ -31,6 +35,7 @@ import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.IConfigureMap;
 import com.phasetranscrystal.fpsmatch.core.map.VoteObj;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
+import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.core.team.TeamData;
@@ -44,16 +49,20 @@ import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Team;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -64,7 +73,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public abstract class CSMap extends BaseMap implements IConfigureMap<CSMap> {
+public abstract class  CSMap extends BaseMap implements IConfigureMap<CSMap> {
 
     private static final Vector3f T_COLOR = new Vector3f(1, 0.75f, 0.25f);
     private static final Vector3f CT_COLOR = new Vector3f(0.25f, 0.55f, 1);
@@ -150,6 +159,13 @@ public abstract class CSMap extends BaseMap implements IConfigureMap<CSMap> {
         this.autoStartLogic();
     }
 
+    @Override
+    public boolean start(){
+        super.start();
+        this.configureGameRules(this.getServerLevel());
+        return true;
+    }
+
     protected void autoStartLogic() {
         if (!autoStart.get()) return;
         if (isStart) {
@@ -180,6 +196,36 @@ public abstract class CSMap extends BaseMap implements IConfigureMap<CSMap> {
             }
         }
     }
+
+    /**
+     * 判断实体是否需要被清理
+     */
+    public boolean shouldDiscardEntity(Entity entity) {
+        return entity instanceof ItemEntity
+                || entity instanceof CompositionC4Entity
+                || entity instanceof MatchDropEntity;
+    }
+
+    /**
+     * 清理指定区域内的特定实体
+     */
+    public void cleanupSpecificEntities(ServerLevel serverLevel, AreaData areaData) {
+        serverLevel.getEntitiesOfClass(Entity.class, areaData.getAABB())
+                .stream()
+                .filter(this::shouldDiscardEntity)
+                .forEach(Entity::discard);
+    }
+
+
+    /**
+     * 发送物理模组兼容包
+     */
+    public void sendPhysicsRagdollRemovalPacket() {
+        if (ModList.get().isLoaded("physicsmod")) {
+            sendPacketToAllPlayer(new PxResetCompatS2CPacket());
+        }
+    }
+
 
     protected void handleActiveCountdown() {
         autoStartTimer++;
@@ -361,6 +407,23 @@ public abstract class CSMap extends BaseMap implements IConfigureMap<CSMap> {
         }
     }
 
+    /**
+     * 配置游戏规则（基于BOConfig配置）
+     */
+    public void configureGameRules(ServerLevel serverLevel) {
+        GameRules gameRules = serverLevel.getGameRules();
+        gameRules.getRule(GameRules.RULE_KEEPINVENTORY).set(BOConfig.common.keepInventory.get(), null);
+        gameRules.getRule(GameRules.RULE_DO_IMMEDIATE_RESPAWN).set(BOConfig.common.immediateRespawn.get(), null);
+        gameRules.getRule(GameRules.RULE_DAYLIGHT).set(BOConfig.common.daylightCycle.get(), null);
+        gameRules.getRule(GameRules.RULE_WEATHER_CYCLE).set(BOConfig.common.weatherCycle.get(), null);
+        gameRules.getRule(GameRules.RULE_DOMOBSPAWNING).set(BOConfig.common.mobSpawning.get(), null);
+        gameRules.getRule(GameRules.RULE_NATURAL_REGENERATION).set(BOConfig.common.naturalRegeneration.get(), null);
+
+        if (BOConfig.common.hardDifficulty.get()) {
+            serverLevel.getServer().setDifficulty(Difficulty.HARD, true);
+        }
+    }
+
     @Override
     public void join(String teamName, ServerPlayer player) {
         FPSMCore.checkAndLeaveTeam(player);
@@ -444,6 +507,13 @@ public abstract class CSMap extends BaseMap implements IConfigureMap<CSMap> {
                         });
                     });
                 }));
+    }
+
+    /**
+     * 安全获取玩家商店数据
+     */
+    public Optional<ShopData<?>> getShopDataSafely(UUID playerUuid) {
+        return ShopCapability.getPlayerShopData(this, playerUuid);
     }
 
     public abstract void givePlayerKits(ServerPlayer player);

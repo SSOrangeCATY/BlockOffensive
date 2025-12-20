@@ -10,11 +10,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.multiplayer.PlayerInfo;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,7 +26,6 @@ public class CSGameOverlay {
     public static int textTWinnerRoundsColor = color(253,217,141);
     public static int noColor = color(0,0,0,0);
     public static int textRoundTimeColor = color(255,255,255);
-    public static final String code = "7355608";
 
     private static final int[] BG_COLORS = new int[]{
             RenderUtil.color(216,130,44), // Blue
@@ -46,10 +41,6 @@ public class CSGameOverlay {
 
     public void render(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
         Font font = Minecraft.getInstance().font;
-        Minecraft mc = Minecraft.getInstance();
-        LocalPlayer player = mc.player;
-        if(mc.player == null) return;
-
         // 计算缩放因子 (以855x480为基准)
         float scaleFactor = Math.min(screenWidth / 855.0f, screenHeight / 480.0f);
 

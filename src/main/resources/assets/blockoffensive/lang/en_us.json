@@ -91,5 +91,7 @@
   "key.blockoffensive.switch_spec_previous.desc": "Switch previous teammate",
   "key.blockoffensive.switch_spec_next.desc": "Switch next teammate",
   "key.category.blockoffensive.spec": "Blockoffensive Spectator",
-  "blockoffensive.killed_by": "Killed by"
+  "blockoffensive.killed_by": "Killed by",
+  "blockoffensive.tab.header.score": "score",
+  "blockoffensive.tab.header.kd": "K/D"
 }
