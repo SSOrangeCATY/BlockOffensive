@@ -46,7 +46,7 @@ public class BOClientEvent {
         if(!BOConfig.common.webServerEnabled.get()) return;
         FPSMClientGlobalData data = FPSMClient.getGlobalData();
 
-        if(!(data.equalsMap("fpsm_none") || data.equalsGame("none")) && data.isSpectator()) {
+        if(!(!data.isInMap() || !data.isInGame()) && data.isSpectator()) {
             BOClientWebServer.start();
         }else {
             BOClientWebServer.stop();
@@ -64,7 +64,8 @@ public class BOClientEvent {
     }
 
     public static void pullMessage(){
-        if(CSClientData.isStart && (FPSMClient.getGlobalData().equalsMap("fpsm_none") || FPSMClient.getGlobalData().equalsGame("none"))){
+        FPSMClientGlobalData data = FPSMClient.getGlobalData();
+        if(CSClientData.isStart && (!data.isInMap() || !data.isInGame())){
             FPSMatch.pullGameInfo();
         }
     }

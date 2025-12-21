@@ -224,7 +224,6 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback {
         @Override
         protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
             int width = right - left;
-            int height = bottom - top;
 
             // 计算内容区域位置 - 居中
             int contentWidth = content.getMeasuredWidth();

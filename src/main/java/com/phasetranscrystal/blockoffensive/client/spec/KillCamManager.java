@@ -271,7 +271,6 @@ public final class KillCamManager {
         if (!isSpec) {
             forceRestoreCameraToPlayer();
             reset();
-            return;
         }
     }
 

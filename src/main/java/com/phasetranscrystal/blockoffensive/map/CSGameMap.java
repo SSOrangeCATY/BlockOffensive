@@ -302,7 +302,6 @@ public class CSGameMap extends CSMap{
         }
 
         MapTeams mapTeams = getMapTeams();
-        ServerLevel serverLevel = getServerLevel();
 
         setTeamNameColors();
         if (this.isError) return false;

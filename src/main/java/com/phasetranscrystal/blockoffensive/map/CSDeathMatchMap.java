@@ -3,8 +3,7 @@ package com.phasetranscrystal.blockoffensive.map;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import com.phasetranscrystal.blockoffensive.BOConfig;
-import com.phasetranscrystal.blockoffensive.event.CSGamePlayerJoinEvent;
+import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.fpsmatch.common.capability.map.GameEndTeleportCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.team.StartKitsCapability;
@@ -18,7 +17,6 @@ import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
-import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import net.minecraft.core.registries.Registries;
@@ -26,19 +24,16 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.Difficulty;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.scores.Team;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.*;
 import java.util.function.Function;
 
-@Mod.EventBusSubscriber
+@Mod.EventBusSubscriber(modid = BlockOffensive.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CSDeathMatchMap extends CSMap {
     /**
      * Codec序列化配置（用于地图数据保存/加载）
