@@ -1,5 +1,6 @@
 package com.phasetranscrystal.blockoffensive.map;
 
+import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.compat.BOImpl;
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
@@ -24,11 +25,13 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
+import net.minecraftforge.fml.common.Mod;
 
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+@Mod.EventBusSubscriber(modid = BlockOffensive.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CSGameEvents {
 
     @SubscribeEvent

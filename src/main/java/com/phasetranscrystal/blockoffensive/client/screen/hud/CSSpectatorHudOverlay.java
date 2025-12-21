@@ -5,7 +5,7 @@ import com.phasetranscrystal.blockoffensive.client.spec.SpechudAPI;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.screen.texture.NamecardResolver;
-import com.phasetranscrystal.fpsmatch.common.client.screen.texture.NamecardTexture;
+import com.phasetranscrystal.fpsmatch.common.client.screen.texture.NameCardTexture;
 import com.phasetranscrystal.fpsmatch.core.team.ClientTeam;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -45,13 +45,13 @@ public final class CSSpectatorHudOverlay {
 
     // 名片纹理相关
     private static volatile ResourceLocation currentCardLocation = null;
-    private static volatile NamecardTexture currentCardTexture = null;
+    private static volatile NameCardTexture currentCardTexture = null;
     private static volatile ResourceLocation previousCardLocation = null;
-    private static volatile NamecardTexture previousCardTexture = null;
+    private static volatile NameCardTexture previousCardTexture = null;
 
     // 名片缓存 - 避免重复加载
     private static final Map<UUID, ResourceLocation> CARD_LOCATION_CACHE = new ConcurrentHashMap<>();
-    private static final Map<UUID, NamecardTexture> CARD_TEXTURE_CACHE = new ConcurrentHashMap<>();
+    private static final Map<UUID, NameCardTexture> CARD_TEXTURE_CACHE = new ConcurrentHashMap<>();
 
     // 时间跟踪
     private static long lastFrameTimeNs = 0L;
@@ -189,7 +189,7 @@ public final class CSSpectatorHudOverlay {
 
             // 异步加载名片
             if (targetUuid != null) {
-                loadNamecardAsync(targetUuid, minecraft);
+                loadNameCardAsync(targetUuid, minecraft);
             }
         }
 
@@ -268,11 +268,11 @@ public final class CSSpectatorHudOverlay {
     /**
      * 异步加载玩家名片
      */
-    private void loadNamecardAsync(UUID targetUuid, Minecraft minecraft) {
+    private void loadNameCardAsync(UUID targetUuid, Minecraft minecraft) {
         NAME_CARD_EXECUTOR.execute(() -> {
             // 检查缓存
             ResourceLocation cachedLoc = CARD_LOCATION_CACHE.get(targetUuid);
-            NamecardTexture cachedTex = CARD_TEXTURE_CACHE.get(targetUuid);
+            NameCardTexture cachedTex = CARD_TEXTURE_CACHE.get(targetUuid);
             if (cachedLoc != null && cachedTex != null) {
                 minecraft.execute(() -> applyNamecard(targetUuid, cachedLoc, cachedTex));
                 return;
@@ -282,7 +282,7 @@ public final class CSSpectatorHudOverlay {
             File namecardFile = NamecardResolver.resolve(targetUuid);
             if (namecardFile != null && namecardFile.isFile()) {
                 ResourceLocation textureId = ResourceLocation.tryBuild(FPSMatch.MODID, "namecard/" + targetUuid);
-                NamecardTexture texture = new NamecardTexture(namecardFile, textureId);
+                NameCardTexture texture = new NameCardTexture(namecardFile, textureId);
 
                 minecraft.execute(() -> {
                     minecraft.getTextureManager().register(textureId, texture);
@@ -297,7 +297,7 @@ public final class CSSpectatorHudOverlay {
     /**
      * 应用名片到当前显示
      */
-    private static void applyNamecard(UUID owner, ResourceLocation id, NamecardTexture tex) {
+    private static void applyNamecard(UUID owner, ResourceLocation id, NameCardTexture tex) {
         if (owner == null || id == null || tex == null) return;
         if (!owner.equals(lastTargetUuid)) return;
 
@@ -337,7 +337,7 @@ public final class CSSpectatorHudOverlay {
      * 渲染名片层
      */
     private void renderCardLayer(GuiGraphics g, int x, int y, int width, int height,
-                                 ResourceLocation loc, NamecardTexture tex, float alpha) {
+                                 ResourceLocation loc, NameCardTexture tex, float alpha) {
         if (loc == null || tex == null || alpha <= 0.01f) return;
 
         float scale = width / (float) tex.realWidth;

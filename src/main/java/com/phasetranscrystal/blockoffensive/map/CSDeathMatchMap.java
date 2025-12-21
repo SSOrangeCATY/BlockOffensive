@@ -28,6 +28,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.scores.Team;
+import net.minecraftforge.client.event.MovementInputUpdateEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.*;
@@ -263,14 +264,12 @@ public class CSDeathMatchMap extends CSMap {
     
     @Override
     public void givePlayerKits(ServerPlayer player) {
-        // 死斗模式下，给玩家基础装备，但允许他们自由购买
         CapabilityMap.getTeamCapability(this, StartKitsCapability.class)
                 .forEach((team, opt) -> {
                     if (team.hasPlayer(player.getUUID())) {
                         opt.ifPresent(cap -> cap.givePlayerKits(player));
                     }
-                });
-    }
+                });    }
     
     @Override
     public Team.Visibility nameTagVisibility() {
@@ -300,7 +299,7 @@ public class CSDeathMatchMap extends CSMap {
     
     @Override
     public boolean canGiveEconomy() {
-        return true;
+        return false;
     }
     
     @Override
@@ -310,6 +309,7 @@ public class CSDeathMatchMap extends CSMap {
     
     @Override
     public boolean setTeamSpawnPoints() {
+        spawnPoints.clear();
         for (ServerTeam team : this.getMapTeams().getNormalTeams()) {
             Optional<SpawnPointCapability> spawnCapOpt = team.getCapabilityMap().get(SpawnPointCapability.class);
             spawnCapOpt.ifPresent(cap -> {
