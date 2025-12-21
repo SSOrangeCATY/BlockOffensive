@@ -26,10 +26,13 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.scores.Team;
 import net.minecraftforge.client.event.MovementInputUpdateEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Function;
@@ -57,9 +60,9 @@ public class CSDeathMatchMap extends CSMap {
     private static final List<Class<? extends TeamCapability>> TEAM_CAPABILITIES = List.of(ShopCapability.class, StartKitsCapability.class, SpawnPointCapability.class);
     
     // 死斗模式设置
-    private final Setting<Boolean> isTDM = this.addSetting("isTDM", false);
-    private final Setting<Integer> matchTimeLimit = this.addSetting("matchTimeLimit", 18000); // 15 minutes in ticks
-    private final Setting<Integer> spawnProtectionTime = this.addSetting("spawnProtectionTime", 100);
+    private Setting<Boolean> isTDM;
+    private Setting<Integer> matchTimeLimit;
+    private Setting<Integer> spawnProtectionTime;
     
     // 游戏状态
     private int currentMatchTime = 0;
@@ -93,7 +96,9 @@ public class CSDeathMatchMap extends CSMap {
 
     @Override
     public void setup() {
-
+        isTDM = this.addSetting("isTDM", false);
+        matchTimeLimit = this.addSetting("matchTimeLimit", 18000);
+        spawnProtectionTime = this.addSetting("spawnProtectionTime", 100);
     }
     
     @Override
@@ -255,10 +260,8 @@ public class CSDeathMatchMap extends CSMap {
     }
     
     @Override
-    public void onPlayerDeathEvent(ServerPlayer player, DamageSource source) {
-        super.onPlayerDeathEvent(player, source);
-        
-        // 立即重生
+    public void onPlayerDeathEvent(ServerPlayer player, @Nullable ServerPlayer attacker, @NotNull ItemStack itemStack,boolean isHeadShot) {
+        super.onPlayerDeathEvent(player, attacker, itemStack, isHeadShot);
         respawnPlayer(player);
     }
     
@@ -340,7 +343,7 @@ public class CSDeathMatchMap extends CSMap {
     
     @Override
     public int getNextRoundMinMoney(ServerTeam team) {
-        return 16000; // 死斗模式下，总是给足钱
+        return -1;
     }
     
     @Override

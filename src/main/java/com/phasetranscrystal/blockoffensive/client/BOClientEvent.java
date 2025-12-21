@@ -5,6 +5,7 @@ import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import com.phasetranscrystal.blockoffensive.client.key.OpenShopKey;
 import com.phasetranscrystal.blockoffensive.client.screen.CSGameShopScreen;
+import com.phasetranscrystal.blockoffensive.net.dm.PlayerMoveC2SPacket;
 import com.phasetranscrystal.blockoffensive.web.BOClientWebServer;
 import com.phasetranscrystal.blockoffensive.compat.BOImpl;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
@@ -15,15 +16,18 @@ import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
+import com.tacz.guns.api.event.common.GunFireEvent;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.util.InputExtraCheck;
 import icyllis.modernui.mc.MuiScreen;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.Input;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.client.event.MovementInputUpdateEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -40,6 +44,15 @@ public class BOClientEvent {
         checkOption(mc);
 
         startWebServer();
+    }
+
+    @SubscribeEvent
+    public static void onPlayerMoveInput(MovementInputUpdateEvent event) {
+        if(Minecraft.getInstance().player == null) return;
+        Input input = event.getInput();
+        if (input.left || input.right || input.up || input.down || input.shiftKeyDown) {
+            FPSMatch.sendToServer(new PlayerMoveC2SPacket());
+        }
     }
 
     public static void startWebServer(){

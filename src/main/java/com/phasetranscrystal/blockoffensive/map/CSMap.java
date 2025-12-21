@@ -12,6 +12,7 @@ import com.phasetranscrystal.blockoffensive.net.DeathMessageS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.PxResetCompatS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.shop.ShopStatesS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.spec.CSGameWeaponDataS2CPacket;
+import com.phasetranscrystal.blockoffensive.util.BOUtil;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
 import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
@@ -20,7 +21,6 @@ import com.phasetranscrystal.fpsmatch.common.capability.team.StartKitsCapability
 import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
 import com.phasetranscrystal.fpsmatch.common.entity.drop.MatchDropEntity;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
-import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
@@ -50,11 +50,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
@@ -73,7 +71,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public abstract class  CSMap extends BaseMap implements IConfigureMap<CSMap> {
+public abstract class CSMap extends BaseMap implements IConfigureMap<CSMap> {
 
     private static final Vector3f T_COLOR = new Vector3f(1, 0.75f, 0.25f);
     private static final Vector3f CT_COLOR = new Vector3f(0.25f, 0.55f, 1);
@@ -83,6 +81,7 @@ public abstract class  CSMap extends BaseMap implements IConfigureMap<CSMap> {
     protected final Setting<Boolean> autoStart = this.addSetting("autoStart", true);
     protected final Setting<Integer> autoStartTime = this.addSetting("autoStartTime", 6000);
     protected final Setting<Boolean> allowFriendlyFire = this.addSetting("allowFriendlyFire",false);
+    protected final Setting<Float> minAssistDamageRatio = this.addSetting("minAssistDamageRatio", 0.25f);
 
     private final Setting<Integer> ctLimit = this.addSetting("ctLimit",5);
     private final Setting<Integer> tLimit = this.addSetting("tLimit",5);
@@ -667,75 +666,61 @@ public abstract class  CSMap extends BaseMap implements IConfigureMap<CSMap> {
         return true;
     }
 
-    public void onPlayerDeathEvent(ServerPlayer player, DamageSource source) {
-        ServerPlayer attacker;
-        if (source.getEntity() instanceof ServerPlayer p) {
-            attacker = p;
-        } else if (source.getEntity() instanceof ThrowableItemProjectile throwable
-                && throwable.getOwner() instanceof ServerPlayer p) {
-            attacker = p;
-        } else {
-            attacker = null;
-        }
-        handleDeathEvent(player,attacker);
+    public void onPlayerDeathEvent(ServerPlayer deadPlayer, @Nullable ServerPlayer attacker,
+                                   @NotNull ItemStack deathItem, boolean isHeadShot) {
+        handleDeathEvent(deadPlayer,attacker,isHeadShot);
 
-        if (attacker == null) return;
-
-        ItemStack itemStack;
-        if (source.getDirectEntity() instanceof ThrowableItemProjectile projectile) {
-            itemStack = projectile.getItem();
-        } else if (FPSMImpl.findCounterStrikeGrenadesMod()) {
-            itemStack = CounterStrikeGrenadesCompat.getItemFromDamageSource(source);
-            if (itemStack.isEmpty()) {
-                itemStack = attacker.getMainHandItem();
-            }
-        } else {
-            itemStack = attacker.getMainHandItem();
+        if (attacker == null) {
+            return;
         }
 
-        if (itemStack.getItem() instanceof IGun) return;
+        giveEco(deadPlayer, attacker, deathItem, true);
 
-        giveEco(player, attacker, itemStack,true);
-
-        DeathMessage.Builder builder = new DeathMessage.Builder(attacker, player, itemStack);
-        DeathMessageS2CPacket killMessageS2CPacket = new DeathMessageS2CPacket(builder.build());
-        this.sendPacketToAllPlayer(killMessageS2CPacket);
+        DeathMessageS2CPacket killPacket = BOUtil.buildDeathMessagePacket(this,attacker, deadPlayer, deathItem, isHeadShot,minAssistDamageRatio.get());
+        sendPacketToAllPlayer(killPacket);
     }
 
-    public final void handleDeathEvent(ServerPlayer dead, @Nullable ServerPlayer killer){
-        handleDeath(dead);
-        calculateTabData(dead,killer);
+    /**
+     * 基础死亡事件处理
+     */
+    public final void handleDeathEvent(ServerPlayer deadPlayer, @Nullable ServerPlayer killer,boolean isHeadShot) {
+        handleDeath(deadPlayer);
+        if (isStart) {
+            calculateAssist(deadPlayer, killer);
+            calculateKill(deadPlayer, killer,isHeadShot);
+        }
+    }
+
+    /**
+     * 计算助攻（原calculateTabData中的助攻逻辑）
+     */
+    public void calculateAssist(ServerPlayer deadPlayer, @Nullable ServerPlayer killer) {
+        BOUtil.calculateAssistPlayer(this,deadPlayer,minAssistDamageRatio.get()).ifPresent(assistData -> {
+            UUID killerId = killer != null ? killer.getUUID() : null;
+            if (killerId != null && !killerId.equals(assistData.getOwner())) {
+                assistData.addAssist();
+            }
+        });
+    }
+
+    /**
+     * 计算击杀数（原calculateTabData中的击杀逻辑）
+     */
+    public void calculateKill(ServerPlayer deadPlayer, @Nullable ServerPlayer killer,boolean isHeadShot) {
+        if (killer == null || killer.getUUID().equals(deadPlayer.getUUID())) {
+            return;
+        }
+        getMapTeams().getTeamByPlayer(killer)
+                .flatMap(team -> team.getPlayerData(killer.getUUID()))
+                .ifPresent(data->{
+                    data.addKills();
+                    if (isHeadShot) {
+                        data.addHeadshotKill();
+                    }
+                });
     }
 
     public abstract void handleDeath(ServerPlayer dead);
-
-    public void calculateTabData(ServerPlayer dead, @Nullable ServerPlayer killer) {
-        if(this.isStart) {
-            MapTeams teams = this.getMapTeams();
-            Map<UUID, Float> hurtDataMap = teams.getDamageMap().get(dead.getUUID());
-            if (hurtDataMap != null && !hurtDataMap.isEmpty()) {
-                hurtDataMap.entrySet().stream()
-                        .filter(entry -> entry.getValue() > dead.getMaxHealth() / 4)
-                        .sorted(Map.Entry.<UUID, Float>comparingByValue().reversed())
-                        .limit(1)
-                        .findAny().ifPresent(assist->{
-                            UUID assistId = assist.getKey();
-                            teams.getTeamByPlayer(assistId)
-                                    .flatMap(assistPlayerTeam -> assistPlayerTeam.getPlayerData(assistId))
-                                    .ifPresent(assistData -> {
-                                        if (killer != null && killer.getUUID().equals(assistId)) return;
-                                        assistData.addAssist();
-                                    });
-                        });
-
-            }
-
-            if(killer == null || killer.getUUID().equals(dead.getUUID())) return;
-            teams.getTeamByPlayer(killer)
-                    .flatMap(killerPlayerTeam -> killerPlayerTeam.getPlayerData(killer.getUUID()))
-                    .ifPresent(PlayerData::addKills);
-        }
-    }
 
     public int getRewardByItem(ItemStack itemStack){
         if(FPSMImpl.findEquipmentMod() && LrtacticalCompat.isKnife(itemStack)){

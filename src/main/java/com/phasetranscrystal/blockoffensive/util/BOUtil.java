@@ -1,0 +1,143 @@
+package com.phasetranscrystal.blockoffensive.util;
+
+import com.phasetranscrystal.blockoffensive.data.DeathMessage;
+import com.phasetranscrystal.blockoffensive.map.CSMap;
+import com.phasetranscrystal.blockoffensive.net.DeathMessageS2CPacket;
+import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
+import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
+import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
+import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
+import me.xjqsh.lrtactical.entity.ThrowableItemEntity;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.item.ItemStack;
+
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
+public class BOUtil {
+
+    /**
+     * 从伤害源中解析击杀者
+     * @param source 伤害源
+     * @return 击杀者（可能为空）
+     */
+    public static Optional<ServerPlayer> getAttackerFromDamageSource(DamageSource source) {
+        if (source.getEntity() instanceof ServerPlayer attacker) {
+            return Optional.of(attacker);
+        }
+
+        if(source.getDirectEntity() instanceof ServerPlayer attacker){
+            return Optional.of(attacker);
+        }
+
+        if (source.getEntity() instanceof ThrowableItemEntity throwable && throwable.getOwner() instanceof ServerPlayer owner) {
+            return Optional.of(owner);
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * 从击杀者和伤害源中解析导致死亡的物品栈
+     * @param attacker 击杀者
+     * @param source 伤害源
+     * @return 致死物品栈（非空，默认返回主手物品）
+     */
+    public static ItemStack getDeathItemStack(ServerPlayer attacker, DamageSource source) {
+        if (source.getDirectEntity() instanceof ThrowableItemEntity projectile) {
+            return projectile.getItem();
+        }
+
+        if (FPSMImpl.findCounterStrikeGrenadesMod()) {
+            ItemStack grenade = CounterStrikeGrenadesCompat.getItemFromDamageSource(source);
+            if (!grenade.isEmpty()) {
+                return grenade;
+            }
+        }
+
+        return attacker.getMainHandItem().isEmpty() ? ItemStack.EMPTY : attacker.getMainHandItem();
+    }
+
+    /**
+     * 计算助攻玩家（符合伤害阈值的首个助攻者）
+     * @param deadPlayer 死亡玩家
+     * @return 助攻玩家数据（可能为空）
+     */
+    public static Optional<PlayerData> calculateAssistPlayer(BaseMap map, ServerPlayer deadPlayer, float minAssistDamageRatio) {
+        MapTeams mapTeams = map.getMapTeams();
+
+        if(mapTeams.getTeamByPlayer(deadPlayer).isEmpty()) return Optional.empty();
+
+        Map<UUID, Float> hurtDataMap = mapTeams.getDamageMap().getOrDefault(deadPlayer.getUUID(),null);
+        if (hurtDataMap == null || hurtDataMap.isEmpty()) {
+            return Optional.empty();
+        }
+
+        float minAssistDamage = deadPlayer.getMaxHealth() * minAssistDamageRatio;
+        return hurtDataMap.entrySet().stream()
+                .filter(entry -> entry.getValue() > minAssistDamage)
+                .sorted(Map.Entry.<UUID, Float>comparingByValue().reversed())
+                .limit(1)
+                .findAny()
+                .flatMap(entry -> mapTeams.getTeamByPlayer(entry.getKey())
+                        .flatMap(team -> team.getPlayerData(entry.getKey())));
+    }
+
+
+    /**
+     * 构建死亡消息（包含击杀、助攻、爆头信息）
+     * @param map 地图
+     * @param attacker 击杀者
+     * @param deadPlayer 死亡玩家
+     * @param deathItem 致死物品
+     * @param isHeadShot 是否爆头
+     * @return 死亡消息数据包
+     */
+    public static DeathMessageS2CPacket buildDeathMessagePacket(BaseMap map, ServerPlayer attacker, ServerPlayer deadPlayer,
+                                                          ItemStack deathItem, boolean isHeadShot,float minAssistDamageRatio) {
+
+        DeathMessage.Builder builder = new DeathMessage.Builder(attacker, deadPlayer, deathItem);
+
+        // 设置爆头标记
+        if (isHeadShot) {
+            builder.setHeadShot(true);
+        }
+
+        // 设置助攻信息
+        calculateAssistPlayer(map,deadPlayer,minAssistDamageRatio).ifPresent(assistData -> {
+            if (!attacker.getUUID().equals(assistData.getOwner())) {
+                builder.setAssist(assistData.name(), assistData.getOwner());
+            }
+        });
+
+        return new DeathMessageS2CPacket(builder.build());
+    }
+
+    /**
+     * 处理击杀奖励（经济+击杀数+爆头数）
+     * @param deadPlayer 死亡玩家
+     * @param attacker 击杀者
+     * @param deathItem 致死物品
+     * @param isHeadShot 是否爆头
+     */
+    public static void handleKillRewards(CSMap csMap, ServerPlayer deadPlayer, ServerPlayer attacker,
+                                   ItemStack deathItem, boolean isHeadShot) {
+        // 发放经济奖励
+        csMap.giveEco(deadPlayer, attacker, deathItem, true);
+
+        // 增加击杀数
+        csMap.getMapTeams().getTeamByPlayer(attacker)
+                .flatMap(team -> team.getPlayerData(attacker.getUUID()))
+                .ifPresent(playerData -> {
+                    playerData.addKills();
+                    // 爆头额外计数
+                    if (isHeadShot) {
+                        playerData.addHeadshotKill();
+                    }
+                });
+    }
+
+}
