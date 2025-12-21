@@ -276,7 +276,6 @@ public class CSDeathMatchMap extends CSMap {
     
     @Override
     public Team.Visibility nameTagVisibility() {
-        // 死斗模式下，显示所有玩家的名称标签
         return Team.Visibility.ALWAYS;
     }
     
