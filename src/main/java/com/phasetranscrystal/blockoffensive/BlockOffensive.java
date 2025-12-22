@@ -1,6 +1,8 @@
 package com.phasetranscrystal.blockoffensive;
 
 import com.phasetranscrystal.blockoffensive.command.VoteCommand;
+import com.phasetranscrystal.blockoffensive.compat.BOImpl;
+import com.phasetranscrystal.blockoffensive.compat.PhysicsModCompat;
 import com.phasetranscrystal.blockoffensive.entity.BOEntityRegister;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.net.*;
@@ -69,7 +71,7 @@ public class BlockOffensive {
         PACKET_REGISTER.registerPacket(CSTabRemovalS2CPacket.class);
         PACKET_REGISTER.registerPacket(DeathMessageS2CPacket.class);
         PACKET_REGISTER.registerPacket(PxDeathCompatS2CPacket.class);
-        PACKET_REGISTER.registerPacket(PxResetCompatS2CPacket.class);
+        PACKET_REGISTER.registerPacket(PxRagdollRemovalCompatS2CPacket.class);
         PACKET_REGISTER.registerPacket(CSGameWeaponDataS2CPacket.class);
         PACKET_REGISTER.registerPacket(BombFuseS2CPacket.class);
 
@@ -93,6 +95,10 @@ public class BlockOffensive {
             FPSMSoundRegister.registerKnifeDropSound(BOSoundRegister.WEAPON_KNIFE_IMPACT.get());
             FPSMSoundRegister.registerItemPickupSound(BOItemRegister.C4.get().asItem(), SoundEvents.EXPERIENCE_ORB_PICKUP);
             FPSMSoundRegister.registerItemDropSound(BOItemRegister.C4.get().asItem(), BOSoundRegister.WEAPON_C4_IMPACT.get());
+
+            if(BOImpl.isPhysicsModLoaded()){
+                PhysicsModCompat.init();
+            }
         });
     }
 }

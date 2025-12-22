@@ -12,6 +12,8 @@ import me.xjqsh.lrtactical.entity.ThrowableItemEntity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.item.ItemStack;
+import org.joml.Vector3d;
+import org.joml.Vector3f;
 
 import java.util.Map;
 import java.util.Optional;
@@ -116,28 +118,11 @@ public class BOUtil {
         return new DeathMessageS2CPacket(builder.build());
     }
 
-    /**
-     * 处理击杀奖励（经济+击杀数+爆头数）
-     * @param deadPlayer 死亡玩家
-     * @param attacker 击杀者
-     * @param deathItem 致死物品
-     * @param isHeadShot 是否爆头
-     */
-    public static void handleKillRewards(CSMap csMap, ServerPlayer deadPlayer, ServerPlayer attacker,
-                                   ItemStack deathItem, boolean isHeadShot) {
-        // 发放经济奖励
-        csMap.giveEco(deadPlayer, attacker, deathItem, true);
+    public static boolean isFrozen(Vector3d vector3d) {
+        final double EPSILON = 1e-6f;
 
-        // 增加击杀数
-        csMap.getMapTeams().getTeamByPlayer(attacker)
-                .flatMap(team -> team.getPlayerData(attacker.getUUID()))
-                .ifPresent(playerData -> {
-                    playerData.addKills();
-                    // 爆头额外计数
-                    if (isHeadShot) {
-                        playerData.addHeadshotKill();
-                    }
-                });
+        return Math.abs(vector3d.x) < EPSILON &&
+                Math.abs(vector3d.y) < EPSILON &&
+                Math.abs(vector3d.z) < EPSILON;
     }
-
 }

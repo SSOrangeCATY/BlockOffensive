@@ -5,6 +5,7 @@ import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import com.phasetranscrystal.blockoffensive.client.data.WeaponData;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.data.FPSMClientGlobalData;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
@@ -36,9 +37,9 @@ public class BOClientWebServer {
             server.createContext("/api/data", new CSDataHandler());
             server.setExecutor(null);
             server.start();
-            System.out.println("BO Web Server started on port " + port);
+            FPSMatch.LOGGER.info("BlockOffensive Web Server started on port {}", port);
         } catch (IOException e) {
-            System.out.println("BO Web Server failed to start on port " + port + " " + e.getMessage());
+            FPSMatch.LOGGER.info("BlockOffensive Web Server failed to start on port {} {}", port, e.getMessage());
             server = null;
         }
     }
@@ -47,7 +48,7 @@ public class BOClientWebServer {
         if (server != null) {
             server.stop(0);
             server = null;
-            System.out.println("FPSM Web Server stopped");
+            FPSMatch.LOGGER.info("BlockOffensive Web Server stopped");
         }
     }
 

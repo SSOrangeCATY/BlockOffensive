@@ -8,6 +8,7 @@ import com.phasetranscrystal.fpsmatch.common.capability.map.GameEndTeleportCapab
 import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.team.StartKitsCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.team.SpawnPointCapability;
+import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
 import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
@@ -20,22 +21,22 @@ import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.scores.Team;
-import net.minecraftforge.client.event.MovementInputUpdateEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Mod.EventBusSubscriber(modid = BlockOffensive.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CSDeathMatchMap extends CSMap {
@@ -116,6 +117,12 @@ public class CSDeathMatchMap extends CSMap {
             }
         });
     }
+
+    @Override
+    public void leave(ServerPlayer player){
+        super.leave(player);
+        this.playerData.remove(player.getUUID());
+    }
     
     @Override
     public boolean start() {
@@ -141,6 +148,61 @@ public class CSDeathMatchMap extends CSMap {
         initializePlayers(mapTeams);
         
         return true;
+    }
+
+    @Override
+    public boolean cleanupMap() {
+        if (!super.cleanupMap()) {
+            return false;
+        }
+
+        this.cleanupSpecificEntities();
+
+        return true;
+    }
+
+    @Override
+    public void victory(){
+        List<PlayerData> players = this.getMapTeams()
+                .getNormalTeams()
+                .stream()
+                .map(team -> team.getPlayers().values())
+                .flatMap(Collection::stream)
+                .sorted(Comparator.comparingInt(PlayerData::getScores))
+                .toList();
+
+        Component head = Component.translatable("map.deathmatch.message.victory.head");
+        List<Component> messages = new ArrayList<>();
+        for (int i = 0; i < players.size(); i++) {
+            PlayerData data = players.get(i);
+            Component message = Component.translatable("map.deathmatch.message.victory.message",i,data.name(),data.getScores(),data.getKills(),data.getDeaths(),data.getAssists(),String.format("%.2f",data.headshotPer()),data.getDamage());
+            messages.add(message);
+        }
+
+        this.sendAllPlayerMessage(head,false);
+        for (Component message : messages) {
+            this.sendAllPlayerMessage(message,false);
+        }
+
+        this.reset();
+    }
+
+    @Override
+    public void reset(){
+        super.reset();
+        this.cleanupMap();
+        this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> this.getPlayerByUUID(uuid).ifPresent(player->{
+            this.getServerLevel().getServer().getScoreboard().removePlayerFromTeam(player.getScoreboardName());
+            player.getInventory().clearContent();
+            player.removeAllEffects();
+        })));
+        this.teleportPlayerToMatchEndPoint();
+        this.sendPacketToAllPlayer(new FPSMatchStatsResetS2CPacket());
+        this.isError = false;
+        this.isStart = false;
+        this.currentMatchTime = 0;
+        this.getMapTeams().getJoinedPlayers().forEach(data-> data.getPlayer().ifPresent(this::resetPlayerClientData));
+        this.getMapTeams().reset();
     }
 
     public void resetAllPlayerData(){

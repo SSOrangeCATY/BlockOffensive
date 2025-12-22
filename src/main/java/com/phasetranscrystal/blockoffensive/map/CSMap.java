@@ -2,19 +2,19 @@ package com.phasetranscrystal.blockoffensive.map;
 
 import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.client.data.WeaponData;
-import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.blockoffensive.event.CSGamePlayerJoinEvent;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.item.CompositionC4;
 import com.phasetranscrystal.blockoffensive.net.CSGameSettingsS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.DeathMessageS2CPacket;
-import com.phasetranscrystal.blockoffensive.net.PxResetCompatS2CPacket;
+import com.phasetranscrystal.blockoffensive.net.PxRagdollRemovalCompatS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.shop.ShopStatesS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.spec.CSGameWeaponDataS2CPacket;
 import com.phasetranscrystal.blockoffensive.util.BOUtil;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
+import com.phasetranscrystal.fpsmatch.common.capability.map.GameEndTeleportCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.team.SpawnPointCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.team.StartKitsCapability;
@@ -23,6 +23,7 @@ import com.phasetranscrystal.fpsmatch.common.entity.drop.MatchDropEntity;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
+import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
 import com.phasetranscrystal.fpsmatch.core.capability.map.MapCapability;
@@ -208,8 +209,8 @@ public abstract class CSMap extends BaseMap implements IConfigureMap<CSMap> {
     /**
      * 清理指定区域内的特定实体
      */
-    public void cleanupSpecificEntities(ServerLevel serverLevel, AreaData areaData) {
-        serverLevel.getEntitiesOfClass(Entity.class, areaData.getAABB())
+    public void cleanupSpecificEntities() {
+        getServerLevel().getEntitiesOfClass(Entity.class, getMapArea().getAABB())
                 .stream()
                 .filter(this::shouldDiscardEntity)
                 .forEach(Entity::discard);
@@ -219,9 +220,9 @@ public abstract class CSMap extends BaseMap implements IConfigureMap<CSMap> {
     /**
      * 发送物理模组兼容包
      */
-    public void sendPhysicsRagdollRemovalPacket() {
+    public void sendPhysicsRagdollRemovalPacket(UUID uuid) {
         if (ModList.get().isLoaded("physicsmod")) {
-            sendPacketToAllPlayer(new PxResetCompatS2CPacket());
+            sendPacketToAllPlayer(new PxRagdollRemovalCompatS2CPacket(uuid));
         }
     }
 
@@ -551,6 +552,16 @@ public abstract class CSMap extends BaseMap implements IConfigureMap<CSMap> {
 
     public void sendAllPlayerMessage(Component message, boolean actionBar){
         this.getMapTeams().getJoinedPlayers().forEach(data -> data.getPlayer().ifPresent(player -> player.displayClientMessage(message,actionBar)));
+    }
+
+    public void teleportPlayerToMatchEndPoint(){
+        getCapabilityMap().get(GameEndTeleportCapability.class).ifPresent(cap->{
+            SpawnPointData data = cap.getPoint();
+            this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> this.getPlayerByUUID(uuid).ifPresent(player->{
+                teleportToPoint(player, data);
+                player.setGameMode(FPSMConfig.common.autoAdventureMode.get() ? GameType.ADVENTURE : GameType.SURVIVAL);
+            })));
+        });
     }
 
     /**

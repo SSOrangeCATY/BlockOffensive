@@ -1000,14 +1000,12 @@ public class CSGameMap extends CSMap{
             return false;
         }
 
-        AreaData areaData = getMapArea();
-        ServerLevel serverLevel = getServerLevel();
         MapTeams mapTeams = getMapTeams();
         int ctScore = getCT().getScores();
         int tScore = getT().getScores();
 
-        sendPhysicsRagdollRemovalPacket();
-        cleanupSpecificEntities(serverLevel, areaData);
+        sendPhysicsRagdollRemovalPacket(PxRagdollRemovalCompatS2CPacket.ALL);
+        cleanupSpecificEntities();
         notifySpectatorsOfBombFuse();
 
         boolean shouldSwitchTeams = handleOvertimeAndTeamSwitch(ctScore, tScore, mapTeams);
@@ -1149,16 +1147,6 @@ public class CSGameMap extends CSMap{
                     if(team.hasPlayer(player.getUUID())){
                         opt.ifPresent(cap -> cap.givePlayerKits(player));
                     }
-        });
-    }
-
-    public void teleportPlayerToMatchEndPoint(){
-        getCapabilityMap().get(GameEndTeleportCapability.class).ifPresent(cap->{
-                    SpawnPointData data = cap.getPoint();
-            this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> this.getPlayerByUUID(uuid).ifPresent(player->{
-                teleportToPoint(player, data);
-                player.setGameMode(FPSMConfig.common.autoAdventureMode.get() ? GameType.ADVENTURE : GameType.SURVIVAL);
-            })));
         });
     }
 

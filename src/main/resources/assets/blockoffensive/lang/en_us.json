@@ -86,12 +86,12 @@
   "blockoffensive.map.cs.team.giveBomb": "%s has been chosen to carry the C4 bomb. Plant it at the designated site!",
   "blockoffensive.cs.knife.selection": "Side Selection",
 
-  "blockoffensive.killCam.killed_by": "Killed by",
-  "blockoffensive.killCam.unknown_weapon": "Unknown weapon",
   "key.blockoffensive.switch_spec_previous.desc": "Switch previous teammate",
   "key.blockoffensive.switch_spec_next.desc": "Switch next teammate",
   "key.category.blockoffensive.spec": "Blockoffensive Spectator",
   "blockoffensive.killed_by": "Killed by",
   "blockoffensive.tab.header.score": "score",
-  "blockoffensive.tab.header.kd": "K/D"
+  "blockoffensive.tab.header.kd": "K/D",
+  "map.deathmatch.message.victory.head": "========== Match Results ==========",
+  "map.deathmatch.message.victory.message": "#%s | %s | Score: %s | K/D/A: %s/%s/%s | HS%%: %s | DMG: %s"
 }
