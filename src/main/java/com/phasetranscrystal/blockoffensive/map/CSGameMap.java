@@ -1118,7 +1118,6 @@ public class CSGameMap extends CSMap{
         player.heal(player.getMaxHealth());
         player.setGameMode(GameType.ADVENTURE);
 
-        // 队伍切换时：清空背包 + 发放工具包 + 发送提示
         if (shouldSwitchTeams) {
             clearInventory(player);
             givePlayerKits(player);
@@ -1126,7 +1125,6 @@ public class CSGameMap extends CSMap{
             return;
         }
 
-        // 非切换时：死亡玩家重置背包，存活玩家重置弹药
         if (!data.isLiving()) {
             clearInventory(player);
             givePlayerKits(player);
@@ -1134,7 +1132,6 @@ public class CSGameMap extends CSMap{
             resetGunAmmo();
         }
 
-        // 锁定商店槽位
         ShopCapability.getPlayerShopData(this, player.getUUID())
                 .ifPresent(shopData -> shopData.lockShopSlots(player));
     }
@@ -1347,7 +1344,7 @@ public class CSGameMap extends CSMap{
 
                 this.sendPacketToJoinedPlayer(dead, new ShopStatesS2CPacket(false, 0, 0), true);
                 deadPlayerTeam.getPlayerData(dead.getUUID()).ifPresent(data -> {
-                    data.addDeaths();
+                    data.addDeath();
                     data.setLiving(false);
                     // 清除c4,并掉落c4
                     dropC4(dead);

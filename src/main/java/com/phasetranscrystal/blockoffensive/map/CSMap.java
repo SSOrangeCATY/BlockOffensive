@@ -724,7 +724,7 @@ public abstract class CSMap extends BaseMap implements IConfigureMap<CSMap> {
         getMapTeams().getTeamByPlayer(killer)
                 .flatMap(team -> team.getPlayerData(killer.getUUID()))
                 .ifPresent(data->{
-                    data.addKills();
+                    data.addKill();
                     if (isHeadShot) {
                         data.addHeadshotKill();
                     }

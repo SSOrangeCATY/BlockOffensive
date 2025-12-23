@@ -3,6 +3,7 @@ package com.phasetranscrystal.blockoffensive.client.screen.hud;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
+import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -14,10 +15,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static com.phasetranscrystal.fpsmatch.util.RenderUtil.color;
 
@@ -367,10 +365,11 @@ public class CSGameOverlay {
                     : (boxStartX + 2 + i*(avatarSize+gap));
 
             // 1) 血量 =>0=死/观战
-            float actualRatio = fetchEntityHealthRatio(uuid);
+            Optional<PlayerData> data = RenderUtil.getPlayerData(player);
+            boolean checked = data.isPresent();
 
             // 2) 对非本地阵营 => 不显示血条
-            float barRatio = (!isSameTeam) ? 0f : actualRatio;
+            float barRatio = (!isSameTeam) ? 0f : checked ? data.get().getHealthPercent() : 0f;
 
             // 3) 背景框: 每玩家固定颜色
             int colorIndex = getColorIndexForPlayer(uuid);
@@ -379,7 +378,7 @@ public class CSGameOverlay {
 
             // 4) 灰度头像(dead)
             float r=1f,g=1f,b=1f,a=1f;
-            if (actualRatio<=0.001f) {
+            if (checked && data.get().isLiving()) {
                 r=g=b=0.3f;
             }
             RenderSystem.setShaderColor(r,g,b,a);
@@ -399,7 +398,7 @@ public class CSGameOverlay {
                 startY += barHeight + margin;
             }
 
-            int killCount = FPSMClient.getGlobalData().getPlayerTabData(uuid).get()._kills();
+            int killCount = FPSMClient.getGlobalData().getPlayerTabData(uuid).map(PlayerData::getTempKills).orElse(0);
             if(killCount > 0){
                 drawPlayerKills(guiGraphics,font,killCount,avX + (smallAvSize/2),startY,scaleFactor);
                 startY += 5 + margin;
@@ -493,22 +492,11 @@ public class CSGameOverlay {
     }
 
     private boolean isSameTeam(@Nullable String localTeam, String rowTeam) {
-        if (localTeam==null || localTeam.isEmpty()
+        if (localTeam == null || localTeam.isEmpty()
                 || "spectator".equalsIgnoreCase(localTeam)) {
             return true;
         }
         return localTeam.equalsIgnoreCase(rowTeam);
-    }
-
-    // 读血量 =>0=dead
-    private float fetchEntityHealthRatio(UUID uuid){
-        Player p = Minecraft.getInstance().level.getPlayerByUUID(uuid);
-        if (p==null || !p.isAlive() || p.isSpectator()) {
-            return 0f;
-        }
-        float hp = p.getHealth();
-        float mx = p.getMaxHealth();
-        return (mx<=0f)?0f:(hp/mx)*100f;
     }
 
     // 平滑血条

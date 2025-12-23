@@ -9,6 +9,7 @@ import com.phasetranscrystal.blockoffensive.compat.BOImpl;
 import com.phasetranscrystal.blockoffensive.compat.HitIndicationCompat;
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
+import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.screen.hud.IHudRenderer;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import com.tacz.guns.api.TimelessAPI;
@@ -46,6 +47,7 @@ public class CSGameHud implements IHudRenderer {
     private final CSMvpHud mvpHud = new CSMvpHud();
     private final CSDeathMessageHud deathMessageHud = new CSDeathMessageHud();
     private final CSGameOverlay gameOverlay = new CSGameOverlay();
+    private final CSDMOverlay dmOverlay = new CSDMOverlay();
     private static final ResourceLocation SEMI = ResourceLocation.tryBuild("tacz", "textures/hud/fire_mode_semi.png");
     private static final ResourceLocation AUTO = ResourceLocation.tryBuild("tacz", "textures/hud/fire_mode_auto.png");
     private static final ResourceLocation BURST = ResourceLocation.tryBuild("tacz", "textures/hud/fire_mode_burst.png");
@@ -105,7 +107,11 @@ public class CSGameHud implements IHudRenderer {
 
     @Override
     public void onSpectatorRender(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
-        gameOverlay.render(guiGraphics, screenWidth, screenHeight);
+        if(!FPSMClient.getGlobalData().equalsGame("csdm")){
+            gameOverlay.render(guiGraphics, screenWidth, screenHeight);
+        }else{
+            dmOverlay.render(guiGraphics, screenWidth, screenHeight);
+        }
         deathMessageHud.render(guiGraphics);
         mvpHud.render(guiGraphics, screenWidth, screenHeight);
     }
@@ -116,7 +122,11 @@ public class CSGameHud implements IHudRenderer {
         if(BOImpl.isHitIndicationLoaded()){
             HitIndicationCompat.Renderer.render(gui.getMinecraft().getWindow(),guiGraphics);
         }
-        gameOverlay.render(guiGraphics, screenWidth, screenHeight);
+        if(!FPSMClient.getGlobalData().equalsGame("csdm")){
+            gameOverlay.render(guiGraphics, screenWidth, screenHeight);
+        }else{
+            dmOverlay.render(guiGraphics, screenWidth, screenHeight);
+        }
         deathMessageHud.render(guiGraphics);
         renderInfoLine(mc,gui, guiGraphics, screenWidth, screenHeight);
         renderItemBar(mc,gui, guiGraphics, screenWidth, screenHeight);

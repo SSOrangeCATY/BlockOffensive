@@ -65,7 +65,7 @@
   "item.blockoffensive.bomb_disposal_kit" : "Bomb Disposal Kit",
   "blockoffensive.map.cs.match.point" : "Match Point",
   "blockoffensive.map.cs.join.team" : "Successfully joined team %1$s",
-  "blockoffensive.item.bomb_disposal_kit.drop.message" : "you can't drop this item",
+  "blockoffensive.item.drop.fail.message" : "you can't drop this item",
   "command.cs.noMap": "You have not joined any CS maps.",
   "command.cs.onlyPlayer": "This command only player execute.",
   "blockoffensive.tab.header.player": "Player",

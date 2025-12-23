@@ -65,7 +65,7 @@
   "item.blockoffensive.bomb_disposal_kit": "拆弹器",
   "blockoffensive.map.cs.match.point": "赛点",
   "blockoffensive.map.cs.join.team": "成功加入 %1$s",
-  "blockoffensive.item.bomb_disposal_kit.drop.message": "你不能丢弃这个物品",
+  "blockoffensive.item.drop.fail.message": "你不能丢弃这个物品",
   "command.cs.noMap": "你没有加入任何CS地图",
   "command.cs.onlyPlayer": "这个指令只有玩家能够执行",
   "blockoffensive.tab.header.player": "玩家",

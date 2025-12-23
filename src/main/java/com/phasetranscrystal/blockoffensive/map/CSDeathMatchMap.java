@@ -36,7 +36,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Mod.EventBusSubscriber(modid = BlockOffensive.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CSDeathMatchMap extends CSMap {
@@ -175,7 +174,7 @@ public class CSDeathMatchMap extends CSMap {
         List<Component> messages = new ArrayList<>();
         for (int i = 0; i < players.size(); i++) {
             PlayerData data = players.get(i);
-            Component message = Component.translatable("map.deathmatch.message.victory.message",i,data.name(),data.getScores(),data.getKills(),data.getDeaths(),data.getAssists(),String.format("%.2f",data.headshotPer()),data.getDamage());
+            Component message = Component.translatable("map.deathmatch.message.victory.message",i,data.name(),data.getScores(),data.getTotalKills(),data.getTotalDeaths(),data.getTotalAssists(),String.format("%.2f",data.getHeadshotRate()),data.getTotalDamage());
             messages.add(message);
         }
 
@@ -252,8 +251,8 @@ public class CSDeathMatchMap extends CSMap {
         // 立即重生玩家
         respawnPlayer(dead);
     }
-    
-    private void respawnPlayer(ServerPlayer player) {
+
+    public void respawnPlayer(ServerPlayer player) {
         // 重置玩家状态
         player.heal(player.getMaxHealth());
         player.removeAllEffects();
@@ -271,23 +270,21 @@ public class CSDeathMatchMap extends CSMap {
         getDMPlayerData(player.getUUID()).ifPresent(DMPlayerData::respawn);
     }
     
-    private SpawnPointData getRandomSpawnPoint() {
+    public SpawnPointData getRandomSpawnPoint() {
         if (spawnPoints.isEmpty()) {
             return null;
         }
         
-        // 计算附近玩家数量，选择安全的重生点
         Map<SpawnPointData, Double> weightMap = new HashMap<>();
         for (SpawnPointData spawnPoint : spawnPoints) {
             double weight = calculateSpawnPointWeight(spawnPoint);
             weightMap.put(spawnPoint, weight);
         }
         
-        // 基于权重选择重生点
         return selectWeightedRandomSpawnPoint(weightMap);
     }
     
-    private double calculateSpawnPointWeight(SpawnPointData spawnPoint) {
+    public double calculateSpawnPointWeight(SpawnPointData spawnPoint) {
         double baseWeight = 1.0;
         double playerDistanceFactor = 10.0;
 
@@ -305,8 +302,8 @@ public class CSDeathMatchMap extends CSMap {
         
         return baseWeight;
     }
-    
-    private SpawnPointData selectWeightedRandomSpawnPoint(Map<SpawnPointData, Double> weightMap) {
+
+    public SpawnPointData selectWeightedRandomSpawnPoint(Map<SpawnPointData, Double> weightMap) {
         double totalWeight = weightMap.values().stream().mapToDouble(Double::doubleValue).sum();
         double randomValue = new Random().nextDouble() * totalWeight;
         
@@ -399,7 +396,7 @@ public class CSDeathMatchMap extends CSMap {
     
     @Override
     public Function<ServerPlayer, Boolean> getPlayerCanOpenShop() {
-        return player -> getDMPlayerData(player.getUUID()).map(DMPlayerData::canOpenShop).orElse(false);
+        return player -> getDMPlayerData(player.getUUID()).map(DMPlayerData::isSpawning).orElse(false);
     }
     
     @Override
@@ -427,7 +424,7 @@ public class CSDeathMatchMap extends CSMap {
      * 检查玩家是否处于重生保护状态
      */
     public boolean isInSpawnProtection(UUID uuid) {
-        return this.getDMPlayerData(uuid).map(d -> System.currentTimeMillis() - d.lastProtectionTime < (spawnProtectionTime.get() * 1000L)).orElse(false);
+        return this.getDMPlayerData(uuid).map(d -> d.isSpawning() && (System.currentTimeMillis() - d.lastProtectionTime < (spawnProtectionTime.get() * 1000L))).orElse(false);
     }
     
     /**
@@ -472,7 +469,7 @@ public class CSDeathMatchMap extends CSMap {
             this.owner = owner;
         }
 
-        public boolean canOpenShop(){
+        public boolean isSpawning(){
             return !isFired && !isMoved;
         }
 

@@ -9,6 +9,7 @@ import com.phasetranscrystal.blockoffensive.net.*;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombActionC2SPacket;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombActionS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombDemolitionProgressS2CPacket;
+import com.phasetranscrystal.blockoffensive.net.dm.PlayerMoveC2SPacket;
 import com.phasetranscrystal.blockoffensive.net.mvp.MvpHUDCloseS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.mvp.MvpMessageS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.shop.ShopStatesS2CPacket;
@@ -74,6 +75,7 @@ public class BlockOffensive {
         PACKET_REGISTER.registerPacket(PxRagdollRemovalCompatS2CPacket.class);
         PACKET_REGISTER.registerPacket(CSGameWeaponDataS2CPacket.class);
         PACKET_REGISTER.registerPacket(BombFuseS2CPacket.class);
+        PACKET_REGISTER.registerPacket(PlayerMoveC2SPacket.class);
 
         event.enqueueWork(() -> {
             FPSMSoundRegister.registerGunPickupSound(GunTabType.PISTOL,BOSoundRegister.WEAPON_PISTOL_PICKUP.get());

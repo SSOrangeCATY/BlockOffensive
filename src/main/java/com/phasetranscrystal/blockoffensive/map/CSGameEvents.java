@@ -29,6 +29,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.ServerChatEvent;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -41,6 +42,23 @@ import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = BlockOffensive.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CSGameEvents {
+
+    @SubscribeEvent
+    public static void onPlayerHurt(LivingHurtEvent event) {
+        if(event.getEntity() instanceof ServerPlayer player) {
+            FPSMCore.getInstance().getMapByPlayer(player)
+                    .map(map->{
+                        if(map instanceof CSDeathMatchMap dm){
+                            return dm;
+                        }
+                        return null;
+                    }).ifPresent(dm->{
+                        if(dm.isInSpawnProtection(player.getUUID())){
+                            event.setCanceled(true);
+                        }
+                    });
+        }
+    }
 
     @SubscribeEvent
     public static void onPlayerShoot(GunShootEvent event) {
@@ -79,7 +97,7 @@ public class CSGameEvents {
         Optional<BaseMap> optional = FPSMCore.getInstance().getMapByPlayer(event.getPlayer());
         if(optional.isEmpty()) return;
         BaseMap map = optional.get();
-        if(map instanceof CSGameMap csGameMap){
+        if(map instanceof CSMap csGameMap){
             String[] m = event.getMessage().getString().split("\\.");
             if(m.length > 1){
                 csGameMap.handleChatCommand(m[1],event.getPlayer());
@@ -95,14 +113,17 @@ public class CSGameEvents {
         Optional<BaseMap> optional = FPSMCore.getInstance().getMapByPlayer(event.getPlayer());
         if(optional.isEmpty()) return;
         BaseMap map = optional.get();
-        if (map instanceof CSGameMap){
+        if (map instanceof CSMap cs){
+            if(cs instanceof CSDeathMatchMap){
+                event.setCanceled(true);
+            }
+
             if(itemStack.getItem() instanceof CompositionC4){
                 event.getEntity().setGlowingTag(true);
             }
 
             if(itemStack.getItem() instanceof BombDisposalKit){
                 event.setCanceled(true);
-                event.getPlayer().displayClientMessage(Component.translatable("blockoffensive.item.bomb_disposal_kit.drop.message").withStyle(ChatFormatting.RED),true);
                 event.getPlayer().getInventory().add(new ItemStack(BOItemRegister.BOMB_DISPOSAL_KIT.get(),1));
             }
         }

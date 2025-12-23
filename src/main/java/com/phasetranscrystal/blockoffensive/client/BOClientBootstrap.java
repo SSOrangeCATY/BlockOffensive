@@ -41,7 +41,10 @@ public class BOClientBootstrap {
         SpecKeyHandler.registerSwitchKey(SwitchSpectatorKey.KEY_SPECTATE_PREV);
         // cs: hud | overlay | tab
         TabManager.getInstance().registerRenderer(new CSGameTabRenderer());
+        TabManager.getInstance().registerRenderer(new CSDMTabRenderer());
+
         FPSMGameHudManager.INSTANCE.registerHud("cs", CSGameHud.getInstance());
+        FPSMGameHudManager.INSTANCE.registerHud("csdm", CSGameHud.getInstance());
     }
 
     @SubscribeEvent

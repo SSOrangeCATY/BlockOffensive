@@ -4,6 +4,7 @@ import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.tab.TabRenderer;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
@@ -13,10 +14,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.scores.Objective;
 import net.minecraft.world.scores.Scoreboard;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class CSGameTabRenderer implements TabRenderer {
     public static final ResourceLocation GUI_ICONS_LOCATION = ResourceLocation.tryBuild("minecraft","textures/gui/icons.png");
@@ -54,9 +52,9 @@ public class CSGameTabRenderer implements TabRenderer {
 
         // 按伤害排序
         Comparator<PlayerInfo> damageComparator = (p1, p2) -> {
-            PlayerData t1 = FPSMClient.getGlobalData().getPlayerTabData(p1.getProfile().getId()).get();
-            PlayerData t2 = FPSMClient.getGlobalData().getPlayerTabData(p2.getProfile().getId()).get();
-            return Float.compare(t2.getDamage(), t1.getDamage());
+            Optional<PlayerData> t1 = FPSMClient.getGlobalData().getPlayerTabData(p1.getProfile().getId());
+            Optional<PlayerData> t2 = FPSMClient.getGlobalData().getPlayerTabData(p2.getProfile().getId());
+            return Float.compare(t1.map(PlayerData::getTotalDamage).orElse(0F), t2.map(PlayerData::getTotalDamage).orElse(0F));
         };
 
         teamPlayers.get("ct").sort(damageComparator);
@@ -112,35 +110,35 @@ public class CSGameTabRenderer implements TabRenderer {
         currentHeaderX += avatarSize + nameWidth + padding;
 
         // 金钱
-        Component moneyText = Component.translatable("blockoffensive.tab.header.money");
+        Component moneyText = Component.translatable("blockoffensive.tab.header.money").withStyle(ChatFormatting.BOLD);
         guiGraphics.drawString(minecraft.font, moneyText,
                 currentHeaderX + (moneyWidth - minecraft.font.width(moneyText)) / 2, headerY, 0xFFFFFFFF);
         currentHeaderX += moneyWidth;
 
         // K/D/A
-        Component killsText = Component.translatable("blockoffensive.tab.header.kills");
+        Component killsText = Component.translatable("blockoffensive.tab.header.kills").withStyle(ChatFormatting.BOLD);
         guiGraphics.drawString(minecraft.font, killsText,
                 currentHeaderX + (killWidth - minecraft.font.width(killsText)) / 2, headerY, 0xFFFFFFFF);
         currentHeaderX += killWidth;
 
-        Component deathsText = Component.translatable("blockoffensive.tab.header.deaths");
+        Component deathsText = Component.translatable("blockoffensive.tab.header.deaths").withStyle(ChatFormatting.BOLD);
         guiGraphics.drawString(minecraft.font, deathsText,
                 currentHeaderX + (deathWidth - minecraft.font.width(deathsText)) / 2, headerY, 0xFFFFFFFF);
         currentHeaderX += deathWidth;
 
-        Component assistsText = Component.translatable("blockoffensive.tab.header.assists");
+        Component assistsText = Component.translatable("blockoffensive.tab.header.assists").withStyle(ChatFormatting.BOLD);
         guiGraphics.drawString(minecraft.font, assistsText,
                 currentHeaderX + (assistWidth - minecraft.font.width(assistsText)) / 2, headerY, 0xFFFFFFFF);
         currentHeaderX += assistWidth;
 
         // 爆头率
-        Component headshotText = Component.translatable("blockoffensive.tab.header.headshot");
+        Component headshotText = Component.translatable("blockoffensive.tab.header.headshot").withStyle(ChatFormatting.BOLD);
         guiGraphics.drawString(minecraft.font, headshotText,
                 currentHeaderX + (headshotWidth - minecraft.font.width(headshotText)) / 2, headerY, 0xFFFFFFFF);
         currentHeaderX += headshotWidth;
 
         // 伤害（直接跟在爆头率后面）
-        Component damageText = Component.translatable("blockoffensive.tab.header.damage");
+        Component damageText = Component.translatable("blockoffensive.tab.header.damage").withStyle(ChatFormatting.BOLD);
         guiGraphics.drawString(minecraft.font, damageText,
                 currentHeaderX + (damageWidth - minecraft.font.width(damageText)) / 2, headerY, 0xFFFFFFFF);
 
@@ -213,71 +211,40 @@ public class CSGameTabRenderer implements TabRenderer {
 
         // K/D/A（与表头对齐）
         int kdaX = moneyX + moneyWidth;
-        String kills = String.valueOf(tabData.getKills());
+        Component kills = Component.literal(String.valueOf(tabData.getTotalKills())).withStyle(ChatFormatting.BOLD);
         guiGraphics.drawString(minecraft.font, kills,
                 kdaX + (killWidth - minecraft.font.width(kills)) / 2, textY, textColor);
 
         int deathsX = kdaX + killWidth;
         guiGraphics.fill(deathsX, y, deathsX + deathWidth, y + height, 0x20FFFFFF);
-        String deaths = String.valueOf(tabData.getDeaths());
+        Component deaths = Component.literal(String.valueOf(tabData.getTotalDeaths())).withStyle(ChatFormatting.BOLD);
         guiGraphics.drawString(minecraft.font, deaths,
                 deathsX + (deathWidth - minecraft.font.width(deaths)) / 2, textY, textColor);
 
         int assistsX = deathsX + deathWidth;
-        String assists = String.valueOf(tabData.getAssists());
+        Component assists = Component.literal(String.valueOf(tabData.getTotalAssists())).withStyle(ChatFormatting.BOLD);
         guiGraphics.drawString(minecraft.font, assists,
                 assistsX + (assistWidth - minecraft.font.width(assists)) / 2, textY, textColor);
 
         // 爆头率（与表头对齐）
         int headshotX = assistsX + assistWidth;
         guiGraphics.fill(headshotX, y, headshotX + headshotWidth, y + height, 0x20FFFFFF);
-        String headshotPercentage = tabData.getKills() > 0
-                ? String.format("%.0f%%", (float)tabData.getHeadshotKills() / tabData.getKills() * 100)
-                : "0%";
+        float headShotRate = tabData.getHeadshotRate();
+        Component headshotPercentage = Component.literal(String.format("%.0f%%", headShotRate * 100)).withStyle(ChatFormatting.BOLD);
         guiGraphics.drawString(minecraft.font, headshotPercentage,
                 headshotX + (headshotWidth - minecraft.font.width(headshotPercentage)) / 2, textY, textColor);
 
         // 伤害（与表头对齐）
         int damageX = x + width - damageWidth;
         guiGraphics.fill(damageX, y, damageX + damageWidth, y + height, 0x40FFFFFF);
-        String damage = String.valueOf(Math.round(tabData.getDamage()));
+        Component damage = Component.literal(String.valueOf(Math.round(tabData.getTotalDamage()))).withStyle(ChatFormatting.BOLD);
         guiGraphics.drawString(minecraft.font, damage,
                 damageX + (damageWidth - minecraft.font.width(damage)) / 2, textY, textColor);
 
-        if(!tabData.isLivingNoOnlineCheck()){
+        if(!tabData.isLiving()){
             //渲染一层半透明灰色
             guiGraphics.fill(x, y, x + width, y + height, 0x40000000);
         }
-    }
-
-    private void renderEmptyPlayerRow(GuiGraphics guiGraphics, int x, int y, int width, int height, int textColor) {
-        // 列宽定义（与表头保持一致）
-        int padding = 5;
-        int pingWidth = 40;
-        int avatarSize = 12;
-        int nameWidth = 110;
-        int moneyWidth = 40;
-        int killWidth = 35;
-        int deathWidth = 35;
-        int assistWidth = 35;
-        int headshotWidth = 40;
-        int damageWidth = 48;
-
-        // 渲染半透明背景
-        guiGraphics.fill(x, y, x + width, y + height, 0x40000000);
-
-        // 渲染高亮列的背景
-        int moneyX = x + pingWidth + avatarSize + padding + nameWidth;
-        guiGraphics.fill(moneyX, y, moneyX + moneyWidth, y + height, 0x20FFFFFF);
-
-        int deathsX = moneyX + moneyWidth + killWidth;
-        guiGraphics.fill(deathsX, y, deathsX + deathWidth, y + height, 0x20FFFFFF);
-
-        int headshotX = deathsX + deathWidth + assistWidth;
-        guiGraphics.fill(headshotX, y, headshotX + headshotWidth, y + height, 0x20FFFFFF);
-
-        int damageX = x + width - damageWidth;
-        guiGraphics.fill(damageX, y, damageX + damageWidth, y + height, 0x40FFFFFF);
     }
 
     protected Component getNameForDisplay(PlayerInfo info) {

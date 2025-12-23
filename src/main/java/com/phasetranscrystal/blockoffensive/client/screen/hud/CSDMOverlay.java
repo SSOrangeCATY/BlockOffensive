@@ -5,6 +5,7 @@ import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -20,6 +21,7 @@ import static com.phasetranscrystal.fpsmatch.util.RenderUtil.color;
 
 public class CSDMOverlay {
     public static int textRoundTimeColor = color(255, 255, 255);
+    public static int textFontColor = color(138, 118, 110);
 
     private final Minecraft minecraft = Minecraft.getInstance();
 
@@ -35,7 +37,7 @@ public class CSDMOverlay {
         int timeBarHeight = (int) (13 * scaleFactor);
         int avatarSize = (int) (24.0F * scaleFactor);
         int avatarGap = (int) (16 * scaleFactor);
-        int scoreBgHeight = (int) (10 * scaleFactor);
+        int scoreBgHeight = (int) (8 * scaleFactor);
 
         // 渲染时间计数器
         renderTimeCounter(guiGraphics, font, centerX, startY, timeBarHeight, scaleFactor);
@@ -85,7 +87,7 @@ public class CSDMOverlay {
         // 渲染玩家头像和分数
         for (int i = 0; i < topPlayers.size(); i++) {
             PlayerInfo player = topPlayers.get(i);
-            Optional<PlayerData> playerData = getPlayerData(player);
+            Optional<PlayerData> playerData = RenderUtil.getPlayerData(player);
             if(playerData.isEmpty()) continue;
             PlayerData data = playerData.get();
             int drawX = startX + i * (avatarSize + avatarGap);
@@ -94,11 +96,11 @@ public class CSDMOverlay {
             renderPlayerAvatar(guiGraphics, player, data, drawX, startY, avatarSize);
 
             // 渲染分数背景
-            guiGraphics.fill(drawX, startY + avatarSize, drawX + avatarSize, startY + avatarSize + scoreBgHeight, textRoundTimeColor);
+            guiGraphics.fillGradient(drawX, startY + avatarSize, drawX + avatarSize, startY + avatarSize + scoreBgHeight, -1072689136, -804253680);
 
             // 渲染分数
             int playerScore = data.getScores();
-            String scoreText = String.valueOf(playerScore);
+            Component scoreText = Component.literal(String.valueOf(playerScore)).withStyle(ChatFormatting.BOLD);
             float scoreScale = scaleFactor * 0.8f;
 
             guiGraphics.pose().pushPose();
@@ -107,7 +109,7 @@ public class CSDMOverlay {
             guiGraphics.drawString(font, scoreText,
                     -font.width(scoreText) / 2,
                     -font.lineHeight / 2,
-                    0x000000,
+                    textFontColor,
                     false);
             guiGraphics.pose().popPose();
         }
@@ -116,7 +118,7 @@ public class CSDMOverlay {
     private void renderPlayerAvatar(GuiGraphics guiGraphics, PlayerInfo player, PlayerData data, int x, int y, int size) {
         // 灰度头像(dead)
         float r = 1f, g = 1f, b = 1f, a = 1f;
-        if (data.isLivingNoOnlineCheck()) {
+        if (data.isLiving()) {
             r = g = b = 0.3f;
         }
         RenderSystem.setShaderColor(r, g, b, a);
@@ -132,21 +134,7 @@ public class CSDMOverlay {
     }
 
     private int getPlayerScore(PlayerInfo player) {
-        return getPlayerData(player).map(PlayerData::getKills).orElse(0);
-    }
-
-    private Optional<PlayerData> getPlayerData(PlayerInfo player) {
-        return FPSMClient.getGlobalData().getPlayerTabData(player.getProfile().getId());
-    }
-
-    private float fetchEntityHealthRatio(UUID uuid) {
-        Player p = minecraft.level.getPlayerByUUID(uuid);
-        if (p == null || !p.isAlive() || p.isSpectator()) {
-            return 0f;
-        }
-        float hp = p.getHealth();
-        float mx = p.getMaxHealth();
-        return (mx <= 0f) ? 0f : (hp / mx) * 100f;
+        return RenderUtil.getPlayerData(player).map(PlayerData::getScores).orElse(0);
     }
 
     private Component getRoundTimeString() {

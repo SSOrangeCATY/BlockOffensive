@@ -50,6 +50,8 @@ public class BOClientEvent {
     public static void onPlayerMoveInput(MovementInputUpdateEvent event) {
         if(Minecraft.getInstance().player == null) return;
         Input input = event.getInput();
+        if(!FPSMClient.getGlobalData().equalsGame("csdm")) return;
+
         if (input.left || input.right || input.up || input.down || input.shiftKeyDown) {
             FPSMatch.sendToServer(new PlayerMoveC2SPacket());
         }

@@ -3,6 +3,7 @@ package com.phasetranscrystal.blockoffensive.client.screen.hud;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.multiplayer.PlayerInfo;
@@ -18,7 +19,7 @@ public class CSDMTabRenderer extends CSGameTabRenderer {
 
     @Override
     public String getGameType() {
-        return "deathmatch";
+        return "csdm";
     }
 
     @Override
@@ -97,43 +98,43 @@ public class CSDMTabRenderer extends CSGameTabRenderer {
         currentHeaderX += avatarSize + nameWidth + padding;
 
         // 杀敌数
-        Component killsText = Component.translatable("blockoffensive.tab.header.kills");
+        Component killsText = Component.translatable("blockoffensive.tab.header.kills").withStyle(ChatFormatting.BOLD);
         guiGraphics.drawString(minecraft.font, killsText,
                 currentHeaderX + (killsWidth - minecraft.font.width(killsText)) / 2, headerY, 0xFFFFFFFF);
         currentHeaderX += killsWidth;
 
         // 死亡数
-        Component deathsText = Component.translatable("blockoffensive.tab.header.deaths");
+        Component deathsText = Component.translatable("blockoffensive.tab.header.deaths").withStyle(ChatFormatting.BOLD);
         guiGraphics.drawString(minecraft.font, deathsText,
                 currentHeaderX + (deathsWidth - minecraft.font.width(deathsText)) / 2, headerY, 0xFFFFFFFF);
         currentHeaderX += deathsWidth;
 
         // 助攻数
-        Component assistsText = Component.translatable("blockoffensive.tab.header.assists");
+        Component assistsText = Component.translatable("blockoffensive.tab.header.assists").withStyle(ChatFormatting.BOLD);
         guiGraphics.drawString(minecraft.font, assistsText,
                 currentHeaderX + (assistsWidth - minecraft.font.width(assistsText)) / 2, headerY, 0xFFFFFFFF);
         currentHeaderX += assistsWidth;
 
         // KD
-        Component kdText = Component.translatable("blockoffensive.tab.header.kd");
+        Component kdText = Component.translatable("blockoffensive.tab.header.kd").withStyle(ChatFormatting.BOLD);
         guiGraphics.drawString(minecraft.font, kdText,
                 currentHeaderX + (kdWidth - minecraft.font.width(kdText)) / 2, headerY, 0xFFFFFFFF);
         currentHeaderX += kdWidth;
 
         // 爆头率
-        Component headshotText = Component.translatable("blockoffensive.tab.header.headshot");
+        Component headshotText = Component.translatable("blockoffensive.tab.header.headshot").withStyle(ChatFormatting.BOLD);
         guiGraphics.drawString(minecraft.font, headshotText,
                 currentHeaderX + (headshotWidth - minecraft.font.width(headshotText)) / 2, headerY, 0xFFFFFFFF);
         currentHeaderX += headshotWidth;
 
         // 伤害
-        Component damageText = Component.translatable("blockoffensive.tab.header.damage");
+        Component damageText = Component.translatable("blockoffensive.tab.header.damage").withStyle(ChatFormatting.BOLD);
         guiGraphics.drawString(minecraft.font, damageText,
                 currentHeaderX + (damageWidth - minecraft.font.width(damageText)) / 2, headerY, 0xFFFFFFFF);
         currentHeaderX += damageWidth;
 
         // 得分
-        Component scoreText = Component.translatable("blockoffensive.tab.header.score");
+        Component scoreText = Component.translatable("blockoffensive.tab.header.score").withStyle(ChatFormatting.BOLD);
         guiGraphics.drawString(minecraft.font, scoreText,
                 currentHeaderX + (scoreWidth - minecraft.font.width(scoreText)) / 2, headerY, 0xFFFFFFFF);
 
@@ -184,40 +185,41 @@ public class CSDMTabRenderer extends CSGameTabRenderer {
 
         // 杀敌数
         int killsX = x + pingWidth + avatarSize + padding + nameWidth;
-        String kills = String.valueOf(tabData.getKills());
+        String kills = String.valueOf(tabData.getTotalKills());
         guiGraphics.drawString(minecraft.font, kills,
                 killsX + (killsWidth - minecraft.font.width(kills)) / 2, textY, 0xFFFFFFFF);
 
         // 死亡数
         int deathsX = killsX + killsWidth;
-        String deaths = String.valueOf(tabData.getDeaths());
+        String deaths = String.valueOf(tabData.getTotalDeaths());
         guiGraphics.drawString(minecraft.font, deaths,
                 deathsX + (deathsWidth - minecraft.font.width(deaths)) / 2, textY, 0xFFFFFFFF);
 
         // 助攻数
         int assistsX = deathsX + deathsWidth;
-        String assists = String.valueOf(tabData.getAssists());
+        String assists = String.valueOf(tabData.getTotalAssists());
         guiGraphics.drawString(minecraft.font, assists,
                 assistsX + (assistsWidth - minecraft.font.width(assists)) / 2, textY, 0xFFFFFFFF);
 
         // KD
         int kdX = assistsX + assistsWidth;
-        float kd = tabData.getDeaths() > 0 ? (float) tabData.getKills() / tabData.getDeaths() : tabData.getKills();
+        float kd = tabData.getKD();
         String kdStr = String.format("%.2f", kd);
         guiGraphics.drawString(minecraft.font, kdStr,
                 kdX + (kdWidth - minecraft.font.width(kdStr)) / 2, textY, 0xFFFFFFFF);
 
         // 爆头率
         int headshotX = kdX + kdWidth;
-        String headshotPercentage = tabData.getKills() > 0
-                ? String.format("%.0f%%", (float) tabData.getHeadshotKills() / tabData.getKills() * 100)
+        float headshotRate = tabData.getHeadshotRate();
+        String headshotPercentage = headshotRate > 0
+                ? String.format("%.0f%%", headshotRate * 100)
                 : "0%";
         guiGraphics.drawString(minecraft.font, headshotPercentage,
                 headshotX + (headshotWidth - minecraft.font.width(headshotPercentage)) / 2, textY, 0xFFFFFFFF);
 
         // 伤害
         int damageX = headshotX + headshotWidth;
-        String damage = String.valueOf(Math.round(tabData.getDamage()));
+        String damage = String.valueOf(Math.round(tabData.getTotalDamage()));
         guiGraphics.drawString(minecraft.font, damage,
                 damageX + (damageWidth - minecraft.font.width(damage)) / 2, textY, 0xFFFFFFFF);
 
@@ -227,7 +229,7 @@ public class CSDMTabRenderer extends CSGameTabRenderer {
         guiGraphics.drawString(minecraft.font, score,
                 scoreX + (scoreWidth - minecraft.font.width(score)) / 2, textY, 0xFFFFFFFF);
 
-        if(!tabData.isLivingNoOnlineCheck()){
+        if(!tabData.isLiving()){
             //渲染一层半透明灰色
             guiGraphics.fill(x, y, x + width, y + height, 0x40000000);
         }
