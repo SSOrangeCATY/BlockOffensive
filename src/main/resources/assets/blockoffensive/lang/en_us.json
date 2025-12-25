@@ -93,5 +93,6 @@
   "blockoffensive.tab.header.score": "score",
   "blockoffensive.tab.header.kd": "K/D",
   "map.deathmatch.message.victory.head": "========== Match Results ==========",
-  "map.deathmatch.message.victory.message": "#%s | %s | Score: %s | K/D/A: %s/%s/%s | HS%%: %s | DMG: %s"
+  "map.deathmatch.message.victory.message": "#%s | %s | Score: %s | K/D/A: %s/%s/%s | HS%%: %s | DMG: %s",
+  "commands.blockoffensive.mvp.description": "Add mvp sound to player"
 }

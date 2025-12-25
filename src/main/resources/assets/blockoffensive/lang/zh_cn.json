@@ -92,5 +92,6 @@
   "blockoffensive.tab.header.score": "得分",
   "blockoffensive.tab.header.kd": "K/D",
   "map.deathmatch.message.victory.head": "========== 比赛结果 ==========",
-  "map.deathmatch.message.victory.message": "第%s名 | %s | 分数: %s | 杀/死/助: %s/%s/%s | 爆头率: %s | 伤害: %s"
+  "map.deathmatch.message.victory.message": "第%s名 | %s | 分数: %s | 杀/死/助: %s/%s/%s | 爆头率: %s | 伤害: %s",
+  "commands.blockoffensive.mvp.description": "添加MVP音乐给玩家"
 }

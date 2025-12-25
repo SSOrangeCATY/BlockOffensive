@@ -4,6 +4,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.sound.MVPMusicManager;
+import com.phasetranscrystal.fpsmatch.common.command.FPSMHelpManager;
 import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMCommandEvent;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -27,13 +28,16 @@ public class BOCommandRegister {
                         .then(Commands.argument("sound", ResourceLocationArgument.id())
                                 .suggests(SuggestionProviders.AVAILABLE_SOUNDS)
                                 .executes(BOCommandRegister::handleMvp))));
+        FPSMHelpManager.getInstance().registerCommandHelp("fpsm mvp", Component.translatable("commands.blockoffensive.mvp.description"));
+        FPSMHelpManager.getInstance().registerCommandParameters("fpsm mvp", "*targets", "*sound");
+
     }
 
     private static int handleMvp(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Collection<ServerPlayer> players = EntityArgument.getPlayers(context, "targets");
         ResourceLocation sound = ResourceLocationArgument.getId(context, "sound");
         players.forEach(player -> MVPMusicManager.getInstance().addMvpMusic(player.getUUID().toString(), sound));
-        context.getSource().sendSuccess(() -> Component.translatable("commands.fpsm.mvp.success", players.size(), sound), true);
+        context.getSource().sendSuccess(() -> Component.translatable("commands.blockoffensive.mvp.success", players.size(), sound), true);
         return 1;
     }
 

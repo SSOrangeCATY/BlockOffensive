@@ -129,7 +129,7 @@ public class CompositionC4 extends Item implements BlastBombItem {
 			return InteractionResultHolder.pass(stack);
 		}
 
-		if (!baseMap.isStart) {
+		if (!baseMap.isStart()) {
 			player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.map.notStart"), true);
 			return InteractionResultHolder.pass(stack);
 		}

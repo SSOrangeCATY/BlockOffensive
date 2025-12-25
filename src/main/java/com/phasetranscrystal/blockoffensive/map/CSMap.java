@@ -557,6 +557,7 @@ public abstract class CSMap extends BaseMap implements IConfigureMap<CSMap> {
     public void teleportPlayerToMatchEndPoint(){
         getCapabilityMap().get(GameEndTeleportCapability.class).ifPresent(cap->{
             SpawnPointData data = cap.getPoint();
+            if(data == null) return;
             this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> this.getPlayerByUUID(uuid).ifPresent(player->{
                 teleportToPoint(player, data);
                 player.setGameMode(FPSMConfig.common.autoAdventureMode.get() ? GameType.ADVENTURE : GameType.SURVIVAL);

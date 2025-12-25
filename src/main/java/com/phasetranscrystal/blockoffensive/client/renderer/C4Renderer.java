@@ -10,6 +10,7 @@ import net.minecraft.client.renderer.entity.ItemEntityRenderer;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +24,7 @@ public class C4Renderer implements EntityRendererProvider<CompositionC4Entity> {
             ItemEntityRenderer itemRender = null;
             @Override
             public @NotNull ResourceLocation getTextureLocation(@NotNull CompositionC4Entity pEntity) {
-                return TextureAtlas.LOCATION_BLOCKS;
+                return InventoryMenu.BLOCK_ATLAS;
             }
 
             @Override

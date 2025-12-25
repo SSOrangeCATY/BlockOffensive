@@ -93,7 +93,7 @@ public class BOClientWebServer {
                     playerData.put("team", team);
                     playerData.putAll(data.mappedInfo());
                     playerData.put("money", globalData.getPlayerMoney(uuid));
-                    playerData.put("health",data.healthPercent() * 100);
+                    playerData.put("health",data.getHealthPercent() * 100);
                     WeaponData weaponData = CSClientData.getWeaponData(uuid);
                     playerData.put("items", weaponData.weaponData());
                     playerData.put("bpAttributeHasHelmet", weaponData.bpAttributeHasHelmet());

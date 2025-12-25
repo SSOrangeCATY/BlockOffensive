@@ -295,7 +295,7 @@ public class CSDeathMatchMap extends CSMap {
                 continue;
             }
             
-            double distance = player.distanceToSqr(spawnPoint.getPosition().getX(), spawnPoint.getPosition().getY(), spawnPoint.getPosition().getZ());
+            double distance = player.distanceToSqr(spawnPoint.getX(), spawnPoint.getY(), spawnPoint.getZ());
 
             baseWeight += playerDistanceFactor / (distance + 1.0);
         }

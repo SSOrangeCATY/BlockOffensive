@@ -375,7 +375,7 @@ public class CSGameOverlay {
 
             // 4) 灰度头像(dead)
             float r=1f,g=1f,b=1f,a=1f;
-            if (checked && data.get().isLiving()) {
+            if (checked && !data.get().isLiving()) {
                 r=g=b=0.3f;
             }
             RenderSystem.setShaderColor(r,g,b,a);
@@ -493,19 +493,21 @@ public class CSGameOverlay {
                                      int startX, int startY, int endX, int endY)
     {
         int total = endX - startX;
-        for (int i = 0; i < total; i++) {
-            // 计算当前alpha值（从255到0线性变化）
-            float progress = (float)i / total;
-            int alpha = 255 - (int)(progress * 255);
+        if(ratio != 1.0f){
+            for (int i = 0; i < total; i++) {
+                // 计算当前alpha值（从255到0线性变化）
+                float progress = (float)i / total;
+                int alpha = 255 - (int)(progress * 255);
 
-            // 确保alpha在0-255范围内
-            alpha = Math.max(0, Math.min(255, alpha));
+                // 确保alpha在0-255范围内
+                alpha = Math.max(0, Math.min(255, alpha));
 
-            gg.fill(startX, startY, startX + i, endY,
-                    RenderUtil.color(166, 42, 39, alpha));
+                gg.fill(startX, startY, startX + i, endY,
+                        RenderUtil.color(166, 42, 39, alpha));
+            }
         }
 
-        int fillW = (int)(total*(ratio/100f));
+        int fillW = (int)(total*(ratio));
         gg.fill(startX, startY, startX+fillW, endY, RenderUtil.color(255,255,255));
     }
 
