@@ -13,7 +13,6 @@ import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -244,7 +243,6 @@ public class CSGameOverlay {
 
         Map<String, List<PlayerInfo>> teamPlayers = RenderUtil.getTeamsPlayerInfo();
 
-        String localTeam = FPSMClient.getGlobalData().getCurrentTeam();
 
         boolean showInfo = CSClientData.isWaiting;
 
@@ -252,14 +250,14 @@ public class CSGameOverlay {
             renderAvatarRow(guiGraphics, teamPlayers.get("ct"),
                     ctBoxX - offset, startY, boxWidth,
                     avatarSize, avatarGap, true,showInfo,
-                    localTeam, "ct",scaleFactor);
+                    "ct",scaleFactor);
         }
 
         if(teamPlayers.containsKey("t")) {
             renderAvatarRow(guiGraphics, teamPlayers.get("t"),
                     tBoxX + offset, startY, boxWidth,
                     avatarSize, avatarGap, false,showInfo,
-                    localTeam, "t",scaleFactor);
+                    "t",scaleFactor);
         }
     }
 
@@ -346,12 +344,11 @@ public class CSGameOverlay {
                                  int gap,
                                  boolean leftSide,
                                  boolean showNameInfo,
-                                 String localTeam,
                                  String rowTeam,
                                  float scaleFactor
     )
     {
-        boolean isSameTeam = isSameTeam(localTeam, rowTeam);
+        boolean isSameTeam = FPSMClient.getGlobalData().equalsTeam(rowTeam);
         boolean isCT = rowTeam.equals("ct");
         if (showNameInfo) {
             rowY += 6;
@@ -461,13 +458,13 @@ public class CSGameOverlay {
 
     private void drawPlayerKills(GuiGraphics guiGraphics, Font font,int count,
                                  int centerX, int startY,float scaleFactor){
-
+        String str = "\uD83D\uDC80".repeat(Math.max(0, count));
+        if(str.isEmpty()) return;
         float textScale = 0.6f * scaleFactor;
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(centerX, startY, 0);
         guiGraphics.pose().scale(textScale, textScale, 1f);
 
-        String str = "\uD83D\uDC80".repeat(Math.max(0, count));
         int w = font.width(str);
         guiGraphics.drawString(font, str, -w/2, 0, 0xFFFFFFFF, false);
         guiGraphics.pose().popPose();
@@ -489,14 +486,6 @@ public class CSGameOverlay {
         guiGraphics.drawString(font, moneyStr, -w/2, 0, 0xFFFFFFFF, false);
 
         guiGraphics.pose().popPose();
-    }
-
-    private boolean isSameTeam(@Nullable String localTeam, String rowTeam) {
-        if (localTeam == null || localTeam.isEmpty()
-                || "spectator".equalsIgnoreCase(localTeam)) {
-            return true;
-        }
-        return localTeam.equalsIgnoreCase(rowTeam);
     }
 
     // 平滑血条

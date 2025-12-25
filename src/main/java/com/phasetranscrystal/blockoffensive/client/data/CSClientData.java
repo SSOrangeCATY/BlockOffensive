@@ -81,7 +81,7 @@ public class CSClientData {
         for (var clientTeam : FPSMClient.getGlobalData().clientTeamData.values()) {
             if (clientTeam.name.equals(team)) {
                 for (var data :clientTeam.players.values()){
-                    if (data.isLivingNoOnlineCheck()) living++;
+                    if (data.isLiving()) living++;
                 }
             }
         }
