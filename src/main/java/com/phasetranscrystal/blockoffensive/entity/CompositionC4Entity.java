@@ -235,14 +235,14 @@ public class CompositionC4Entity extends Entity implements TraceableEntity , Bla
 
     public void setFuse(int pLife) {
         this.fuse = pLife;
-        this.map.getMap().getMapTeams().getSpecPlayers().forEach((pUUID)->{
+        this.map.getMapTeams().getSpecPlayers().forEach((pUUID)->{
             Optional<ServerPlayer> receiver = FPSMCore.getInstance().getPlayerByUUID(pUUID);
             receiver.ifPresent(player -> BlockOffensive.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new BombFuseS2CPacket(pLife,BOConfig.common.fuseTime.get())));
         });
     }
 
     public void syncDemolitionProgress(){
-        BaseMap map = (BaseMap) this.map;
+        BaseMap map = this.map;
         float progress = this.getDemolitionProgress();
         if(map != null){
             map.getMapTeams().getJoinedPlayers().forEach((data)->{
