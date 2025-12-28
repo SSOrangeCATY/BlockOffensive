@@ -419,7 +419,7 @@ public class CSDeathMatchMap extends CSMap {
     public Optional<DMPlayerData> getDMPlayerData(UUID uuid){
         return Optional.ofNullable(playerData.getOrDefault(uuid, null));
     }
-    
+
     /**
      * 检查玩家是否处于重生保护状态
      */
@@ -450,11 +450,6 @@ public class CSDeathMatchMap extends CSMap {
                     map.saveConfig();
                     manager.saveData(map, map.getMapName(), false);
                 }));
-    }
-
-    @Override
-    public CSDeathMatchMap getMap() {
-        return this;
     }
 
      public static class DMPlayerData{

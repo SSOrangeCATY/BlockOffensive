@@ -1306,11 +1306,6 @@ public class CSGameMap extends CSMap{
     }
 
     @Override
-    public CSGameMap getMap() {
-        return this;
-    }
-
-    @Override
     public boolean setTeamSpawnPoints(){
         for (ServerTeam team : this.getMapTeams().getNormalTeams()){
             Optional<SpawnPointCapability> capability = team.getCapabilityMap().get(SpawnPointCapability.class);
