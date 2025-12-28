@@ -33,7 +33,6 @@ import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
-import com.phasetranscrystal.fpsmatch.core.map.IConfigureMap;
 import com.phasetranscrystal.fpsmatch.core.map.VoteObj;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopData;
@@ -72,13 +71,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public abstract class CSMap extends BaseMap implements IConfigureMap<CSMap> {
+public abstract class CSMap extends BaseMap {
 
     private static final Vector3f T_COLOR = new Vector3f(1, 0.75f, 0.25f);
     private static final Vector3f CT_COLOR = new Vector3f(0.25f, 0.55f, 1);
 
     private final Map<String, Consumer<ServerPlayer>> commands = new ConcurrentHashMap<>();
-    private final List<Setting<?>> settings = new ArrayList<>();
     protected final Setting<Boolean> autoStart = this.addSetting("autoStart", true);
     protected final Setting<Integer> autoStartTime = this.addSetting("autoStartTime", 6000);
     protected final Setting<Boolean> allowFriendlyFire = this.addSetting("allowFriendlyFire",false);
@@ -140,18 +138,6 @@ public abstract class CSMap extends BaseMap implements IConfigureMap<CSMap> {
     public abstract boolean isWaitingWinner();
     public abstract boolean canGiveEconomy();
     public abstract int getClientTime();
-
-    @Override
-    public Collection<Setting<?>> settings() {
-        return settings;
-    }
-
-    @Override
-    public <I> Setting<I> addSetting(Setting<I> setting) {
-        settings.add(setting);
-        return setting;
-    }
-
 
     @Override
     public void tick() {
