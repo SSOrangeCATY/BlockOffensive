@@ -48,6 +48,7 @@ public class CSGameHud implements IHudRenderer {
     private final CSDeathMessageHud deathMessageHud = new CSDeathMessageHud();
     private final CSGameOverlay gameOverlay = new CSGameOverlay();
     private final CSDMOverlay dmOverlay = new CSDMOverlay();
+    private final CSSpectatorHudOverlay spectatorHudOverlay = new CSSpectatorHudOverlay();
     private static final ResourceLocation SEMI = ResourceLocation.tryBuild("tacz", "textures/hud/fire_mode_semi.png");
     private static final ResourceLocation AUTO = ResourceLocation.tryBuild("tacz", "textures/hud/fire_mode_auto.png");
     private static final ResourceLocation BURST = ResourceLocation.tryBuild("tacz", "textures/hud/fire_mode_burst.png");
@@ -113,6 +114,7 @@ public class CSGameHud implements IHudRenderer {
             dmOverlay.render(guiGraphics, screenWidth, screenHeight);
         }
         deathMessageHud.render(guiGraphics);
+        spectatorHudOverlay.render(guiGraphics);
         mvpHud.render(guiGraphics, screenWidth, screenHeight);
     }
 
