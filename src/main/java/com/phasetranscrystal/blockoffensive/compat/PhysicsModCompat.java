@@ -133,7 +133,7 @@ public class PhysicsModCompat {
                     if (body.getRigidBody() instanceof PxRigidDynamic dynamicBody) {
                         totalDynamicBodies++;
                         if(body.hasTransformationChanged()){
-                            if (data.livingTicks >= 5){
+                            if (data.livingTicks >= 20){
                                 Matrix4d current = body.getEntity().getTransformation();
                                 Matrix4d old = body.getEntity().getOldTransformation();
 

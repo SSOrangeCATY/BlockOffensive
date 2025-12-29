@@ -7,10 +7,12 @@ import com.phasetranscrystal.blockoffensive.item.BombDisposalKit;
 import com.phasetranscrystal.blockoffensive.item.CompositionC4;
 import com.phasetranscrystal.blockoffensive.net.PxDeathCompatS2CPacket;
 import com.phasetranscrystal.blockoffensive.util.BOUtil;
+import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchRespawnS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.event.FPSMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
+import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.event.common.EntityKillByGunEvent;
 import com.tacz.guns.api.event.common.GunShootEvent;
 import com.tacz.guns.api.item.IGun;
@@ -78,20 +80,25 @@ public class CSGameEvents {
     //控制地图物品掉落
     @SubscribeEvent
     public static void onPlayerDropItem(FPSMapEvent.PlayerEvent.TossItemEvent event){
+        ServerPlayer player = event.getPlayer();
         ItemStack itemStack = event.getItemEntity().getItem();
         BaseMap map = event.getMap();
         if (map instanceof CSMap cs){
-            if(cs instanceof CSDeathMatchMap){
+            if( cs instanceof CSDeathMatchMap){
                 event.setCanceled(true);
+            }
+
+            if(itemStack.getItem() instanceof BombDisposalKit){
+                event.setCanceled(true);
+                event.getPlayer().getInventory().add(new ItemStack(BOItemRegister.BOMB_DISPOSAL_KIT.get(),1));
             }
 
             if(itemStack.getItem() instanceof CompositionC4){
                 event.getItemEntity().setGlowingTag(true);
             }
 
-            if(itemStack.getItem() instanceof BombDisposalKit){
-                event.setCanceled(true);
-                event.getPlayer().getInventory().add(new ItemStack(BOItemRegister.BOMB_DISPOSAL_KIT.get(),1));
+            if(!event.isCanceled()){
+                FPSMUtil.sortPlayerInventory(player);
             }
         }
     }
@@ -103,7 +110,6 @@ public class CSGameEvents {
             return;
         }
 
-        // 获取死亡玩家所在的CS地图
         Optional<CSMap> csMapOpt = FPSMCore.getInstance().getMapByPlayer(deadPlayer)
                 .filter(map -> map instanceof CSMap)
                 .map(map -> (CSMap) map);
@@ -112,12 +118,10 @@ public class CSGameEvents {
         }
         CSMap csMap = csMapOpt.get();
 
-        // 验证击杀者是玩家且持有枪械
         if (!(event.getAttacker() instanceof ServerPlayer attacker) || !IGun.mainHandHoldGun(attacker)) {
             return;
         }
 
-        // 验证击杀者和死亡玩家在同一地图
         if (!FPSMCore.getInstance().getMapByPlayer(attacker).map(map -> map.equals(csMap)).orElse(false)) {
             return;
         }
@@ -143,7 +147,6 @@ public class CSGameEvents {
         ItemStack deathItem = attackerOpt.map(attacker -> BOUtil.getDeathItemStack(attacker, event.getSource()))
                 .orElse(ItemStack.EMPTY);
 
-        // 处理核心死亡逻辑
         csMap.onPlayerDeathEvent(player, attackerOpt.orElse(null), deathItem, false);
 
         csMap.sendPacketToJoinedPlayer(player, new FPSMatchRespawnS2CPacket(), true);

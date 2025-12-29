@@ -20,6 +20,7 @@ import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -162,27 +163,9 @@ public class CSDeathMatchMap extends CSMap {
 
     @Override
     public void victory(){
-        List<PlayerData> players = this.getMapTeams()
-                .getNormalTeams()
-                .stream()
-                .map(team -> team.getPlayers().values())
-                .flatMap(Collection::stream)
-                .sorted(Comparator.comparingInt(PlayerData::getScores))
-                .toList();
-
-        Component head = Component.translatable("map.deathmatch.message.victory.head");
-        List<Component> messages = new ArrayList<>();
-        for (int i = 0; i < players.size(); i++) {
-            PlayerData data = players.get(i);
-            Component message = Component.translatable("map.deathmatch.message.victory.message",i,data.name(),data.getScores(),data.getTotalKills(),data.getTotalDeaths(),data.getTotalAssists(),String.format("%.2f",data.getHeadshotRate()),data.getTotalDamage());
-            messages.add(message);
-        }
-
-        this.sendAllPlayerMessage(head,false);
-        for (Component message : messages) {
-            this.sendAllPlayerMessage(message,false);
-        }
-
+        this.sendVictoryMessage(
+                Component.translatable("map.deathmatch.message.victory.head").withStyle(ChatFormatting.GOLD).withStyle(ChatFormatting.BOLD),
+                Comparator.comparingInt(PlayerData::getScores));
         this.reset();
     }
 

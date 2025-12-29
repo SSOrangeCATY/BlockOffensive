@@ -210,6 +210,28 @@ public abstract class CSMap extends BaseMap {
         }
     }
 
+    public void sendVictoryMessage(Component head,Comparator<PlayerData> comparator) {
+        List<PlayerData> players = this.getMapTeams()
+                .getNormalTeams()
+                .stream()
+                .map(team -> team.getPlayers().values())
+                .flatMap(Collection::stream)
+                .sorted(comparator)
+                .toList();
+
+        List<Component> messages = new ArrayList<>();
+        for (int i = 0; i < players.size(); i++) {
+            PlayerData data = players.get(i);
+            Component message = Component.translatable("map.cs.message.victory.message",i,data.name(),data.getScores(),data.getTotalKills(),data.getTotalDeaths(),data.getTotalAssists(),String.format("%.2f",data.getHeadshotRate()),data.getTotalDamage()).withStyle(i %2 == 0 ? ChatFormatting.DARK_AQUA : ChatFormatting.BLUE).withStyle(ChatFormatting.BOLD);
+            messages.add(message);
+        }
+
+        this.sendAllPlayerMessage(head,false);
+        for (Component message : messages) {
+            this.sendAllPlayerMessage(message,false);
+        }
+    }
+
 
     protected void handleActiveCountdown() {
         autoStartTimer++;

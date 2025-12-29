@@ -933,7 +933,7 @@ public class CSGameMap extends CSMap{
             int overTimeRound = this.overtimeRound.get();
             if (team.getScores() >= (isOvertime ? winnerRound.get() - 1 + (this.overCount * overTimeRound) + overTimeRound + 1 : winnerRound.get())) {
                 isVictory.set(true);
-                MinecraftForge.EVENT_BUS.post(new FPSMapEvent.VictoryEvent(this));
+                this.sendVictoryMessage(Component.translatable("map.cs.message.victory.head",team.name.toUpperCase(Locale.US)).withStyle(ChatFormatting.GOLD).withStyle(ChatFormatting.BOLD),Comparator.comparingDouble(PlayerData::getTotalDamage));
                 this.sendAllPlayerTitle(Component.translatable("blockoffensive.map.cs.winner." + team.name + ".title").withStyle(team.name.equals("ct") ? ChatFormatting.DARK_AQUA : ChatFormatting.YELLOW),null);
             }
         });
