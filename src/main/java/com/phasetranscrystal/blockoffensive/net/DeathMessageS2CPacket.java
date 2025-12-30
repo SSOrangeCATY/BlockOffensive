@@ -39,6 +39,7 @@ public class DeathMessageS2CPacket {
         flags |= (byte) (packet.deathMessage.isThroughSmoke() ? 4 : 0);
         flags |= (byte) (packet.deathMessage.isThroughWall() ? 8 : 0);
         flags |= (byte) (packet.deathMessage.isNoScope() ? 16 : 0);
+        flags |= (byte) (packet.deathMessage.isFlying() ? 32 : 0);
         buf.writeByte(flags);
     }
 
@@ -61,6 +62,7 @@ public class DeathMessageS2CPacket {
             .setThroughSmoke((flags & 4) != 0)
             .setThroughWall((flags & 8) != 0)
             .setNoScope((flags & 16) != 0)
+            .setFlying((flags & 32) != 0)
             .build());
     }
 
@@ -72,9 +74,6 @@ public class DeathMessageS2CPacket {
             boolean isLocalDead = deathMessage.getDeadUUID().equals(Minecraft.getInstance().player.getUUID());
             if(isLocalKill && !isLocalDead) {
                 CSGameHud.getInstance().addKill(deathMessage);
-            }
-            if(isLocalDead){
-
             }
         });
         ctx.get().setPacketHandled(true);

@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.phasetranscrystal.fpsmatch.util.FPSMFormatUtil.fmt2;
 
-@Mod.EventBusSubscriber
+@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class BOSpecManager {
 
     private static final Logger LOG = LogUtils.getLogger();

@@ -27,6 +27,7 @@ public class DeathMessage {
     private final boolean isThroughSmoke;
     private final boolean isThroughWall;
     private final boolean isNoScope;
+    private final boolean isFlying;
     private final ResourceLocation itemRL;
     
     private DeathMessage(Builder builder) {
@@ -44,6 +45,11 @@ public class DeathMessage {
         this.isThroughSmoke = builder.isThroughSmoke;
         this.isThroughWall = builder.isThroughWall;
         this.isNoScope = builder.isNoScope;
+        this.isFlying = builder.isFlying;
+    }
+
+    public boolean isFlying() {
+        return isFlying;
     }
 
     public static class Builder {
@@ -60,6 +66,7 @@ public class DeathMessage {
         private boolean isThroughSmoke = false;
         private boolean isThroughWall = false;
         private boolean isNoScope = false;
+        private boolean isFlying = false;
         
         public Builder(Player killer, Player dead, ItemStack weapon) {
             this.killer = killer.getDisplayName();
@@ -122,6 +129,11 @@ public class DeathMessage {
         
         public DeathMessage build() {
             return new DeathMessage(this);
+        }
+
+        public Builder setFlying(boolean flying) {
+            isFlying = flying;
+            return this;
         }
     }
     

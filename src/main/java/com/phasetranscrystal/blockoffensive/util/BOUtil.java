@@ -22,27 +22,6 @@ import java.util.UUID;
 public class BOUtil {
 
     /**
-     * 从伤害源中解析击杀者
-     * @param source 伤害源
-     * @return 击杀者（可能为空）
-     */
-    public static Optional<ServerPlayer> getAttackerFromDamageSource(DamageSource source) {
-        if (source.getEntity() instanceof ServerPlayer attacker) {
-            return Optional.of(attacker);
-        }
-
-        if(source.getDirectEntity() instanceof ServerPlayer attacker){
-            return Optional.of(attacker);
-        }
-
-        if (source.getEntity() instanceof ThrowableItemEntity throwable && throwable.getOwner() instanceof ServerPlayer owner) {
-            return Optional.of(owner);
-        }
-
-        return Optional.empty();
-    }
-
-    /**
      * 从击杀者和伤害源中解析导致死亡的物品栈
      * @param attacker 击杀者
      * @param source 伤害源
@@ -108,6 +87,11 @@ public class BOUtil {
             builder.setHeadShot(true);
         }
 
+
+        if(!attacker.equals(deadPlayer) && !attacker.onGround()){
+            builder.setFlying(true);
+        }
+
         // 设置助攻信息
         calculateAssistPlayer(map,deadPlayer,minAssistDamageRatio).ifPresent(assistData -> {
             if (!attacker.getUUID().equals(assistData.getOwner())) {
@@ -116,15 +100,5 @@ public class BOUtil {
         });
 
         return new DeathMessageS2CPacket(builder.build());
-    }
-
-    public static boolean isFrozen(Vector3d vector3d) {
-        if(vector3d == null) return false;
-
-        final double EPSILON = 1e-6f;
-
-        return Math.abs(vector3d.x) < EPSILON &&
-                Math.abs(vector3d.y) < EPSILON &&
-                Math.abs(vector3d.z) < EPSILON;
     }
 }
