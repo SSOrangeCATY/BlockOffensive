@@ -20,6 +20,7 @@ import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
+import com.phasetranscrystal.fpsmatch.core.team.TeamData;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -101,7 +102,17 @@ public class CSDeathMatchMap extends CSMap {
         matchTimeLimit = this.addSetting("matchTimeLimit", 18000);
         spawnProtectionTime = this.addSetting("spawnProtectionTime", 100);
     }
+
+    @Override
+    public ServerTeam addTeam(TeamData data){
+        ServerTeam team = super.addTeam(data);
+        CapabilityMap.getTeamCapability(this,ShopCapability.class).forEach((t,opt)->{
+            opt.ifPresent(cap -> cap.initialize("cs",16000));
+        });
+        return team;
+    }
     
+
     @Override
     public String getGameType() {
         return TYPE;
@@ -117,6 +128,7 @@ public class CSDeathMatchMap extends CSMap {
             }
         });
     }
+
 
     @Override
     public void leave(ServerPlayer player){
@@ -389,13 +401,11 @@ public class CSDeathMatchMap extends CSMap {
     
     @Override
     public int getShopCloseTime() {
-        // 死斗模式下，商店关闭时间为0，因为玩家可以随时购买
-        return 0;
+        return 999;
     }
     
     @Override
     public void startNewRound() {
-        // 死斗模式下，新回合直接开始
         this.start();
     }
 
@@ -435,7 +445,11 @@ public class CSDeathMatchMap extends CSMap {
                 }));
     }
 
-     public static class DMPlayerData{
+    public boolean isTDM() {
+        return isTDM.get();
+    }
+
+    public static class DMPlayerData{
         UUID owner;
         boolean needRespawnProtection = false;
         long lastProtectionTime = 0;

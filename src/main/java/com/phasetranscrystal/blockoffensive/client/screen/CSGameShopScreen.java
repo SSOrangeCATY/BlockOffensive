@@ -140,14 +140,17 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback {
             headBar.addView(cooldownText, cooldownParams);
 
             // 下一轮最低金钱文本
-            nextRoundMinMoneyText = new TextView(getContext());
-            nextRoundMinMoneyText.setText(I18n.get("blockoffensive.shop.title.min.money", CSClientData.getNextRoundMinMoney() + CSClientData.getMoney()));
-            nextRoundMinMoneyText.setTextSize(15);
-            RelativeLayout.LayoutParams minMoneyParams = new RelativeLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
-            minMoneyParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-            minMoneyParams.addRule(RelativeLayout.CENTER_VERTICAL);
-            minMoneyParams.rightMargin = 20;
-            headBar.addView(nextRoundMinMoneyText, minMoneyParams);
+            int nextRoundMoney = CSClientData.getNextRoundMinMoney();
+            if(nextRoundMoney != -1){
+                nextRoundMinMoneyText = new TextView(getContext());
+                nextRoundMinMoneyText.setText(I18n.get("blockoffensive.shop.title.min.money", nextRoundMoney + CSClientData.getMoney()));
+                nextRoundMinMoneyText.setTextSize(15);
+                RelativeLayout.LayoutParams minMoneyParams = new RelativeLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+                minMoneyParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+                minMoneyParams.addRule(RelativeLayout.CENTER_VERTICAL);
+                minMoneyParams.rightMargin = 20;
+                headBar.addView(nextRoundMinMoneyText, minMoneyParams);
+            }
 
             addView(headBar);
 
@@ -206,16 +209,19 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback {
             // 更新文本大小
             moneyText.setTextSize(18 * scale);
             cooldownText.setTextSize(18 * scale);
-            nextRoundMinMoneyText.setTextSize(15 * scale);
+            if(nextRoundMinMoneyText != null){
+                nextRoundMinMoneyText.setTextSize(15 * scale);
+
+                RelativeLayout.LayoutParams minMoneyParams = (RelativeLayout.LayoutParams) nextRoundMinMoneyText.getLayoutParams();
+                minMoneyParams.rightMargin = (int) (20 * scale);
+                nextRoundMinMoneyText.setLayoutParams(minMoneyParams);
+            }
 
             // 更新边距
             RelativeLayout.LayoutParams moneyParams = (RelativeLayout.LayoutParams) moneyText.getLayoutParams();
             moneyParams.leftMargin = (int) (25 * scale);
             moneyText.setLayoutParams(moneyParams);
 
-            RelativeLayout.LayoutParams minMoneyParams = (RelativeLayout.LayoutParams) nextRoundMinMoneyText.getLayoutParams();
-            minMoneyParams.rightMargin = (int) (20 * scale);
-            nextRoundMinMoneyText.setLayoutParams(minMoneyParams);
 
             // 设置自身尺寸
             setMeasuredDimension(width, height);

@@ -7,7 +7,6 @@ import com.phasetranscrystal.blockoffensive.item.BombDisposalKit;
 import com.phasetranscrystal.blockoffensive.item.CompositionC4;
 import com.phasetranscrystal.blockoffensive.net.PxDeathCompatS2CPacket;
 import com.phasetranscrystal.blockoffensive.util.BOUtil;
-import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchRespawnS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.event.FPSMapEvent;
@@ -19,7 +18,6 @@ import com.tacz.guns.api.item.IGun;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
@@ -34,6 +32,14 @@ public class CSGameEvents {
         if (event.getMap() instanceof CSDeathMatchMap dm){
             if(dm.isInSpawnProtection(event.getPlayer().getUUID())){
                 event.setCanceled(true);
+            }else{
+               boolean isTeammate = FPSMUtil.getAttackerFromDamageSource(event.getSource())
+                       .map(attacker -> dm.getMapTeams().isSameTeam(event.getPlayer(), attacker))
+                       .orElse(false);
+
+               if(dm.isTDM() && isTeammate){
+                   event.setCanceled(true);
+               }
             }
         }
     }
