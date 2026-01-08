@@ -2,6 +2,7 @@ package com.phasetranscrystal.blockoffensive;
 
 import com.phasetranscrystal.blockoffensive.command.VoteCommand;
 import com.phasetranscrystal.blockoffensive.compat.BOImpl;
+import com.phasetranscrystal.blockoffensive.compat.CSGrenadeCompat;
 import com.phasetranscrystal.blockoffensive.compat.PhysicsModCompat;
 import com.phasetranscrystal.blockoffensive.entity.BOEntityRegister;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
@@ -18,6 +19,7 @@ import com.phasetranscrystal.blockoffensive.net.spec.CSGameWeaponDataS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
 import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
+import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.tacz.guns.api.item.GunTabType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
@@ -100,6 +102,10 @@ public class BlockOffensive {
 
             if(BOImpl.isPhysicsModLoaded()){
                 PhysicsModCompat.init();
+            }
+
+            if(FPSMImpl.findCounterStrikeGrenadesMod()){
+                CSGrenadeCompat.init();
             }
         });
     }

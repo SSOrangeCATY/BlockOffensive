@@ -276,9 +276,13 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback {
         }
 
         public void updateText() {
-            moneyText.setText("$ " + CSClientData.getMoney());
+            int money = CSClientData.getMoney() == -1 ? 16000 : CSClientData.getMoney();
+            moneyText.setText("$ " + money);
             moneyText.setTextColor(FPSMClient.getGlobalData().equalsTeam("ct") ? RenderUtil.color(150, 200, 250) : RenderUtil.color(234, 192, 85));
-            nextRoundMinMoneyText.setText(I18n.get("blockoffensive.shop.title.min.money", CSClientData.getNextRoundMinMoney()));
+            if(nextRoundMinMoneyText != null){
+                nextRoundMinMoneyText.setText(I18n.get("blockoffensive.shop.title.min.money", CSClientData.getNextRoundMinMoney()));
+            }
+
             cooldownText.setText(I18n.get("blockoffensive.shop.title.cooldown", CSClientData.shopCloseTime));
         }
     }

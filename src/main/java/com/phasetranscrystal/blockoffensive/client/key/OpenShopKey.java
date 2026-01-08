@@ -56,11 +56,6 @@ public class OpenShopKey {
                     return;
                 }
 
-                if(!CSClientData.currentMapSupportShop){
-                    Minecraft.getInstance().player.sendSystemMessage(Component.translatable("key.blockoffensive.open.shop.failed.game_type.no_shop"));
-                    return;
-                }
-
                 if(!CSClientData.canOpenShop){
                     Minecraft.getInstance().player.sendSystemMessage(Component.translatable("key.blockoffensive.open.shop.failed.purchase_time.expired"));
                     return;

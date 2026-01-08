@@ -1,11 +1,14 @@
 package com.phasetranscrystal.blockoffensive.data;
 
 import com.phasetranscrystal.fpsmatch.common.effect.FPSMEffectRegister;
+import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
+import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.client.resource.index.ClientGunIndex;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -74,7 +77,7 @@ public class DeathMessage {
             this.dead = dead.getDisplayName();
             this.deadUUID = dead.getUUID();
             this.weapon = weapon;
-            this.isBlinded = killer.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS.get());
+            setBlinded(killer);
         }
 
         public Builder(Component killer, UUID killerUUID, Component dead, UUID deadUUID,ItemStack weapon) {
@@ -83,6 +86,16 @@ public class DeathMessage {
             this.dead = dead;
             this.deadUUID = deadUUID;
             this.weapon = weapon;
+        }
+
+        public void setBlinded(Player killer){
+            if(killer.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS.get()) || killer.hasEffect(MobEffects.BLINDNESS) || killer.hasEffect(MobEffects.DARKNESS)){
+                this.isBlinded = true;
+            }else{
+                if(FPSMImpl.findCounterStrikeGrenadesMod()){
+                    this.isBlinded = CounterStrikeGrenadesCompat.isPlayerFlashed(killer);
+                }
+            }
         }
 
         public Builder setAssist(Component assist, UUID assistUUID){

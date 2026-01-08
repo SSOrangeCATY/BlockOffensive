@@ -97,6 +97,10 @@ public class BOClientEvent {
         }
     }
 
+    public static boolean isLocked(){
+        return (CSClientData.isWaiting || CSClientData.isPause) && (FPSMClient.getGlobalData().equalsGame("cs") && !FPSMClient.getGlobalData().isSpectator());
+    }
+
     @SubscribeEvent
     public static void onFPSMClientReset(FPSMClientResetEvent event) {
         CSClientData.reset();

@@ -118,7 +118,7 @@ public class CSDMOverlay {
     private void renderPlayerAvatar(GuiGraphics guiGraphics, PlayerInfo player, PlayerData data, int x, int y, int size) {
         // 灰度头像(dead)
         float r = 1f, g = 1f, b = 1f, a = 1f;
-        if (data.isLiving()) {
+        if (!data.isLiving()) {
             r = g = b = 0.3f;
         }
         RenderSystem.setShaderColor(r, g, b, a);

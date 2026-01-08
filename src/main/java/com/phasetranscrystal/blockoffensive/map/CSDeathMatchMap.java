@@ -145,7 +145,7 @@ public class CSDeathMatchMap extends CSMap {
         MapTeams mapTeams = getMapTeams();
 
         this.isStart = true;
-        this.currentMatchTime = 0;
+        this.currentMatchTime = matchTimeLimit.get();
         this.resetAllPlayerData();
         
         if (!this.setTeamSpawnPoints()) {
@@ -232,13 +232,12 @@ public class CSDeathMatchMap extends CSMap {
     }
     
     private void updateMatchTime() {
-        this.currentMatchTime++;
+        this.currentMatchTime--;
     }
     
     @Override
     public boolean victoryGoal() {
-        // 死斗模式胜利条件：时间结束
-        return currentMatchTime >= matchTimeLimit.get();
+        return this.isStart && currentMatchTime <= 0;
     }
     
     @Override
@@ -360,7 +359,7 @@ public class CSDeathMatchMap extends CSMap {
     
     @Override
     public int getClientTime() {
-        return this.currentMatchTime / 20; // 返回秒数
+        return this.currentMatchTime;
     }
     
     @Override
