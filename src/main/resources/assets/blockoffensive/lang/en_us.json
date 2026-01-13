@@ -95,5 +95,11 @@
   "map.cs.message.victory.head": "========== %s Victory ==========",
   "map.deathmatch.message.victory.head": "========== Match Results ==========",
   "map.cs.message.victory.message": "#%s | %s | Score: %s | K/D/A: %s/%s/%s | HS%%: %s | DMG: %s",
-  "commands.blockoffensive.mvp.description": "Add mvp sound to player"
+  "commands.blockoffensive.mvp.description": "Add mvp sound to player",
+
+  "blockoffensive.throwable.grenade.throw.message": "Fire in the hole!",
+  "blockoffensive.throwable.flash_bang.throw.message": "Flashbang Out!",
+  "blockoffensive.throwable.smoke.throw.message": "Smoke Out!",
+  "blockoffensive.throwable.incendiary_grenade.throw.message": "FireBomb on the way!",
+  "blockoffensive.throwable.decoy.throw.message": "Decoy Out!"
 }

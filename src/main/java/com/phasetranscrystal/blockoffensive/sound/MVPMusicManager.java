@@ -3,7 +3,7 @@ package com.phasetranscrystal.blockoffensive.sound;
 import com.google.common.collect.Maps;
 import com.mojang.serialization.Codec;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
-import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMSaveDataEvent;
+import com.phasetranscrystal.fpsmatch.common.event.register.RegisterFPSMSaveDataEvent;
 import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.persistence.SaveHolder;
 import net.minecraft.resources.ResourceLocation;

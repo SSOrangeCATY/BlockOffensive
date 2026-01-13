@@ -6,6 +6,7 @@ import com.phasetranscrystal.blockoffensive.compat.CSGrenadeCompat;
 import com.phasetranscrystal.blockoffensive.compat.PhysicsModCompat;
 import com.phasetranscrystal.blockoffensive.entity.BOEntityRegister;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
+import com.phasetranscrystal.blockoffensive.map.team.capability.ColoredPlayerCapability;
 import com.phasetranscrystal.blockoffensive.net.*;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombActionC2SPacket;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombActionS2CPacket;
@@ -17,6 +18,9 @@ import com.phasetranscrystal.blockoffensive.net.shop.ShopStatesS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.spec.BombFuseS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.spec.CSGameWeaponDataS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
+import com.phasetranscrystal.blockoffensive.util.BOUtil;
+import com.phasetranscrystal.blockoffensive.util.ThrowableType;
+import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
@@ -80,6 +84,8 @@ public class BlockOffensive {
         PACKET_REGISTER.registerPacket(PlayerMoveC2SPacket.class);
 
         event.enqueueWork(() -> {
+            ColoredPlayerCapability.register();
+
             FPSMSoundRegister.registerGunPickupSound(GunTabType.PISTOL,BOSoundRegister.WEAPON_PISTOL_PICKUP.get());
             FPSMSoundRegister.registerGunPickupSound(GunTabType.RIFLE,BOSoundRegister.WEAPON_RIFLE_PICKUP.get());
             FPSMSoundRegister.registerGunPickupSound(GunTabType.SHOTGUN,BOSoundRegister.WEAPON_SHOTGUN_PICKUP.get());
@@ -99,6 +105,12 @@ public class BlockOffensive {
             FPSMSoundRegister.registerKnifeDropSound(BOSoundRegister.WEAPON_KNIFE_IMPACT.get());
             FPSMSoundRegister.registerItemPickupSound(BOItemRegister.C4.get().asItem(), SoundEvents.EXPERIENCE_ORB_PICKUP);
             FPSMSoundRegister.registerItemDropSound(BOItemRegister.C4.get().asItem(), BOSoundRegister.WEAPON_C4_IMPACT.get());
+
+            BOUtil.registerThrowable(ThrowableType.SMOKE, FPSMItemRegister.SMOKE_SHELL.get());
+            BOUtil.registerThrowable(ThrowableType.GRENADE, FPSMItemRegister.GRENADE.get());
+            BOUtil.registerThrowable(ThrowableType.INCENDIARY_GRENADE, FPSMItemRegister.T_INCENDIARY_GRENADE.get());
+            BOUtil.registerThrowable(ThrowableType.INCENDIARY_GRENADE, FPSMItemRegister.CT_INCENDIARY_GRENADE.get());
+            BOUtil.registerThrowable(ThrowableType.FLASH_BANG, FPSMItemRegister.FLASH_BOMB.get());
 
             if(BOImpl.isPhysicsModLoaded()){
                 PhysicsModCompat.init();

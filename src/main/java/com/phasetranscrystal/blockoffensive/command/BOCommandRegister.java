@@ -5,7 +5,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.sound.MVPMusicManager;
 import com.phasetranscrystal.fpsmatch.common.command.FPSMHelpManager;
-import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMCommandEvent;
+import com.phasetranscrystal.fpsmatch.common.event.register.RegisterFPSMCommandEvent;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;

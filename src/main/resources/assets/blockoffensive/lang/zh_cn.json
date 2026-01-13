@@ -94,5 +94,11 @@
   "map.cs.message.victory.head": "========== %s Victory ==========",
   "map.deathmatch.message.victory.head": "========== 比赛结果 ==========",
   "commands.blockoffensive.mvp.description": "添加MVP音乐给玩家",
-  "map.cs.message.victory.message": "第%s名 | %s | 分数: %s | 杀/死/助: %s/%s/%s | 爆头率: %s | 伤害: %s"
+  "map.cs.message.victory.message": "第%s名 | %s | 分数: %s | 杀/死/助: %s/%s/%s | 爆头率: %s | 伤害: %s",
+
+  "blockoffensive.throwable.grenade.throw.message": "高爆手雷！",
+  "blockoffensive.throwable.flash_bang.throw.message": "小心闪光震撼弹！",
+  "blockoffensive.throwable.smoke.throw.message": "烟雾弹！",
+  "blockoffensive.throwable.incendiary_grenade.throw.message": "燃烧弹！",
+  "blockoffensive.throwable.decoy.throw.message": "诱饵弹！"
 }

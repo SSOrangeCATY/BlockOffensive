@@ -2,6 +2,7 @@ package com.phasetranscrystal.blockoffensive.client.screen.hud;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
+import com.phasetranscrystal.blockoffensive.util.BOUtil;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
@@ -24,17 +25,7 @@ public class CSGameOverlay {
     public static int noColor = color(0,0,0,0);
     public static int textRoundTimeColor = color(255,255,255);
 
-    private static final int[] BG_COLORS = new int[]{
-            RenderUtil.color(216,130,44), // Blue
-            RenderUtil.color(238,228,75), // Yellow
-            RenderUtil.color(66,185,131), // Purple
-            RenderUtil.color(7,156,130), // Green
-            RenderUtil.color(145,203,234)  // Orange
-    };
-
-    private final Map<UUID,Integer> playerColorIndex = new HashMap<>();
     private final Map<UUID,String> cachedName = new HashMap<>();
-    private int nextColorIndex = 0;
 
     public void render(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
         Font font = Minecraft.getInstance().font;
@@ -327,14 +318,6 @@ public class CSGameOverlay {
         guiGraphics.pose().popPose();
     }
 
-    private int getColorIndexForPlayer(UUID uuid) {
-        if (!playerColorIndex.containsKey(uuid)) {
-            playerColorIndex.put(uuid, nextColorIndex);
-            nextColorIndex = (nextColorIndex + 1) % BG_COLORS.length;
-        }
-        return playerColorIndex.get(uuid);
-    }
-
     private void renderAvatarRow(GuiGraphics guiGraphics,
                                  List<PlayerInfo> players,
                                  int boxStartX,
@@ -361,16 +344,12 @@ public class CSGameOverlay {
                     ? (boxStartX + boxWidth - avatarSize - 2 - i*(avatarSize+gap))
                     : (boxStartX + 2 + i*(avatarSize+gap));
 
-            // 1) 血量 =>0=死/观战
             Optional<PlayerData> data = RenderUtil.getPlayerData(player);
             boolean checked = data.isPresent();
 
-            // 2) 对非本地阵营 => 不显示血条
             float barRatio = (!isSameTeam) ? 0f : checked ? data.get().getHealthPercent() : 0f;
 
-            // 3) 背景框: 每玩家固定颜色
-            int colorIndex = getColorIndexForPlayer(uuid);
-            int bgColor = BG_COLORS[colorIndex];
+            int bgColor = BOUtil.getColor(uuid);
             guiGraphics.fill(drawX, rowY, drawX + avatarSize, rowY + avatarSize, bgColor);
 
             // 4) 灰度头像(dead)

@@ -4,8 +4,8 @@ import com.phasetranscrystal.blockoffensive.BlockOffensive;
 
 import com.phasetranscrystal.blockoffensive.data.persistence.CSGameMapFixer;
 import com.phasetranscrystal.blockoffensive.map.shop.ItemType;
-import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMSaveDataEvent;
-import com.phasetranscrystal.fpsmatch.core.event.register.RegisterFPSMapEvent;
+import com.phasetranscrystal.fpsmatch.common.event.register.RegisterFPSMSaveDataEvent;
+import com.phasetranscrystal.fpsmatch.common.event.register.RegisterFPSMapEvent;
 import com.phasetranscrystal.fpsmatch.core.persistence.SaveHolder;
 import com.phasetranscrystal.fpsmatch.core.persistence.datafixer.DataFixer;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;

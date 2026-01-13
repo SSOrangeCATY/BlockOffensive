@@ -6,12 +6,15 @@ import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import com.phasetranscrystal.blockoffensive.client.key.OpenShopKey;
 import com.phasetranscrystal.blockoffensive.client.screen.CSGameShopScreen;
 import com.phasetranscrystal.blockoffensive.net.dm.PlayerMoveC2SPacket;
+import com.phasetranscrystal.blockoffensive.util.BOUtil;
+import com.phasetranscrystal.blockoffensive.util.ThrowableType;
 import com.phasetranscrystal.blockoffensive.web.BOClientWebServer;
 import com.phasetranscrystal.blockoffensive.compat.BOImpl;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.data.FPSMClientGlobalData;
 import com.phasetranscrystal.fpsmatch.common.client.event.FPSMClientResetEvent;
+import com.phasetranscrystal.fpsmatch.common.event.FPSMThrowGrenadeEvent;
 import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
@@ -25,6 +28,7 @@ import net.minecraft.client.player.Input;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.MovementInputUpdateEvent;
@@ -54,6 +58,21 @@ public class BOClientEvent {
 
         if (input.left || input.right || input.up || input.down || input.shiftKeyDown) {
             FPSMatch.sendToServer(new PlayerMoveC2SPacket());
+        }
+    }
+
+    @SubscribeEvent
+    public static void onFPSMatchThrowGrenade(FPSMThrowGrenadeEvent event){
+        buildGrenadeMessageAndSend(event.getItemStack());
+    }
+
+    public static void buildGrenadeMessageAndSend(ItemStack itemStack) {
+        ThrowableType type = BOUtil.getThrowableType(itemStack.getItem());
+        FPSMClientGlobalData data = FPSMClient.getGlobalData();
+        if(type != ThrowableType.UNKNOWN && data.isInNormalTeam()){
+            data.getCurrentClientTeam().ifPresent(team->{
+                team.sendMessage(BOUtil.buildTeamChatMessage(type.getChat()));
+            });
         }
     }
 
@@ -88,7 +107,7 @@ public class BOClientEvent {
     public static void lockMove(Minecraft mc){
         LocalPlayer player = mc.player;
         if(player == null) return;
-        if((CSClientData.isWaiting || CSClientData.isPause) && (FPSMClient.getGlobalData().equalsGame("cs") && !FPSMClient.getGlobalData().isSpectator())){
+        if(isLocked()){
             mc.options.keyUp.setDown(false);
             mc.options.keyLeft.setDown(false);
             mc.options.keyDown.setDown(false);

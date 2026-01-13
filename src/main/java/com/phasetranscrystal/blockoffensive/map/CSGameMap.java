@@ -11,6 +11,7 @@ import com.phasetranscrystal.blockoffensive.event.CSGameRoundEndEvent;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.item.BombDisposalKit;
 import com.phasetranscrystal.blockoffensive.item.CompositionC4;
+import com.phasetranscrystal.blockoffensive.map.team.capability.ColoredPlayerCapability;
 import com.phasetranscrystal.blockoffensive.net.*;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombDemolitionProgressS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.mvp.MvpHUDCloseS2CPacket;
@@ -32,7 +33,6 @@ import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.entity.BlastBombEntity;
-import com.phasetranscrystal.fpsmatch.core.event.FPSMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.*;
 import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
@@ -100,7 +100,7 @@ public class CSGameMap extends CSMap{
                 }));
     }
     private static final List<Class<? extends MapCapability>> MAP_CAPABILITIES = List.of(DemolitionModeCapability.class, GameEndTeleportCapability.class);
-    private static final List<Class<? extends TeamCapability>> TEAM_CAPABILITIES = List.of(PauseCapability.class, CompensationCapability.class, TeamSwitchRestrictionCapability.class, ShopCapability.class, StartKitsCapability.class);
+    private static final List<Class<? extends TeamCapability>> TEAM_CAPABILITIES = List.of(PauseCapability.class, CompensationCapability.class, TeamSwitchRestrictionCapability.class, ShopCapability.class, StartKitsCapability.class, ColoredPlayerCapability.class);
 
     private Setting<Integer> winnerRound;
     private Setting<Integer> overtimeRound;
@@ -331,7 +331,6 @@ public class CSGameMap extends CSMap{
         this.isWaitingWinner = false;
         this.currentPauseTime = 0;
         this.isShopLocked = false;
-        this.isKnifeSelected = false;
     }
 
     /**
