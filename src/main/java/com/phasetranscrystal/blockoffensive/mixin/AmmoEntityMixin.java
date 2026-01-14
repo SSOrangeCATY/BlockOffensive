@@ -11,6 +11,7 @@ import com.tacz.guns.entity.EntityKineticBullet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -29,7 +30,6 @@ import java.util.List;
 
 @Mixin(value = EntityKineticBullet.class,remap = false)
 public abstract class AmmoEntityMixin implements IPassThroughEntity {
-
     @Unique
     private boolean blockoffensive$passedThroughWall = false;
 
@@ -55,41 +55,45 @@ public abstract class AmmoEntityMixin implements IPassThroughEntity {
     )
     private void blockoffensive$checkPassedSmoke(CallbackInfo ci) {
         EntityKineticBullet bullet = (EntityKineticBullet)(Object)this;
-        Level level = bullet.level();
-        if(level.isClientSide()) return;
+        if(bullet.level().isClientSide()) return;
         if(blockoffensive$passedThroughSmoke) return;
-        AABB checker = bullet.getBoundingBox().inflate(16D);
-        Vec3 pos = bullet.position();
+        List<Entity> entities = bullet.level().getEntities(bullet, bullet.getBoundingBox().expandTowards(bullet.getDeltaMovement()).inflate(16.0));
+        if(entities.isEmpty()) return;
+        AABB checker = bullet.getBoundingBox().expandTowards(bullet.getDeltaMovement()).inflate(1D);
+
         if(FPSMImpl.findCounterStrikeGrenadesMod()){
-            if(CounterStrikeGrenadesCompat.isInSmokeGrenadeArea(level,checker,pos)){
+            if(CounterStrikeGrenadesCompat.isInSmokeGrenadeArea(entities,checker)){
                 blockoffensive$passedThroughSmoke = true;
                 return;
             }
         }
 
         if(FPSMImpl.findLrtacticalMod()){
-            if(LrtacticalCompat.isInSmokeGrenadeArea(level,checker,pos)){
+            if(LrtacticalCompat.isInSmokeGrenadeArea(entities,checker)){
                 blockoffensive$passedThroughSmoke = true;
                 return;
             }
         }
 
-        if(blockoffensive$isPassedSmoke(level,checker,pos)){
+        if(blockoffensive$isPassedSmoke(entities,checker)){
             blockoffensive$passedThroughSmoke = true;
         }
     }
 
     @Unique
-    public boolean blockoffensive$isPassedSmoke(Level level, AABB checker, Vec3 position) {
-        List<SmokeShellEntity> s1 = level.getEntitiesOfClass(SmokeShellEntity.class,checker);
-        for (SmokeShellEntity smoke : s1) {
-            if(smoke.isInSmokeArea(position)) {
+    private boolean blockoffensive$isPassedSmoke(List<Entity> entities, AABB checker) {
+        List<SmokeShellEntity> smokes = entities.stream()
+                .filter(entity -> entity instanceof SmokeShellEntity)
+                .map(entity -> (SmokeShellEntity)entity)
+                .toList();
+
+        for (SmokeShellEntity smoke : smokes) {
+            if(smoke.isInSmokeArea(checker)) {
                 return true;
             }
         }
         return false;
     }
-
 
     @Unique
     public BlockHitResult blockoffensive$rayTraceBlocks(Level level, ClipContext context) {

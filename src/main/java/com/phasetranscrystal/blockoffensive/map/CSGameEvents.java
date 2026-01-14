@@ -16,6 +16,7 @@ import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.event.common.EntityKillByGunEvent;
 import com.tacz.guns.api.event.common.GunShootEvent;
 import com.tacz.guns.api.item.IGun;
+import com.tacz.guns.init.ModDamageTypes;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -158,13 +159,15 @@ public class CSGameEvents {
             csMap.sendPacketToAllPlayer(new PxDeathCompatS2CPacket(player.getId()));
         }
 
+        csMap.sendPacketToJoinedPlayer(player, new FPSMatchRespawnS2CPacket(), true);
+        event.setCanceled(true);
+
+        if(event.getSource().is(ModDamageTypes.BULLETS_TAG)) return;
+
         Optional<ServerPlayer> attackerOpt = event.getKiller();
         ItemStack deathItem = attackerOpt.map(attacker -> BOUtil.getDeathItemStack(attacker, event.getSource()))
                 .orElse(ItemStack.EMPTY);
-
         csMap.onPlayerDeathEvent(player, attackerOpt.orElse(null), deathItem, false,false,false);
-        csMap.sendPacketToJoinedPlayer(player, new FPSMatchRespawnS2CPacket(), true);
-        event.setCanceled(true);
     }
 
 }
