@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_8",
   "refmap": "blockoffensive.refmap.json",
   "mixins": [
+    "AmmoEntityMixin",
     "C4KitsItemEntityMixin",
     "StepSoundMixin"
   ],

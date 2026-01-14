@@ -14,7 +14,7 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 
 import java.util.Optional;
 
-public class VoteCommand {
+public class CSCommand {
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
         LiteralArgumentBuilder<CommandSourceStack> literal = Commands.literal("cs2").then(Commands.argument("action",StringArgumentType.string()).executes(context -> {

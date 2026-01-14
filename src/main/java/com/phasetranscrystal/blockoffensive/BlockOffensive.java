@@ -1,6 +1,6 @@
 package com.phasetranscrystal.blockoffensive;
 
-import com.phasetranscrystal.blockoffensive.command.VoteCommand;
+import com.phasetranscrystal.blockoffensive.command.CSCommand;
 import com.phasetranscrystal.blockoffensive.compat.BOImpl;
 import com.phasetranscrystal.blockoffensive.compat.CSGrenadeCompat;
 import com.phasetranscrystal.blockoffensive.compat.PhysicsModCompat;
@@ -64,7 +64,7 @@ public class BlockOffensive {
 
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
-        VoteCommand.onRegisterCommands(event);
+        CSCommand.onRegisterCommands(event);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {

@@ -2,6 +2,7 @@ package com.phasetranscrystal.blockoffensive.map;
 
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.compat.BOImpl;
+import com.phasetranscrystal.blockoffensive.compat.IPassThroughEntity;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.item.BombDisposalKit;
 import com.phasetranscrystal.blockoffensive.item.CompositionC4;
@@ -132,8 +133,16 @@ public class CSGameEvents {
             return;
         }
 
+        boolean isPassWall = false;
+        boolean isPassSmoke = false;
+
+        if(event.getBullet() instanceof IPassThroughEntity passed){
+            isPassWall = passed.blockoffensive$isWall();
+            isPassSmoke = passed.blockoffensive$isSmoke();
+        }
+
         ItemStack deathItem = attacker.getMainHandItem();
-        csMap.onPlayerDeathEvent(deadPlayer, attacker, deathItem, event.isHeadShot());
+        csMap.onPlayerDeathEvent(deadPlayer, attacker, deathItem, event.isHeadShot(),isPassWall,isPassSmoke);
     }
 
     /**
@@ -153,8 +162,7 @@ public class CSGameEvents {
         ItemStack deathItem = attackerOpt.map(attacker -> BOUtil.getDeathItemStack(attacker, event.getSource()))
                 .orElse(ItemStack.EMPTY);
 
-        csMap.onPlayerDeathEvent(player, attackerOpt.orElse(null), deathItem, false);
-
+        csMap.onPlayerDeathEvent(player, attackerOpt.orElse(null), deathItem, false,false,false);
         csMap.sendPacketToJoinedPlayer(player, new FPSMatchRespawnS2CPacket(), true);
         event.setCanceled(true);
     }

@@ -19,7 +19,6 @@ import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
-import com.tacz.guns.api.event.common.GunFireEvent;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.util.InputExtraCheck;
 import icyllis.modernui.mc.MuiScreen;
@@ -138,7 +137,7 @@ public class BOClientEvent {
     public static boolean checkLocalPlayerHand(){
         LocalPlayer player = Minecraft.getInstance().player;
         if (player != null) {
-            return itemCheck(player) || (FPSMImpl.findEquipmentMod() && LrtacticalCompat.itemCheck(player) || (BOImpl.isCounterStrikeGrenadesLoaded() && CounterStrikeGrenadesCompat.itemCheck(player)));
+            return itemCheck(player) || (FPSMImpl.findLrtacticalMod() && LrtacticalCompat.itemCheck(player) || (BOImpl.isCounterStrikeGrenadesLoaded() && CounterStrikeGrenadesCompat.itemCheck(player)));
         }
         return false;
     }

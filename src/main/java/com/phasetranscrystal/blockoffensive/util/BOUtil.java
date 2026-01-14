@@ -51,7 +51,10 @@ public class BOUtil {
     public static int getColor(UUID uuid){
        return FPSMClient.getGlobalData().getTeamByUUID(uuid)
                .map(team-> team.getCapabilityMap().get(ColoredPlayerCapability.class)
-                       .map(cap->cap.getColor(uuid).getRGBA()).orElse(RenderUtil.WHITE))
+                       .map(cap-> {
+                           TeamPlayerColor color = cap.getColor(uuid);
+                           return color == null ? RenderUtil.WHITE :  color.getRGBA();
+                       }).orElse(RenderUtil.WHITE))
                .orElse(RenderUtil.WHITE);
     }
 
@@ -146,19 +149,15 @@ public class BOUtil {
      * @return 死亡消息数据包
      */
     public static DeathMessageS2CPacket buildDeathMessagePacket(BaseMap map, ServerPlayer attacker, ServerPlayer deadPlayer,
-                                                                ItemStack deathItem, boolean isHeadShot, float minAssistDamageRatio) {
+                                                                ItemStack deathItem, boolean isHeadShot,boolean isPassWall, boolean isPassSmoke, float minAssistDamageRatio) {
 
         DeathMessage.Builder builder = new DeathMessage.Builder(attacker, deadPlayer, deathItem);
 
         // 设置爆头标记
-        if (isHeadShot) {
-            builder.setHeadShot(true);
-        }
-
-
-        if (!attacker.equals(deadPlayer) && !attacker.onGround()) {
-            builder.setFlying(true);
-        }
+        builder.setHeadShot(isHeadShot);
+        builder.setFlying(!attacker.equals(deadPlayer) && !attacker.onGround());
+        builder.setThroughWall(isPassWall);
+        builder.setThroughSmoke(isPassSmoke);
 
         // 设置助攻信息
         calculateAssistPlayer(map, deadPlayer, minAssistDamageRatio).ifPresent(assistData -> {

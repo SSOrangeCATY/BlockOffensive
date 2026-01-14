@@ -5,8 +5,6 @@ import club.pisquad.minecraft.csgrenades.registry.ModItems;
 import com.phasetranscrystal.blockoffensive.client.BOClientEvent;
 import com.phasetranscrystal.blockoffensive.util.BOUtil;
 import com.phasetranscrystal.blockoffensive.util.ThrowableType;
-import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
-import com.phasetranscrystal.fpsmatch.common.client.data.FPSMClientGlobalData;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 

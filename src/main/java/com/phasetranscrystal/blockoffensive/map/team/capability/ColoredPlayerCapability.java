@@ -6,6 +6,7 @@ import com.phasetranscrystal.fpsmatch.core.capability.FPSMCapabilityManager;
 import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.common.event.FPSMTeamEvent;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
+import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
@@ -42,7 +43,7 @@ public class ColoredPlayerCapability extends TeamCapability implements FPSMCapab
     }
 
     public TeamPlayerColor getColor(UUID uuid){
-        return colored.getOrDefault(uuid,null);
+        return colored.getOrDefault(uuid, null);
     }
 
     @SubscribeEvent

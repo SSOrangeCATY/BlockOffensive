@@ -313,8 +313,8 @@ public class CSDeathMatchMap extends CSMap {
     }
     
     @Override
-    public void onPlayerDeathEvent(ServerPlayer player, @Nullable ServerPlayer attacker, @NotNull ItemStack itemStack,boolean isHeadShot) {
-        super.onPlayerDeathEvent(player, attacker, itemStack, isHeadShot);
+    public void onPlayerDeathEvent(ServerPlayer player, @Nullable ServerPlayer attacker, @NotNull ItemStack itemStack,boolean isHeadShot,boolean isPassWall, boolean isPassSmoke) {
+        super.onPlayerDeathEvent(player, attacker, itemStack, isHeadShot,isPassWall,isPassSmoke);
         respawnPlayer(player);
     }
     

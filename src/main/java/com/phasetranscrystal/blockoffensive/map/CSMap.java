@@ -680,7 +680,7 @@ public abstract class CSMap extends BaseMap {
     }
 
     public void onPlayerDeathEvent(ServerPlayer deadPlayer, @Nullable ServerPlayer attacker,
-                                   @NotNull ItemStack deathItem, boolean isHeadShot) {
+                                   @NotNull ItemStack deathItem, boolean isHeadShot, boolean isPassWall, boolean isPassSmoke) {
         handleDeathEvent(deadPlayer,attacker,isHeadShot);
 
         if (attacker == null) {
@@ -689,7 +689,7 @@ public abstract class CSMap extends BaseMap {
 
         giveEco(deadPlayer, attacker, deathItem, true);
 
-        DeathMessageS2CPacket killPacket = BOUtil.buildDeathMessagePacket(this,attacker, deadPlayer, deathItem, isHeadShot,minAssistDamageRatio.get());
+        DeathMessageS2CPacket killPacket = BOUtil.buildDeathMessagePacket(this,attacker, deadPlayer, deathItem, isHeadShot,isPassWall,isPassSmoke,minAssistDamageRatio.get());
         sendPacketToAllPlayer(killPacket);
     }
 
@@ -736,7 +736,7 @@ public abstract class CSMap extends BaseMap {
     public abstract void handleDeath(ServerPlayer dead);
 
     public int getRewardByItem(ItemStack itemStack){
-        if(FPSMImpl.findEquipmentMod() && LrtacticalCompat.isKnife(itemStack)){
+        if(FPSMImpl.findLrtacticalMod() && LrtacticalCompat.isKnife(itemStack)){
             return 1500;
         }else{
             if(itemStack.getItem() instanceof IGun iGun){
