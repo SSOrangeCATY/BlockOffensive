@@ -46,6 +46,7 @@ public class CSDeathMessageHud{
         registerSpecialKillIcon("t_incendiary_grenade", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/t_incendiary_grenade.png"));
         registerSpecialKillIcon("flash_bomb", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/flash_bomb.png"));
         registerSpecialKillIcon("smoke_shell", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/smoke_shell.png"));
+        registerSpecialKillIcon("fly", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/fly.png"));
         registerSpecialKillIcon("hand", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/hand.png"));
 
         registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(Items.AIR),"hand");
@@ -85,7 +86,7 @@ public class CSDeathMessageHud{
 
                 renderKillMessage(guiGraphics, message, x, yOffset);
 
-                yOffset += 14;
+                yOffset += 16;
             }
         }
     }
@@ -163,6 +164,8 @@ public class CSDeathMessageHud{
         guiGraphics.drawString(font, component, currentX, y + 4, -1, true);
         currentX += font.width(component) + 2;
 
+        if (message.isFlying()) currentX = renderConditionalIcon(guiGraphics, "fly", currentX, y);
+
         ResourceLocation weaponIcon = message.getWeaponIcon();
         poseStack.pushPose();
         poseStack.translate(currentX, y + 1, 0);
@@ -239,6 +242,7 @@ public class CSDeathMessageHud{
             width += 14;
         }
 
+        if (message.isFlying()) width += 14;
         if (message.isHeadShot()) width += 14;
         if (message.isThroughSmoke()) width += 14;
         if (message.isThroughWall()) width += 14;

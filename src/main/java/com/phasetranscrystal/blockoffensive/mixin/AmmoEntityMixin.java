@@ -50,7 +50,7 @@ public abstract class AmmoEntityMixin implements IPassThroughEntity {
     @Inject(
             method = "onBulletTick",
             at = @At(
-                    value = "TAIL"
+                    value = "HEAD"
             )
     )
     private void blockoffensive$checkPassedSmoke(CallbackInfo ci) {
