@@ -6,6 +6,7 @@ import com.phasetranscrystal.blockoffensive.net.DeathMessageS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
+import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
@@ -87,6 +88,40 @@ public class BOUtil {
                     .withStyle(ChatFormatting.BOLD);
 
         }).orElse(message);
+    }
+
+    public static MutableComponent buildTeamChatMessage(ServerPlayer player, MutableComponent message, MutableComponent location) {
+        return FPSMCore.getInstance().getMapByPlayer(player)
+                .flatMap(map -> map.getMapTeams().getTeamByPlayer(player))
+                .map(team -> {
+                    TextColor textColor = TextColor.parseColor(team.name.equals("ct") ? "#96C8FA" : "#EAC055");
+
+                    MutableComponent head = Component.literal("[" + team.name.toUpperCase(Locale.US) + "]")
+                            .withStyle(Style.EMPTY.withColor(textColor));
+
+                    MutableComponent teamColor = Component.literal(" ● ");
+
+                    team.getCapabilityMap().get(ColoredPlayerCapability.class).ifPresent(cap -> {
+                        TeamPlayerColor c = cap.getColor(player.getUUID());
+                        if (c != null) {
+                            teamColor.withStyle(Style.EMPTY.withColor(TextColor.parseColor(c.getHex())));
+                        }
+                    });
+
+                    MutableComponent playerName = ((MutableComponent) player.getName()).withStyle(Style.EMPTY.withColor(textColor));
+
+                    return head.append(teamColor)
+                            .append(playerName)
+                            .append(location.withStyle(ChatFormatting.GREEN))
+                            .append(Component.literal(":"))
+                            .append(message)
+                            .withStyle(ChatFormatting.BOLD);
+
+                }).orElse(message);
+    }
+
+    public static MutableComponent buildTeamChatMessage(ServerPlayer player, MutableComponent message) {
+        return buildTeamChatMessage(player, message, Component.empty());
     }
 
     /**
