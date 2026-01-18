@@ -357,7 +357,7 @@ public class CompositionC4Entity extends BlastBombEntity {
     private void explode() {
         // 获取爆炸参数
         int instantKillRadius = this.getInstantKillRadius();
-        int damageRadius = instantKillRadius + 31; // 总伤害半径 = 即死范围 + 31
+        int damageRadius = instantKillRadius + 31;
         Vec3 explosionPos = this.position();
 
         // 播放爆炸粒子和音效
