@@ -34,7 +34,7 @@ public class TeamChatKey {
                 return;
             }
             
-            Minecraft.getInstance().setScreen(new TeamChatScreen(""));
+            Minecraft.getInstance().setScreen(new TeamChatScreen());
         }
     }
 }

@@ -16,12 +16,12 @@ import java.awt.*;
 public class TeamChatScreen extends ChatScreen {
     public static final MutableComponent TITLE = Component.translatable("blockoffensive.team_chat.title");
 
-    public TeamChatScreen(String defaultText) {
-        super(defaultText);
+    public TeamChatScreen() {
+        super("");
     }
 
     @Override
-    public void render(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
+    public void render(@NotNull GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
         super.render(pGuiGraphics, pMouseX, pMouseY, pPartialTick);
         if(this.input.getValue().isEmpty()){
             int x = 4;

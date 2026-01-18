@@ -116,7 +116,7 @@ public abstract class CSMap extends BaseMap {
 
         this.tTeam = this.addTeam(TeamData.of("t",tLimit.get(), tCapabilities));
         this.tTeam.setColor(T_COLOR);
-        this.ctTeam.getPlayerTeam().setColor(ChatFormatting.YELLOW);
+        this.tTeam.getPlayerTeam().setColor(ChatFormatting.YELLOW);
     }
 
     // Config
@@ -508,7 +508,7 @@ public abstract class CSMap extends BaseMap {
                                 if(copy.getItem() instanceof ArmorItem armorItem){
                                     player.setItemSlot(armorItem.getEquipmentSlot(),copy);
                                 }else{
-                                    player.getInventory().add(copy);
+                                    player.getInventory().add(FPSMUtil.fixGunItem(copy));
                                 }
                             }
                             FPSMUtil.sortPlayerInventory(player);
