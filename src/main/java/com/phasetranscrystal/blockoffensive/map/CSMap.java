@@ -112,8 +112,11 @@ public abstract class CSMap extends BaseMap {
         this.loadConfig();
         this.ctTeam = this.addTeam(TeamData.of("ct",ctLimit.get(), ctCapabilities));
         this.ctTeam.setColor(CT_COLOR);
+        this.ctTeam.getPlayerTeam().setColor(ChatFormatting.BLUE);
+
         this.tTeam = this.addTeam(TeamData.of("t",tLimit.get(), tCapabilities));
         this.tTeam.setColor(T_COLOR);
+        this.ctTeam.getPlayerTeam().setColor(ChatFormatting.YELLOW);
     }
 
     // Config

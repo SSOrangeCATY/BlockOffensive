@@ -1,5 +1,6 @@
 package com.phasetranscrystal.blockoffensive.client.screen.hud;
 
+import com.phasetranscrystal.blockoffensive.util.BOUtil;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.tab.TabRenderer;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
@@ -146,7 +147,7 @@ public class CSGameTabRenderer implements TabRenderer {
         int currentY = ctStartY;
         List<PlayerInfo> ctPlayers = teamPlayers.get("ct");
         for (PlayerInfo ctPlayer : ctPlayers) {
-            renderPlayerRow(guiGraphics, ctPlayer, bgX + bgPadding, currentY, playerAreaWidth, playerRowHeight, CSGameOverlay.textCTWinnerRoundsColor);
+            renderPlayerRow(guiGraphics, ctPlayer, bgX + bgPadding, currentY, playerAreaWidth, playerRowHeight, BOUtil.CT_COLOR);
             currentY += playerRowHeight + playerGap;
         }
 
@@ -154,7 +155,7 @@ public class CSGameTabRenderer implements TabRenderer {
         currentY = tStartY;
         List<PlayerInfo> tPlayers = teamPlayers.get("t");
         for (PlayerInfo tPlayer : tPlayers) {
-            renderPlayerRow(guiGraphics, tPlayer, bgX + bgPadding, currentY, playerAreaWidth, playerRowHeight, CSGameOverlay.textTWinnerRoundsColor);
+            renderPlayerRow(guiGraphics, tPlayer, bgX + bgPadding, currentY, playerAreaWidth, playerRowHeight, BOUtil.T_COLOR);
             currentY += playerRowHeight + playerGap;
         }
     }

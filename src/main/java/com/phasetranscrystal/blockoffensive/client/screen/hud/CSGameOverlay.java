@@ -20,8 +20,6 @@ import java.util.*;
 import static com.phasetranscrystal.fpsmatch.util.RenderUtil.color;
 
 public class CSGameOverlay {
-    public static int textCTWinnerRoundsColor = color(182, 210, 240);
-    public static int textTWinnerRoundsColor = color(253,217,141);
     public static int noColor = color(0,0,0,0);
     public static int textRoundTimeColor = color(255,255,255);
 
@@ -94,7 +92,7 @@ public class CSGameOverlay {
         guiGraphics.drawString(font, ctLivingStr,
                 -ctNumberWidth/2,
                 -4,
-                textCTWinnerRoundsColor,
+                BOUtil.CT_COLOR,
                 false);
         guiGraphics.pose().popPose();
 
@@ -113,7 +111,7 @@ public class CSGameOverlay {
         guiGraphics.drawString(font, livingText,
                 -smallTextWidth/2, // 使用smallTextWidth
                 0,
-                textCTWinnerRoundsColor,
+                BOUtil.CT_COLOR,
                 false);
         guiGraphics.pose().popPose();
 
@@ -153,7 +151,7 @@ public class CSGameOverlay {
         guiGraphics.drawString(font, tLivingStr,
                 -tNumberWidth/2,
                 -4,
-                textTWinnerRoundsColor,
+                BOUtil.T_COLOR,
                 false);
         guiGraphics.pose().popPose();
 
@@ -168,7 +166,7 @@ public class CSGameOverlay {
         guiGraphics.drawString(font, livingText,
                 -smallTextWidth/2, // 使用smallTextWidth
                 0,
-                textTWinnerRoundsColor,
+                BOUtil.T_COLOR,
                 false);
         guiGraphics.pose().popPose();
 
@@ -201,7 +199,7 @@ public class CSGameOverlay {
         guiGraphics.drawString(font, ctScore,
                 -ctScoreWidth/2,
                 -font.lineHeight/2,
-                textCTWinnerRoundsColor,
+                BOUtil.CT_COLOR,
                 false);
         guiGraphics.pose().popPose();
 
@@ -218,7 +216,7 @@ public class CSGameOverlay {
         guiGraphics.drawString(font, tScore,
                 -tScoreWidth/2,
                 -font.lineHeight/2,
-                textTWinnerRoundsColor,
+                BOUtil.T_COLOR,
                 false);
         guiGraphics.pose().popPose();
 
@@ -314,7 +312,7 @@ public class CSGameOverlay {
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(5,screenHeight - 20,0 );
         guiGraphics.pose().scale(2,2,0);
-        guiGraphics.drawString(font, "$ "+CSClientData.getMoney(), 0,0, FPSMClient.getGlobalData().equalsTeam("ct") ? textCTWinnerRoundsColor : textTWinnerRoundsColor);
+        guiGraphics.drawString(font, "$ "+CSClientData.getMoney(), 0,0, FPSMClient.getGlobalData().equalsTeam("ct") ? BOUtil.CT_COLOR : BOUtil.T_COLOR);
         guiGraphics.pose().popPose();
     }
 
@@ -406,7 +404,7 @@ public class CSGameOverlay {
         int nameWidth = font.width(nameStr);
         if(nameWidth < width) {
             guiGraphics.drawString(font, nameStr, -nameWidth/2, 0,
-                    isCT ? textCTWinnerRoundsColor:textTWinnerRoundsColor, false);
+                    isCT ? BOUtil.CT_COLOR:BOUtil.T_COLOR, false);
         }else{
             StringBuilder modified = new StringBuilder();
             for (char c : nameStr.toCharArray()){
@@ -420,7 +418,7 @@ public class CSGameOverlay {
             }
             int truncatedWidth = font.width(modified.toString());
             guiGraphics.drawString(font, modified.toString(), -truncatedWidth/2, 0,
-                    isCT ? textCTWinnerRoundsColor:textTWinnerRoundsColor, false);
+                    isCT ? BOUtil.CT_COLOR:BOUtil.T_COLOR, false);
         }
         guiGraphics.pose().popPose();
     }

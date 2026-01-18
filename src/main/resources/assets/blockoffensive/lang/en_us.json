@@ -101,5 +101,7 @@
   "blockoffensive.throwable.flash_bang.throw.message": "Flashbang Out!",
   "blockoffensive.throwable.smoke.throw.message": "Smoke Out!",
   "blockoffensive.throwable.incendiary_grenade.throw.message": "FireBomb on the way!",
-  "blockoffensive.throwable.decoy.throw.message": "Decoy Out!"
+  "blockoffensive.throwable.decoy.throw.message": "Decoy Out!",
+  "blockoffensive.team_chat.title": "Team Chat",
+  "key.blockoffensive.team_chat.desc": "Open Team Chat"
 }

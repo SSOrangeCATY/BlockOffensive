@@ -6,7 +6,6 @@ import com.phasetranscrystal.blockoffensive.net.DeathMessageS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
-import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
@@ -30,7 +29,12 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.phasetranscrystal.fpsmatch.util.RenderUtil.color;
+
 public class BOUtil {
+    public static int CT_COLOR = color(182, 210, 240);
+    public static int T_COLOR = color(253,217,141);
+
     private static final Map<Item, ThrowableType> throwables = new ConcurrentHashMap<>();
 
     public static void registerThrowable(ThrowableType type, Item item) {
@@ -47,6 +51,11 @@ public class BOUtil {
 
     public static MutableComponent buildTeamChatMessage(MutableComponent message) {
         return buildTeamChatMessage(message, Component.empty());
+    }
+
+    public static int getTeamColor(UUID uuid){
+        return FPSMClient.getGlobalData().getTeamByUUID(uuid)
+                .map(team -> team.name.equals("ct") ? CT_COLOR :  T_COLOR).orElse(RenderUtil.WHITE);
     }
 
     public static int getColor(UUID uuid){
@@ -88,40 +97,6 @@ public class BOUtil {
                     .withStyle(ChatFormatting.BOLD);
 
         }).orElse(message);
-    }
-
-    public static MutableComponent buildTeamChatMessage(ServerPlayer player, MutableComponent message, MutableComponent location) {
-        return FPSMCore.getInstance().getMapByPlayer(player)
-                .flatMap(map -> map.getMapTeams().getTeamByPlayer(player))
-                .map(team -> {
-                    TextColor textColor = TextColor.parseColor(team.name.equals("ct") ? "#96C8FA" : "#EAC055");
-
-                    MutableComponent head = Component.literal("[" + team.name.toUpperCase(Locale.US) + "]")
-                            .withStyle(Style.EMPTY.withColor(textColor));
-
-                    MutableComponent teamColor = Component.literal(" ● ");
-
-                    team.getCapabilityMap().get(ColoredPlayerCapability.class).ifPresent(cap -> {
-                        TeamPlayerColor c = cap.getColor(player.getUUID());
-                        if (c != null) {
-                            teamColor.withStyle(Style.EMPTY.withColor(TextColor.parseColor(c.getHex())));
-                        }
-                    });
-
-                    MutableComponent playerName = ((MutableComponent) player.getName()).withStyle(Style.EMPTY.withColor(textColor));
-
-                    return head.append(teamColor)
-                            .append(playerName)
-                            .append(location.withStyle(ChatFormatting.GREEN))
-                            .append(Component.literal(":"))
-                            .append(message)
-                            .withStyle(ChatFormatting.BOLD);
-
-                }).orElse(message);
-    }
-
-    public static MutableComponent buildTeamChatMessage(ServerPlayer player, MutableComponent message) {
-        return buildTeamChatMessage(player, message, Component.empty());
     }
 
     /**

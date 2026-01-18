@@ -116,6 +116,7 @@ public class CSGameMap extends CSMap{
     private Setting<Integer> tDeathRewardPer;
     private Setting<Integer> closeShopTime;
     private Setting<Boolean> knifeSelection;
+    private Setting<Integer> c4InstantKillRadius;
 
     private int currentPauseTime = 0;
     private int currentRoundTime = 0;
@@ -194,6 +195,7 @@ public class CSGameMap extends CSMap{
         tDeathRewardPer = this.addSetting("tDeathRewardPer",50);
         closeShopTime = this.addSetting("closeShopTime",200);
         knifeSelection = this.addSetting("knifeSelection",false);
+        c4InstantKillRadius = this.addSetting("c4InstantKillRadius",20);
     }
 
     @Override
@@ -375,7 +377,7 @@ public class CSGameMap extends CSMap{
     }
 
     /**
-     * 处理刀具选择阶段逻辑（商店锁定、装备发放、C4分配、金钱设置）
+     * 处理刀选阶段逻辑
      */
     private void handleKnifeSelectionPhase() {
         boolean isKnifeSelectionPhase = knifeSelection.get() && !isKnifeSelected;
@@ -384,7 +386,7 @@ public class CSGameMap extends CSMap{
         int shopCloseTime = this.closeShopTime.get();
         syncShopInfo(!isKnifeSelectionPhase, shopCloseTime);
 
-        this.giveAllPlayersKits((type)-> type == DropType.THIRD_WEAPON);
+        this.giveAllPlayersKits((type)-> !isKnifeSelectionPhase || type == DropType.THIRD_WEAPON);
 
         if (!isKnifeSelectionPhase) {
             this.giveBlastTeamBomb();
@@ -1306,6 +1308,10 @@ public class CSGameMap extends CSMap{
 
     public boolean checkPlayerIsInBombArea(@NotNull Player player) {
         return this.getCapabilityMap().get(DemolitionModeCapability.class).map(cap->cap.checkPlayerIsInBombArea(player)).orElse(false);
+    }
+
+    public int getC4InstantKillRadius(){
+        return c4InstantKillRadius.get();
     }
 
     @Override
