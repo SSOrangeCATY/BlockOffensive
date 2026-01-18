@@ -378,10 +378,13 @@ public class CompositionC4Entity extends BlastBombEntity {
             if (entity instanceof LivingEntity livingEntity) {
                 // 计算距离
                 double distance = entity.position().distanceTo(explosionPos);
+                if (distance <= instantKillRadius){
+                    applyExplosionDamage(livingEntity, 0, 0, 999);
+                }else{
+                    double blockageFactor = calculateBlockageFactor(explosionPos, entity.position(), distance);
 
-                double blockageFactor = calculateBlockageFactor(explosionPos, entity.position(), distance);
-
-                applyExplosionDamage(livingEntity, distance, blockageFactor, instantKillRadius);
+                    applyExplosionDamage(livingEntity, distance, blockageFactor, instantKillRadius);
+                }
             }
         }
 
@@ -453,8 +456,7 @@ public class CompositionC4Entity extends BlastBombEntity {
     }
 
     private void applyExplosionDamage(LivingEntity entity, double distance, double blockageFactor, int instantKillRadius) {
-        // 如果距离在即死范围内且没有完全阻挡，直接秒杀
-        if (distance <= instantKillRadius && blockageFactor > 0.01) {
+        if (distance <= instantKillRadius) {
             entity.hurt(entity.level().damageSources().explosion(this, this.owner), Float.MAX_VALUE);
             return;
         }

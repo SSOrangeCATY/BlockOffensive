@@ -10,6 +10,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.client.settings.KeyModifier;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
@@ -27,13 +28,8 @@ public class TeamChatKey {
             "key.category.blockoffensive");
 
     @SubscribeEvent
-    public static void onTeamChatPress(InputEvent.Key event) {
-        if (isInGame() && event.getAction() == GLFW.GLFW_PRESS && TEAM_CHAT_KEY.matches(event.getKey(), event.getScanCode())) {
-            LocalPlayer player = Minecraft.getInstance().player;
-            if (player == null) {
-                return;
-            }
-            
+    public static void onTeamChatPress(TickEvent.ClientTickEvent event) {
+        if(event.phase == TickEvent.Phase.END && TEAM_CHAT_KEY.isDown()) {
             Minecraft.getInstance().setScreen(new TeamChatScreen());
         }
     }
