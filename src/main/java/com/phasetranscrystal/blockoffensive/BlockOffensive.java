@@ -103,15 +103,14 @@ public class BlockOffensive {
             FPSMSoundRegister.registerGunDropSound(GunTabType.RPG,BOSoundRegister.WEAPON_HEAVY_IMPACT.get());
 
             FPSMSoundRegister.registerKnifeDropSound(BOSoundRegister.WEAPON_KNIFE_IMPACT.get());
-            FPSMSoundRegister.registerItemPickupSound(BOItemRegister.C4.get().asItem(), SoundEvents.EXPERIENCE_ORB_PICKUP);
-            FPSMSoundRegister.registerItemDropSound(BOItemRegister.C4.get().asItem(), BOSoundRegister.WEAPON_C4_IMPACT.get());
+            FPSMSoundRegister.registerItemPickupSound(BOItemRegister.C4.get(), SoundEvents.EXPERIENCE_ORB_PICKUP);
+            FPSMSoundRegister.registerItemDropSound(BOItemRegister.C4.get(), BOSoundRegister.WEAPON_C4_IMPACT.get());
 
             BOUtil.registerThrowable(ThrowableType.SMOKE, FPSMItemRegister.SMOKE_SHELL.get());
             BOUtil.registerThrowable(ThrowableType.GRENADE, FPSMItemRegister.GRENADE.get());
             BOUtil.registerThrowable(ThrowableType.INCENDIARY_GRENADE, FPSMItemRegister.T_INCENDIARY_GRENADE.get());
             BOUtil.registerThrowable(ThrowableType.INCENDIARY_GRENADE, FPSMItemRegister.CT_INCENDIARY_GRENADE.get());
             BOUtil.registerThrowable(ThrowableType.FLASH_BANG, FPSMItemRegister.FLASH_BOMB.get());
-
             if(BOImpl.isPhysicsModLoaded()){
                 PhysicsModCompat.init();
             }

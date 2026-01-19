@@ -1,7 +1,6 @@
 package com.phasetranscrystal.blockoffensive.client;
 
 import com.phasetranscrystal.blockoffensive.client.key.SwitchSpectatorKey;
-import com.phasetranscrystal.blockoffensive.client.key.TeamChatKey;
 import com.phasetranscrystal.blockoffensive.client.renderer.C4Renderer;
 import com.phasetranscrystal.blockoffensive.client.screen.hud.*;
 import com.phasetranscrystal.blockoffensive.entity.BOEntityRegister;
@@ -38,7 +37,7 @@ public class BOClientBootstrap {
         event.register(DismantleBombKey.DISMANTLE_BOMB_KEY);
         event.register(SwitchSpectatorKey.KEY_SPECTATE_NEXT);
         event.register(SwitchSpectatorKey.KEY_SPECTATE_PREV);
-        event.register(TeamChatKey.TEAM_CHAT_KEY);
+        event.register(com.phasetranscrystal.blockoffensive.client.key.TeamChatKey.TEAM_CHAT_KEY);
         SpecKeyHandler.registerSwitchKey(SwitchSpectatorKey.KEY_SPECTATE_NEXT);
         SpecKeyHandler.registerSwitchKey(SwitchSpectatorKey.KEY_SPECTATE_PREV);
         // cs: hud | overlay | tab

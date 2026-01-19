@@ -2,13 +2,11 @@ package com.phasetranscrystal.blockoffensive.client.data;
 
 import com.phasetranscrystal.blockoffensive.client.screen.hud.CSGameHud;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
-import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import net.minecraft.client.Minecraft;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class CSClientData {
     public static boolean currentMapSupportShop = true;

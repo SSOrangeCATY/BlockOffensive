@@ -49,4 +49,26 @@ public class BOSoundRegister {
     public static final RegistryObject<SoundEvent> ACTION_JUMP_SHOT = SOUNDS.register("action_jump_shot", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.tryBuild(BlockOffensive.MODID, "action_jump_shot")));
     public static final RegistryObject<SoundEvent> MATCH_POINT = SOUNDS.register("match_point", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.tryBuild(BlockOffensive.MODID, "match_point")));
     public static final RegistryObject<SoundEvent> WEAPON_C4_PRE_EXPLODE = SOUNDS.register("weapon_c4_pre_explode", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.tryBuild(BlockOffensive.MODID, "weapon_c4_pre_explode")));
+    // 语音音效
+    public static final RegistryObject<SoundEvent> T_PLANTINGBOMB = SOUNDS.register("t_plantingbomb", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.tryBuild(BlockOffensive.MODID, "t_plantingbomb")));
+
+    // T方投掷物语音
+    public static final RegistryObject<SoundEvent> THROWABLE_SMOKE_T_THROW = SOUNDS.register("throwable_smoke_t_throw", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.tryBuild(BlockOffensive.MODID, "throwable_smoke_t_throw")));
+    public static final RegistryObject<SoundEvent> THROWABLE_MOLOTOV_T_THROW = SOUNDS.register("throwable_molotov_t_throw", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.tryBuild(BlockOffensive.MODID, "throwable_molotov_t_throw")));
+    public static final RegistryObject<SoundEvent> THROWABLE_FLASHBANG_T_THROW = SOUNDS.register("throwable_flashbang_t_throw", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.tryBuild(BlockOffensive.MODID, "throwable_flashbang_t_throw")));
+    public static final RegistryObject<SoundEvent> THROWABLE_DECOY_T_THROW = SOUNDS.register("throwable_decoy_t_throw", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.tryBuild(BlockOffensive.MODID, "throwable_decoy_t_throw")));
+    public static final RegistryObject<SoundEvent> THROWABLE_GRENADE_T_THROW = SOUNDS.register("throwable_grenade_t_throw", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.tryBuild(BlockOffensive.MODID, "throwable_grenade_t_throw")));
+
+    // T方回合开始
+    public static final RegistryObject<SoundEvent> T_ROUNDSTART = SOUNDS.register("t_roundstart", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.tryBuild(BlockOffensive.MODID, "t_roundstart")));
+
+    // CT方投掷物语音
+    public static final RegistryObject<SoundEvent> THROWABLE_SMOKE_CT_THROW = SOUNDS.register("throwable_smoke_ct_throw", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.tryBuild(BlockOffensive.MODID, "throwable_smoke_ct_throw")));
+    public static final RegistryObject<SoundEvent> THROWABLE_MOLOTOV_CT_THROW = SOUNDS.register("throwable_molotov_ct_throw", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.tryBuild(BlockOffensive.MODID, "throwable_molotov_ct_throw")));
+    public static final RegistryObject<SoundEvent> THROWABLE_FLASHBANG_CT_THROW = SOUNDS.register("throwable_flashbang_ct_throw", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.tryBuild(BlockOffensive.MODID, "throwable_flashbang_ct_throw")));
+    public static final RegistryObject<SoundEvent> THROWABLE_DECOY_CT_THROW = SOUNDS.register("throwable_decoy_ct_throw", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.tryBuild(BlockOffensive.MODID, "throwable_decoy_ct_throw")));
+    public static final RegistryObject<SoundEvent> THROWABLE_GRENADE_CT_THROW = SOUNDS.register("throwable_grenade_ct_throw", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.tryBuild(BlockOffensive.MODID, "throwable_grenade_ct_throw")));
+
+    // CT方回合开始
+    public static final RegistryObject<SoundEvent> CT_ROUNDSTART = SOUNDS.register("ct_roundstart", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.tryBuild(BlockOffensive.MODID, "ct_roundstart")));
 }

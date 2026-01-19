@@ -1,13 +1,20 @@
 {
   "required": true,
   "minVersion": "0.8",
+  "mixinextras": {
+    "minVersion": "0.5.0"
+  },
   "package": "com.phasetranscrystal.blockoffensive.mixin",
   "compatibilityLevel": "JAVA_8",
   "refmap": "blockoffensive.refmap.json",
+  "plugin": "com.phasetranscrystal.blockoffensive.BlockOffensiveMixinPlugin",
   "mixins": [
-    "AmmoEntityMixin",
     "C4KitsItemEntityMixin",
-    "StepSoundMixin"
+    "StepSoundMixin",
+    "accessor.BOClipContextAccessor",
+    "ammo.AmmoEntityMixin",
+    "ammo.DefaultAmmoMixin",
+    "ammo.TweakAmmoMixin"
   ],
   "client": [
     "PlayerRendererMixin"

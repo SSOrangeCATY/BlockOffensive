@@ -49,7 +49,7 @@
   "blockoffensive.cs.reset" : "Reset Game",
   "blockoffensive.cs.start": "Start Game",
   "blockoffensive.map.vote.fail.alreadyHasVote" : "This map already has %1$s vote",
-  "blockoffensive.map.vote.help" : "You can type [ .a or .da ] OR [/cs2 a or /cs2 da] in the chat box to agree or disagree with the vote.",
+  "blockoffensive.map.vote.help" : "You can type [ .a or .da ] OR [/cs2 a or /cs2 da] in the chat to agree or disagree with the vote.",
   "blockoffensive.shop.title.equipment" : "Equipment",
   "blockoffensive.shop.title.pistol" : "Pistol",
   "blockoffensive.shop.title.mid_rank" : "Mid Rank",
@@ -103,5 +103,11 @@
   "blockoffensive.throwable.incendiary_grenade.throw.message": "FireBomb on the way!",
   "blockoffensive.throwable.decoy.throw.message": "Decoy Out!",
   "blockoffensive.team_chat.title": "Team Chat",
-  "key.blockoffensive.team_chat.desc": "Open Team Chat"
+  "key.blockoffensive.team_chat.desc": "Open Team Chat",
+
+  "message.damage.hit": "Hit ",
+  "message.damage.times": " times ",
+  "message.damage.damage": " damage ",
+  "message.damage.received": "Received ",
+  "message.damage.remain": "Remaining "
 }

@@ -38,12 +38,12 @@
       "blockoffensive:voice_ct_win"
     ]
   },
-    "voice_t_win": {
-        "subtitle": "sounds.blockoffensive.voice.t_win",
-        "sounds": [
-        "blockoffensive:voice_t_win"
-        ]
-    },
+  "voice_t_win": {
+    "subtitle": "sounds.blockoffensive.voice.t_win",
+    "sounds": [
+      "blockoffensive:voice_t_win"
+    ]
+  },
   "flash": {
     "subtitle": "sounds.blockoffensive.effect.flash",
     "sounds": [
@@ -56,7 +56,7 @@
       "blockoffensive:boom"
     ]
   },
-  "weapon_knife_impact" : {
+  "weapon_knife_impact": {
     "subtitle": "sounds.blockoffensive.weapon.knife.impact",
     "sounds": [
       "blockoffensive:weapon_knife_impact_01",
@@ -66,7 +66,7 @@
       "blockoffensive:weapon_knife_impact_05"
     ]
   },
-  "weapon_heavy_impact" : {
+  "weapon_heavy_impact": {
     "subtitle": "sounds.blockoffensive.weapon.heavy.impact",
     "sounds": [
       "blockoffensive:weapon_heavy_impact_01",
@@ -75,64 +75,64 @@
       "blockoffensive:weapon_heavy_impact_04"
     ]
   },
-  "weapon_pistol_impact" : {
+  "weapon_pistol_impact": {
     "subtitle": "sounds.blockoffensive.weapon.pistol.impact",
     "sounds": [
       "blockoffensive:weapon_pistol_impact"
     ]
   },
-  "weapon_rifle_impact" : {
+  "weapon_rifle_impact": {
     "subtitle": "sounds.blockoffensive.weapon.rifle.impact",
     "sounds": [
       "blockoffensive:weapon_rifle_impact"
     ]
   },
-  "weapon_shotgun_impact" : {
+  "weapon_shotgun_impact": {
     "subtitle": "sounds.blockoffensive.weapon.shotgun.impact",
     "sounds": [
       "blockoffensive:weapon_shotgun_impact"
     ]
   },
-  "weapon_smg_impact" : {
+  "weapon_smg_impact": {
     "subtitle": "sounds.blockoffensive.weapon.smg.impact",
     "sounds": [
       "blockoffensive:weapon_smg_impact"
     ]
   },
-  "weapon_sniper_impact" : {
+  "weapon_sniper_impact": {
     "subtitle": "sounds.blockoffensive.weapon.sniper.impact",
     "sounds": [
       "blockoffensive:weapon_sniper_impact"
     ]
   },
-  "weapon_c4_impact" : {
+  "weapon_c4_impact": {
     "subtitle": "sounds.blockoffensive.weapon.c4.impact",
     "sounds": [
       "blockoffensive:weapon_c4_impact_01"
     ]
   },
-  "weapon_c4beep_impact" : {
+  "weapon_c4beep_impact": {
     "subtitle": "sounds.blockoffensive.weapon.c4beep.impact",
     "sounds": [
       "blockoffensive:weapon_c4beep_impact_04",
       "blockoffensive:weapon_c4beep_impact_05"
     ]
   },
-  "weapon_pickup" : {
+  "weapon_pickup": {
     "subtitle": "sounds.blockoffensive.weapon.pickup",
     "sounds": [
       "blockoffensive:pickup_weapon_01",
       "blockoffensive:pickup_weapon_02"
     ]
   },
-  "weapon_ammo_pickup" : {
+  "weapon_ammo_pickup": {
     "subtitle": "sounds.blockoffensive.ammo.pickup",
     "sounds": [
       "blockoffensive:pickup_ammo_01",
       "blockoffensive:pickup_ammo_02"
     ]
   },
-  "weapon_grenade_pickup" : {
+  "weapon_grenade_pickup": {
     "subtitle": "sounds.blockoffensive.weapon.grenade.pickup",
     "sounds": [
       "blockoffensive:pickup_grenade_01",
@@ -140,13 +140,13 @@
       "blockoffensive:pickup_grenade_03"
     ]
   },
-  "weapon_pistol_pickup" : {
+  "weapon_pistol_pickup": {
     "subtitle": "sounds.blockoffensive.weapon.pistol.pickup",
     "sounds": [
       "blockoffensive:pickup_pistol"
     ]
   },
-  "weapon_quiet_pickup" : {
+  "weapon_quiet_pickup": {
     "subtitle": "sounds.blockoffensive.weapon.pickup.quiet",
     "sounds": [
       "blockoffensive:pickup_quiet_01",
@@ -154,31 +154,31 @@
       "blockoffensive:pickup_quiet_03"
     ]
   },
-  "weapon_rifle_pickup" : {
+  "weapon_rifle_pickup": {
     "subtitle": "sounds.blockoffensive.weapon.rifle.pickup",
     "sounds": [
       "blockoffensive:pickup_rifle"
     ]
   },
-  "weapon_shotgun_pickup" : {
+  "weapon_shotgun_pickup": {
     "subtitle": "sounds.blockoffensive.weapon.shotgun.pickup",
     "sounds": [
       "blockoffensive:pickup_shotgun"
     ]
   },
-  "weapon_smg_pickup" : {
+  "weapon_smg_pickup": {
     "subtitle": "sounds.blockoffensive.weapon.smg.pickup",
     "sounds": [
       "blockoffensive:pickup_smg"
     ]
   },
-  "weapon_sniper_pickup" : {
+  "weapon_sniper_pickup": {
     "subtitle": "sounds.blockoffensive.weapon.sniper.pickup",
     "sounds": [
       "blockoffensive:pickup_sniper"
     ]
   },
-  "action_jump_shot" : {
+  "action_jump_shot": {
     "subtitle": "sounds.blockoffensive.action.jump_shot",
     "sounds": [
       "blockoffensive:effort_m_01"
@@ -194,6 +194,129 @@
     "subtitle": "sounds.blockoffensive.weapon.c4.pre_explode",
     "sounds": [
       "blockoffensive:nvg_on"
+    ]
+  },
+  "t_plantingbomb": {
+    "subtitle": "sounds.blockoffensive.t.plantingbomb",
+    "sounds": [
+      "blockoffensive:voice_plantingbomb_01",
+      "blockoffensive:voice_plantingbomb_02",
+      "blockoffensive:voice_plantingbomb_03"
+    ]
+  },
+  "throwable_smoke_t_throw": {
+    "subtitle": "sounds.blockoffensive.throwable.smoke.t.throw",
+    "sounds": [
+      "blockoffensive:voice_throwable_smoke_t_throw_01",
+      "blockoffensive:voice_throwable_smoke_t_throw_02",
+      "blockoffensive:voice_throwable_smoke_t_throw_03"
+    ]
+  },
+  "throwable_molotov_t_throw": {
+    "subtitle": "sounds.blockoffensive.throwable.molotov.t.throw",
+    "sounds": [
+      "blockoffensive:voice_throwable_molotov_t_throw_01",
+      "blockoffensive:voice_throwable_molotov_t_throw_02",
+      "blockoffensive:voice_throwable_molotov_t_throw_03"
+    ]
+  },
+  "throwable_flashbang_t_throw": {
+    "subtitle": "sounds.blockoffensive.throwable.flashbang.t.throw",
+    "sounds": [
+      "blockoffensive:voice_throwable_flashbang_t_throw_01",
+      "blockoffensive:voice_throwable_flashbang_t_throw_02",
+      "blockoffensive:voice_throwable_flashbang_t_throw_03"
+    ]
+  },
+  "throwable_decoy_t_throw": {
+    "subtitle": "sounds.blockoffensive.throwable.decoy.t.throw",
+    "sounds": [
+      "blockoffensive:voice_throwable_decoy_t_throw_01",
+      "blockoffensive:voice_throwable_decoy_t_throw_02",
+      "blockoffensive:voice_throwable_decoy_t_throw_03"
+    ]
+  },
+  "throwable_grenade_t_throw": {
+    "subtitle": "sounds.blockoffensive.throwable.grenade.t.throw",
+    "sounds": [
+      "blockoffensive:voice_throwable_grenade_t_throw_01",
+      "blockoffensive:voice_throwable_grenade_t_throw_02",
+      "blockoffensive:voice_throwable_grenade_t_throw_03"
+    ]
+  },
+  "t_roundstart": {
+    "subtitle": "sounds.blockoffensive.t.roundstart",
+    "sounds": [
+      "blockoffensive:voice_t_roundstart_01",
+      "blockoffensive:voice_t_roundstart_02",
+      "blockoffensive:voice_t_roundstart_03"
+    ]
+  },
+  "throwable_smoke_ct_throw": {
+    "subtitle": "sounds.blockoffensive.throwable.smoke.ct.throw",
+    "sounds": [
+      "blockoffensive:voice_throwable_smoke_ct_throw_01",
+      "blockoffensive:voice_throwable_smoke_ct_throw_02",
+      "blockoffensive:voice_throwable_smoke_ct_throw_03"
+    ]
+  },
+  "throwable_molotov_ct_throw": {
+    "subtitle": "sounds.blockoffensive.throwable.molotov.ct.throw",
+    "sounds": [
+      "blockoffensive:voice_throwable_molotov_ct_throw_01",
+      "blockoffensive:voice_throwable_molotov_ct_throw_02",
+      "blockoffensive:voice_throwable_molotov_ct_throw_03",
+      "blockoffensive:voice_throwable_molotov_ct_throw_04"
+    ]
+  },
+  "throwable_flashbang_ct_throw": {
+    "subtitle": "sounds.blockoffensive.throwable.flashbang.ct.throw",
+    "sounds": [
+      "blockoffensive:voice_throwable_flashbang_ct_throw_01",
+      "blockoffensive:voice_throwable_flashbang_ct_throw_02",
+      "blockoffensive:voice_throwable_flashbang_ct_throw_03"
+    ]
+  },
+  "throwable_decoy_ct_throw": {
+    "subtitle": "sounds.blockoffensive.throwable.decoy.ct.throw",
+    "sounds": [
+      "blockoffensive:voice_throwable_decoy_ct_throw_01",
+      "blockoffensive:voice_throwable_decoy_ct_throw_02",
+      "blockoffensive:voice_throwable_decoy_ct_throw_03"
+    ]
+  },
+  "throwable_grenade_ct_throw": {
+    "subtitle": "sounds.blockoffensive.throwable.grenade.ct.throw",
+    "sounds": [
+      "blockoffensive:voice_throwable_grenade_ct_throw_01",
+      "blockoffensive:voice_throwable_grenade_ct_throw_02",
+      "blockoffensive:voice_throwable_grenade_ct_throw_03",
+      "blockoffensive:voice_throwable_grenade_ct_throw_04"
+    ]
+  },
+  "ct_roundstart": {
+    "subtitle": "sounds.blockoffensive.ct.roundstart",
+    "sounds": [
+      "blockoffensive:voice_ct_roundstart_01",
+      "blockoffensive:voice_ct_roundstart_02",
+      "blockoffensive:voice_ct_roundstart_03",
+      "blockoffensive:voice_ct_roundstart_04",
+      "blockoffensive:voice_ct_roundstart_05",
+      "blockoffensive:voice_ct_roundstart_06",
+      "blockoffensive:voice_ct_roundstart_07",
+      "blockoffensive:voice_ct_roundstart_08",
+      "blockoffensive:voice_ct_roundstart_09",
+      "blockoffensive:voice_ct_roundstart_10",
+      "blockoffensive:voice_ct_roundstart_11",
+      "blockoffensive:voice_ct_roundstart_12",
+      "blockoffensive:voice_ct_roundstart_13",
+      "blockoffensive:voice_ct_roundstart_14",
+      "blockoffensive:voice_ct_roundstart_15",
+      "blockoffensive:voice_ct_roundstart_16",
+      "blockoffensive:voice_ct_roundstart_17",
+      "blockoffensive:voice_ct_roundstart_18",
+      "blockoffensive:voice_ct_roundstart_19",
+      "blockoffensive:voice_ct_roundstart_20"
     ]
   }
 }

@@ -126,9 +126,14 @@ dependencies {
         exclude group: "it.unimi.dsi", module: "fastutil"
     }
 
+    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.3"))
+    implementation(jarJar("io.github.llamalad7:mixinextras-forge:0.5.3")) {
+        jarJar.ranged(it, "[0.5.3,)")
+    }
+
     implementation fg.deobf("icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_forge_version}")
     implementation fg.deobf("maven.modrinth:timeless-and-classics-zero:${tacz_version}")
-    implementation fg.deobf("curse.maven:tacz-lesraisins-tactical-equipements-1273094:6584599")
+    implementation fg.deobf("maven.modrinth:lr-tactical:${lrtactical_version}")
     implementation fg.deobf("maven.modrinth:cloth-config:${cloth_config_version}")
     implementation(fg.deobf("com.phasetranscrystal:fpsmatch:unobf") {
         transitive = false
@@ -145,8 +150,9 @@ dependencies {
     implementation fg.deobf("maven.modrinth:hit-indication:${hit_indication_version}")
     implementation fg.deobf("maven.modrinth:physicsmod:${physicsmod_version}")
     implementation fg.deobf("maven.modrinth:gd656killicon:${gd656killicon_version}")
+    implementation fg.deobf("maven.modrinth:tacz-tweaks:${tacztweak_version}")
+    runtimeOnly fg.deobf("maven.modrinth:yacl:${yacl_version}")
     runtimeOnly fg.deobf("maven.modrinth:jade:${jade_version}")
-
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }

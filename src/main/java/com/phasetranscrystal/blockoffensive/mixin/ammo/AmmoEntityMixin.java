@@ -1,4 +1,4 @@
-package com.phasetranscrystal.blockoffensive.mixin;
+package com.phasetranscrystal.blockoffensive.mixin.ammo;
 
 import com.phasetranscrystal.blockoffensive.compat.IPassThroughEntity;
 import com.phasetranscrystal.fpsmatch.common.entity.throwable.SmokeShellEntity;
@@ -35,17 +35,6 @@ public abstract class AmmoEntityMixin implements IPassThroughEntity {
 
     @Unique
     private boolean blockoffensive$passedThroughSmoke = false;
-
-    @Redirect(
-            method = "onBulletTick",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lcom/tacz/guns/util/block/BlockRayTrace;rayTraceBlocks(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/level/ClipContext;)Lnet/minecraft/world/phys/BlockHitResult;"
-            )
-    )
-    private BlockHitResult blockoffensive$checkPassedWall(Level level, ClipContext context) {
-        return blockoffensive$rayTraceBlocks(level,context);
-    }
 
     @Inject(
             method = "onBulletTick",
@@ -95,37 +84,23 @@ public abstract class AmmoEntityMixin implements IPassThroughEntity {
         return false;
     }
 
-    @Unique
-    public BlockHitResult blockoffensive$rayTraceBlocks(Level level, ClipContext context) {
-        return BlockRayTraceReflector.performRayTrace(context, (rayTraceContext, blockPos) -> {
-            BlockState blockState = level.getBlockState(blockPos);
-            // 这里添加判断方块是否可以穿透，如果可以穿透则返回 null
-            List<String> ids = AmmoConfig.PASS_THROUGH_BLOCKS.get();
-            ResourceLocation blockId = ForgeRegistries.BLOCKS.getKey(blockState.getBlock());
-            if (blockId != null && ids.contains(blockId.toString())) {
-                blockoffensive$passedThroughWall = true;
-                return null;
-            }
-            // tag
-            if (BlockRayTraceReflector.IGNORES.test(blockState)) {
-                blockoffensive$passedThroughWall = true;
-                return null;
-            }
-            return BlockRayTraceReflector.getBlockHitResult(level, rayTraceContext, blockPos, blockState);
-        }, (rayTraceContext) -> {
-            Vec3 vec3 = rayTraceContext.getFrom().subtract(rayTraceContext.getTo());
-            return BlockHitResult.miss(rayTraceContext.getTo(), Direction.getNearest(vec3.x, vec3.y, vec3.z), BlockPos.containing(rayTraceContext.getTo()));
-        });
-    }
-
-
     @Override
     public boolean blockoffensive$isWall() {
         return this.blockoffensive$passedThroughWall;
     }
 
     @Override
+    public void blockoffensive$setThroughWall(boolean passed){
+        this.blockoffensive$passedThroughWall = passed;
+    }
+
+    @Override
     public boolean blockoffensive$isSmoke() {
         return this.blockoffensive$passedThroughSmoke;
+    }
+
+    @Override
+    public void blockoffensive$setThroughSmoke(boolean passed){
+        this.blockoffensive$passedThroughSmoke = passed;
     }
 }

@@ -1,6 +1,9 @@
 package com.phasetranscrystal.blockoffensive.util;
 
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
+import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
+import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
+import com.phasetranscrystal.blockoffensive.item.CompositionC4;
 import com.phasetranscrystal.blockoffensive.map.team.capability.ColoredPlayerCapability;
 import com.phasetranscrystal.blockoffensive.net.DeathMessageS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
@@ -116,6 +119,10 @@ public class BOUtil {
             if (!grenade.isEmpty()) {
                 return grenade;
             }
+        }
+
+        if(source.getEntity() instanceof CompositionC4Entity) {
+            return BOItemRegister.C4.get().getDefaultInstance();
         }
 
         return attacker.getMainHandItem().isEmpty() ? ItemStack.EMPTY : attacker.getMainHandItem();

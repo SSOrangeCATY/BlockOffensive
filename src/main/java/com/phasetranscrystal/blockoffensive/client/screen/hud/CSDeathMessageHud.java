@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.compat.BOImpl;
+import com.phasetranscrystal.blockoffensive.compat.CSGrenadeCompat;
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
@@ -58,7 +59,7 @@ public class CSDeathMessageHud{
         registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(BOItemRegister.C4.get()),"explode");
 
         if(BOImpl.isCounterStrikeGrenadesLoaded()){
-            CounterStrikeGrenadesCompat.registerKillIcon(itemToIcon);
+            CSGrenadeCompat.registerKillIcon(itemToIcon);
         }
     }
 

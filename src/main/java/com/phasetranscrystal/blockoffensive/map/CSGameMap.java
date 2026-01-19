@@ -23,7 +23,7 @@ import com.phasetranscrystal.blockoffensive.sound.MVPMusicManager;
 import com.phasetranscrystal.fpsmatch.common.capability.map.DemolitionModeCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.map.GameEndTeleportCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.team.*;
-import com.phasetranscrystal.fpsmatch.common.entity.drop.DropType;
+import com.phasetranscrystal.fpsmatch.common.drop.DropType;
 import com.phasetranscrystal.fpsmatch.common.packet.*;
 import com.phasetranscrystal.fpsmatch.core.*;
 import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
@@ -875,6 +875,7 @@ public class CSGameMap extends CSMap{
             this.isWaiting = true;
             this.isWaitingWinner = false;
             this.cleanupMap();
+            this.sendRoundDamageMessage();
             this.getMapTeams().startNewRound();
             this.getMapTeams().getJoinedPlayers().forEach((data -> data.getPlayer().ifPresent(player->{
                 player.removeAllEffects();
@@ -934,8 +935,12 @@ public class CSGameMap extends CSMap{
             int overTimeRound = this.overtimeRound.get();
             if (team.getScores() >= (isOvertime ? winnerRound.get() - 1 + (this.overCount * overTimeRound) + overTimeRound + 1 : winnerRound.get())) {
                 isVictory.set(true);
-                this.sendVictoryMessage(Component.translatable("map.cs.message.victory.head",team.name.toUpperCase(Locale.US)).withStyle(ChatFormatting.GOLD).withStyle(ChatFormatting.BOLD),Comparator.comparingDouble(PlayerData::getTotalDamage));
-                this.sendAllPlayerTitle(Component.translatable("blockoffensive.map.cs.winner." + team.name + ".title").withStyle(team.name.equals("ct") ? ChatFormatting.DARK_AQUA : ChatFormatting.YELLOW),null);
+                this.sendVictoryMessage(
+                        Component.translatable("map.cs.message.victory.head",team.name.toUpperCase(Locale.US)).withStyle(ChatFormatting.GOLD).withStyle(ChatFormatting.BOLD),
+                        Comparator.comparingDouble(PlayerData::getTotalDamage).reversed()
+                );
+
+                this.sendAllPlayerTitle(Component.translatable("blockoffensive.map.cs.winner." + team.name + ".message").withStyle(team.name.equals("ct") ? ChatFormatting.DARK_AQUA : ChatFormatting.YELLOW),null);
             }
         });
         return isVictory.get() && !this.isDebug();

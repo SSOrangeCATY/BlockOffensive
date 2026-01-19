@@ -102,5 +102,11 @@
   "blockoffensive.throwable.incendiary_grenade.throw.message": "燃烧弹！",
   "blockoffensive.throwable.decoy.throw.message": "诱饵弹！",
   "blockoffensive.team_chat.title": "组队聊天",
-  "key.blockoffensive.team_chat.desc": "打开组队聊天"
+  "key.blockoffensive.team_chat.desc": "打开组队聊天",
+
+  "message.damage.hit": "命中",
+  "message.damage.times": "次",
+  "message.damage.damage": "伤害",
+  "message.damage.received": "被击中",
+  "message.damage.remain": "剩"
 }
