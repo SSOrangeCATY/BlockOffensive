@@ -3,10 +3,12 @@ package com.phasetranscrystal.blockoffensive.util;
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
-import com.phasetranscrystal.blockoffensive.item.CompositionC4;
 import com.phasetranscrystal.blockoffensive.map.team.capability.ColoredPlayerCapability;
 import com.phasetranscrystal.blockoffensive.net.DeathMessageS2CPacket;
+import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
+import com.phasetranscrystal.fpsmatch.common.drop.ThrowableRegistry;
+import com.phasetranscrystal.fpsmatch.common.drop.ThrowableSubType;
 import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
@@ -22,9 +24,11 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
 import java.util.Map;
@@ -42,6 +46,35 @@ public class BOUtil {
 
     public static void registerThrowable(ThrowableType type, Item item) {
         throwables.put(item, type);
+    }
+
+    @Nullable
+    public static SoundEvent getVoiceByThrowType(ThrowableSubType subType){
+        if(subType == null) return null;
+
+        boolean isCT = FPSMClient.getGlobalData().equalsTeam("ct");
+
+        if(ThrowableRegistry.GRENADE.equals(subType)){
+            return isCT ? BOSoundRegister.THROWABLE_GRENADE_CT_THROW.get() : BOSoundRegister.THROWABLE_GRENADE_T_THROW.get();
+        }
+
+        if(ThrowableRegistry.MOLOTOV.equals(subType)){
+            return isCT ? BOSoundRegister.THROWABLE_MOLOTOV_CT_THROW.get() : BOSoundRegister.THROWABLE_MOLOTOV_T_THROW.get();
+        }
+
+        if(ThrowableRegistry.SMOKE.equals(subType)){
+            return isCT ? BOSoundRegister.THROWABLE_SMOKE_CT_THROW.get() : BOSoundRegister.THROWABLE_SMOKE_T_THROW.get();
+        }
+
+        if(ThrowableRegistry.FLASH_BANG.equals(subType)){
+            return isCT ? BOSoundRegister.THROWABLE_FLASHBANG_CT_THROW.get() : BOSoundRegister.THROWABLE_FLASHBANG_T_THROW.get();
+        }
+
+        if(ThrowableRegistry.DECOY.equals(subType)){
+            return isCT ? BOSoundRegister.THROWABLE_DECOY_CT_THROW.get() : BOSoundRegister.THROWABLE_DECOY_T_THROW.get();
+        }
+
+        return null;
     }
 
     public static ThrowableType getThrowableType(Item item) {
@@ -170,18 +203,18 @@ public class BOUtil {
 
         DeathMessage.Builder builder = new DeathMessage.Builder(attacker, deadPlayer, deathItem);
 
-        // 设置爆头标记
-        builder.setHeadShot(isHeadShot);
-        builder.setFlying(!attacker.equals(deadPlayer) && !attacker.onGround());
-        builder.setThroughWall(isPassWall);
-        builder.setThroughSmoke(isPassSmoke);
+        if(!attacker.is(deadPlayer)) {
+            builder.setHeadShot(isHeadShot);
+            builder.setFlying(!attacker.equals(deadPlayer) && !attacker.onGround());
+            builder.setThroughWall(isPassWall);
+            builder.setThroughSmoke(isPassSmoke);
 
-        // 设置助攻信息
-        calculateAssistPlayer(map, deadPlayer, minAssistDamageRatio).ifPresent(assistData -> {
-            if (!attacker.getUUID().equals(assistData.getOwner())) {
-                builder.setAssist(assistData.name(), assistData.getOwner());
-            }
-        });
+            calculateAssistPlayer(map, deadPlayer, minAssistDamageRatio).ifPresent(assistData -> {
+                if (!attacker.getUUID().equals(assistData.getOwner())) {
+                    builder.setAssist(assistData.name(), assistData.getOwner());
+                }
+            });
+        }
 
         return new DeathMessageS2CPacket(builder.build());
     }

@@ -167,7 +167,7 @@ public class CSGameEvents {
         Optional<ServerPlayer> attackerOpt = event.getKiller();
         ItemStack deathItem = attackerOpt.map(attacker -> BOUtil.getDeathItemStack(attacker, event.getSource()))
                 .orElse(ItemStack.EMPTY);
-        csMap.onPlayerDeathEvent(player, attackerOpt.orElse(null), deathItem, false,false,false);
+        csMap.onPlayerDeathEvent(player, attackerOpt.orElse(player), deathItem, false,false,false);
     }
 
 }

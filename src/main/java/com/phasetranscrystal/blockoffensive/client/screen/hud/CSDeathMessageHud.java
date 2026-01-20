@@ -148,6 +148,8 @@ public class CSDeathMessageHud{
             guiGraphics.fill(x + width - 1, y, x + width, y + height, 0xFFFF0000);
         }
 
+        boolean isSuicide = message.getDeadUUID().equals(message.getKillerUUID());
+
         int currentX = x + 5;
         int rightPadding = x + width - 5;
 
@@ -167,29 +169,33 @@ public class CSDeathMessageHud{
 
         if (message.isFlying()) currentX = renderConditionalIcon(guiGraphics, "fly", currentX, y);
 
-        ResourceLocation weaponIcon = message.getWeaponIcon();
-        poseStack.pushPose();
-        poseStack.translate(currentX, y + 1, 0);
-        if (weaponIcon != null) {
-            poseStack.scale(0.32f, 0.32f, 1.0f);
-            renderWeaponIcon(guiGraphics, weaponIcon);
-            currentX += 39;
-        }else{
-            if(!this.itemToIcon.containsKey(message.getItemRL())){
-                guiGraphics.renderItem(message.getWeapon(),0,0);
-                currentX += 16;
+        if(!isSuicide){
+            ResourceLocation weaponIcon = message.getWeaponIcon();
+            poseStack.pushPose();
+            poseStack.translate(currentX, y + 1, 0);
+            if (weaponIcon != null) {
+                poseStack.scale(0.32f, 0.32f, 1.0f);
+                renderWeaponIcon(guiGraphics, weaponIcon);
+                currentX += 39;
+            }else{
+                if(!this.itemToIcon.containsKey(message.getItemRL())){
+                    guiGraphics.renderItem(message.getWeapon(),0,0);
+                    currentX += 16;
+                }
             }
-        }
-        poseStack.popPose();
+            poseStack.popPose();
 
-        // 特殊击杀图标（统一处理）
-        String icon = this.itemToIcon.getOrDefault(message.getItemRL(),null);
-        if(icon != null){
-            weaponIcon = this.specialKillIcons.getOrDefault(icon,null);
-            if(weaponIcon != null) {
-                renderIcon(guiGraphics, weaponIcon, currentX, y + 2, 12, 12);
-                currentX += 14;
+            String icon = this.itemToIcon.getOrDefault(message.getItemRL(),null);
+            if(icon != null){
+                weaponIcon = this.specialKillIcons.getOrDefault(icon,null);
+                if(weaponIcon != null) {
+                    renderIcon(guiGraphics, weaponIcon, currentX, y + 2, 12, 12);
+                    currentX += 14;
+                }
             }
+        }else{
+            renderIcon(guiGraphics, this.specialKillIcons.get("suicide"), currentX, y + 2, 12, 12);
+            currentX += 14;
         }
 
         if (message.isHeadShot()) currentX = renderConditionalIcon(guiGraphics, "headshot", currentX, y);
@@ -219,6 +225,8 @@ public class CSDeathMessageHud{
         Font font = minecraft.font;
         int width = 10;
 
+        boolean isSuicide = message.getDeadUUID().equals(message.getKillerUUID());
+
         if (message.isBlinded()) {
             width += 14;
         }
@@ -229,17 +237,21 @@ public class CSDeathMessageHud{
         }
         width += font.width(killerComponent) + 2;
 
-        ResourceLocation weaponIcon = message.getWeaponIcon();
-        if (weaponIcon != null) {
-            width += 39;
-        } else {
-            if (!this.itemToIcon.containsKey(message.getItemRL())) {
-                width += 16;
+        if(!isSuicide){
+            ResourceLocation weaponIcon = message.getWeaponIcon();
+            if (weaponIcon != null) {
+                width += 39;
+            } else {
+                if (!this.itemToIcon.containsKey(message.getItemRL())) {
+                    width += 16;
+                }
             }
-        }
 
-        String specialIcon = this.itemToIcon.getOrDefault(message.getItemRL(), null);
-        if (specialIcon != null && this.specialKillIcons.containsKey(specialIcon)) {
+            String specialIcon = this.itemToIcon.getOrDefault(message.getItemRL(), null);
+            if (specialIcon != null && this.specialKillIcons.containsKey(specialIcon)) {
+                width += 14;
+            }
+        }else{
             width += 14;
         }
 

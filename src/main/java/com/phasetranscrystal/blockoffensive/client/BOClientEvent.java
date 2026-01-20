@@ -14,7 +14,9 @@ import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.data.FPSMClientGlobalData;
 import com.phasetranscrystal.fpsmatch.common.client.event.FPSMClientResetEvent;
+import com.phasetranscrystal.fpsmatch.common.drop.ThrowableRegistry;
 import com.phasetranscrystal.fpsmatch.common.event.FPSMThrowGrenadeEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.FPSMSoundPlayC2SPacket;
 import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
@@ -25,6 +27,7 @@ import icyllis.modernui.mc.MuiScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.Input;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -72,6 +75,11 @@ public class BOClientEvent {
             data.getCurrentClientTeam().ifPresent(team->{
                 team.sendMessage(BOUtil.buildTeamChatMessage(type.getChat()));
             });
+        }
+
+        SoundEvent sound = BOUtil.getVoiceByThrowType(ThrowableRegistry.getThrowableSubType(itemStack.getItem()));
+        if(sound != null){
+            FPSMatch.sendToServer(new FPSMSoundPlayC2SPacket(sound.getLocation(),true));
         }
     }
 

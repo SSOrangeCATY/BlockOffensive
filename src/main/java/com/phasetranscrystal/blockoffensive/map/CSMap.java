@@ -20,6 +20,7 @@ import com.phasetranscrystal.fpsmatch.common.capability.team.SpawnPointCapabilit
 import com.phasetranscrystal.fpsmatch.common.capability.team.StartKitsCapability;
 import com.phasetranscrystal.fpsmatch.common.drop.DropType;
 import com.phasetranscrystal.fpsmatch.common.entity.MatchDropEntity;
+import com.phasetranscrystal.fpsmatch.common.packet.FPSMSoundPlayS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
@@ -43,6 +44,7 @@ import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.item.GunTabType;
 import com.tacz.guns.api.item.IGun;
 import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
@@ -214,14 +216,8 @@ public abstract class CSMap extends BaseMap {
     }
 
     public void sendNewRoundVoice(){
-        List<ServerPlayer> ct = this.getCT().getOnline();
-        ServerLevel level = this.getServerLevel();
-        ServerPlayer p1 = ct.get(level.getRandom().nextInt(0,ct.size()));
-        p1.playSound(BOSoundRegister.CT_ROUNDSTART.get());
-
-        List<ServerPlayer> t = this.getT().getOnline();
-        ServerPlayer p2 = t.get(level.getRandom().nextInt(0,ct.size()));
-        p2.playSound(BOSoundRegister.T_ROUNDSTART.get());
+        this.sendPacketToTeamPlayer(this.getCT(),new FPSMSoundPlayS2CPacket(BOSoundRegister.CT_ROUNDSTART.get().getLocation()),false);
+        this.sendPacketToTeamPlayer(this.getT(),new FPSMSoundPlayS2CPacket(BOSoundRegister.T_ROUNDSTART.get().getLocation()),false);
     }
 
     public void sendRoundDamageMessage(){
@@ -249,6 +245,8 @@ public abstract class CSMap extends BaseMap {
             ServerPlayer player = playerOpt.get();
             Map<UUID, PlayerData.Damage> damageMap = c.getDamageData();
 
+            PlayerData.Damage receivedDamage = receivedDamageMap.getOrDefault(c.getOwner() ,new PlayerData.Damage());
+
             for (PlayerData t : targetPlayers) {
                 UUID targetId = t.getOwner();
                 PlayerData.Damage damageData = damageMap.getOrDefault(targetId,new PlayerData.Damage());
@@ -256,16 +254,13 @@ public abstract class CSMap extends BaseMap {
                 // 获取目标玩家的名称
                 Component targetName = mapTeams.getPlayerName(targetId);
 
-                // 获取目标玩家受到的伤害信息（针对当前玩家）
-                PlayerData.Damage receivedDamage = receivedDamageMap.getOrDefault(targetId,new PlayerData.Damage());
-
                 float remain = remainHp.getOrDefault(targetId, 0.0F);
 
                 // 构建伤害信息消息
                 Component damageMessage = buildDamageMessage(
                         damageData.count, damageData.damage,
-                        receivedDamage != null ? receivedDamage.count : 0,
-                        receivedDamage != null ? receivedDamage.damage : 0.0f,
+                        receivedDamage.count,
+                        receivedDamage.damage,
                         remain, targetName
                 );
 
@@ -284,26 +279,36 @@ public abstract class CSMap extends BaseMap {
                         .withStyle(ChatFormatting.GREEN))
                 .append(Component.translatable("message.damage.times")
                         .withStyle(ChatFormatting.WHITE))
-                .append(Component.literal(String.format("%.1f", hitDamage))
+                .append(CommonComponents.SPACE)
+
+                .append(Component.literal(String.format("%d", Math.round(hitDamage)))
                         .withStyle(ChatFormatting.GREEN))
-                .append(Component.translatable("message.damage.damage")
+                 .append(Component.translatable("message.damage.damage")
                         .withStyle(ChatFormatting.WHITE))
+                .append(CommonComponents.SPACE)
+
                 .append(Component.translatable("message.damage.received")
                         .withStyle(ChatFormatting.WHITE))
                 .append(Component.literal(String.valueOf(receivedCount))
                         .withStyle(ChatFormatting.GREEN))
                 .append(Component.translatable("message.damage.times")
                         .withStyle(ChatFormatting.WHITE))
-                .append(Component.literal(String.format("%.1f", receivedDamage))
+                .append(CommonComponents.SPACE)
+
+                .append(Component.literal(String.format("%d", Math.round(receivedDamage)))
                         .withStyle(ChatFormatting.GREEN))
                 .append(Component.translatable("message.damage.damage")
                         .withStyle(ChatFormatting.WHITE))
+                .append(CommonComponents.SPACE)
+
                 .append(Component.translatable("message.damage.remain")
                         .withStyle(ChatFormatting.WHITE))
-                .append(Component.literal(String.format("%.1f", remainHp))
+                .append(Component.literal(String.format("%d", Math.round(remainHp)))
                         .withStyle(ChatFormatting.GREEN))
-                .append(Component.literal("HP ")
+                .append(Component.literal("HP")
                         .withStyle(ChatFormatting.WHITE))
+                .append(CommonComponents.SPACE)
+
                 .append(targetName);
     }
 
@@ -586,7 +591,18 @@ public abstract class CSMap extends BaseMap {
             return;
         }
 
-        if(attacker.getUUID().equals(player.getUUID())) return;
+        if(attacker.getUUID().equals(player.getUUID())){
+            ServerTeam team = deadTeam.equals(getCT()) ? getT() : getCT();
+            List<ServerPlayer> players = team.getOnline();
+            if(players.isEmpty()) return;
+
+            ServerPlayer p = players.get(getRandom().nextInt(0,players.size()));
+            ShopCapability.getPlayerShopData(this,p.getUUID()).ifPresent(shopData -> {
+                shopData.addMoney(300);
+                p.displayClientMessage(Component.translatable("blockoffensive.kill.message.suicide",player.getDisplayName(), 300),false);
+            });
+            return;
+        }
 
         if (!killerTeam.getFixedName().equals(deadTeam.getFixedName()) || punish){
             int reward = getRewardByItem(itemStack);
@@ -594,7 +610,6 @@ public abstract class CSMap extends BaseMap {
                 shopData.addMoney(reward);
                 attacker.displayClientMessage(Component.translatable("blockoffensive.kill.message.enemy",reward),false);
             });
-
         }else{
             ShopCapability.getPlayerShopData(this,attacker.getUUID()).ifPresent(shopData -> {
                 shopData.reduceMoney(300);

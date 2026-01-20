@@ -108,5 +108,6 @@
   "message.damage.times": "次",
   "message.damage.damage": "伤害",
   "message.damage.received": "被击中",
-  "message.damage.remain": "剩"
+  "message.damage.remain": "剩",
+  "blockoffensive.kill.message.suicide": "你因为 %s 的自杀得到了 %s 补偿"
 }

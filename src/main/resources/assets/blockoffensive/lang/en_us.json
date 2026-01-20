@@ -19,6 +19,7 @@
   "blockoffensive.death.message.headshot": "%1$s headshot %2$s with %3$s",
   "blockoffensive.kill.message.teammate" : "kill teammate reduce %1$s money",
   "blockoffensive.kill.message.enemy" : "kill enemy add %1$s money",
+  "blockoffensive.kill.message.suicide" : "You received %s dollars in compensation for %s's suicide",
   "blockoffensive.screen.scale.warm": "Before using Block Offensive Mod, please check : \n Settings -> Video Settings -> Interface Scale to ensure it is between 1 and 4, not set to automatic.",
   "blockoffensive.screen.scale.warm.tips": "If the store still displays abnormally after opening,\n try adjusting the size of your Minecraft window and reopening the store. You can then revert to fullscreen or another size afterward.",
   "blockoffensive.map.cs.team.switch" : "Offensive Defensive Conversion !",

@@ -367,7 +367,7 @@ public class CSGameOverlay {
             RenderSystem.setShaderColor(1f,1f,1f,1f);
             int startY = rowY + avatarSize + margin;
             if (barRatio>0f) {
-                int barHeight = 4;
+                int barHeight = showNameInfo ? 4 : 2;
                 drawSmoothHealthBar(guiGraphics, barRatio, drawX, startY, drawX+avatarSize,startY + barHeight);
                 startY += barHeight + margin;
             }
@@ -380,10 +380,10 @@ public class CSGameOverlay {
 
             if(showNameInfo){
                 drawPlayerName(guiGraphics, font, uuid, avX, avY + 1, smallAvSize,avatarSize,isCT,scaleFactor);
-            }
 
-            if(isSameTeam) {
-                drawPlayerMoney(guiGraphics, font, uuid, avX + (smallAvSize/2), startY,scaleFactor);
+                if(isSameTeam) {
+                    drawPlayerMoney(guiGraphics, font, uuid, avX + (smallAvSize/2), startY,scaleFactor);
+                }
             }
         }
     }

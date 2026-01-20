@@ -31,6 +31,7 @@ public class DeathMessage {
     private final boolean isThroughWall;
     private final boolean isNoScope;
     private final boolean isFlying;
+
     private final ResourceLocation itemRL;
     
     private DeathMessage(Builder builder) {
@@ -89,6 +90,8 @@ public class DeathMessage {
         }
 
         public void setBlinded(Player killer){
+            if(deadUUID.equals(this.killerUUID)) return;
+
             if(killer.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS.get()) || killer.hasEffect(MobEffects.BLINDNESS) || killer.hasEffect(MobEffects.DARKNESS)){
                 this.isBlinded = true;
             }else{

@@ -130,6 +130,7 @@ public class CSGameMap extends CSMap{
     private boolean isOvertime = false;
     private int overCount = 0;
     private boolean isWaitingOverTimeVote = false;
+    private boolean roundStarted = false;
 
     private final Map<UUID,Integer> knifeCache = new HashMap<>();
 
@@ -465,6 +466,11 @@ public class CSGameMap extends CSMap{
             }
         }else {
             if(this.canRestTime()) currentPauseTime = 0;
+
+            if(!roundStarted){
+                roundStarted = true;
+                this.onRoundStarted();
+            }
             isWaiting = false;
         }
         return this.isWaiting;
@@ -599,6 +605,9 @@ public class CSGameMap extends CSMap{
         return team != null ? getCompensationFactor(team) : 0;
     }
 
+    private void onRoundStarted(){
+        this.sendNewRoundVoice();
+    }
 
     /**
      * 处理回合胜利逻辑
@@ -874,6 +883,7 @@ public class CSGameMap extends CSMap{
             this.isStart = true;
             this.isWaiting = true;
             this.isWaitingWinner = false;
+            this.roundStarted = false;
             this.cleanupMap();
             this.sendRoundDamageMessage();
             this.getMapTeams().startNewRound();
@@ -1222,6 +1232,7 @@ public class CSGameMap extends CSMap{
         this.isWaitingOverTimeVote = false;
         this.overCount = 0;
         this.isShopLocked = false;
+        this.roundStarted = false;
         this.cleanupMap();
         this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> this.getPlayerByUUID(uuid).ifPresent(player->{
             this.getServerLevel().getServer().getScoreboard().removePlayerFromTeam(player.getScoreboardName());
