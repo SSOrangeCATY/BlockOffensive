@@ -457,7 +457,7 @@ public class CompositionC4Entity extends BlastBombEntity {
 
     private void applyExplosionDamage(LivingEntity entity, double distance, double blockageFactor, int instantKillRadius) {
         if (distance <= instantKillRadius) {
-            entity.hurt(entity.level().damageSources().explosion(this, this.owner), Float.MAX_VALUE);
+            entity.hurt(entity.level().damageSources().explosion(this, null), Float.MAX_VALUE);
             return;
         }
 
@@ -465,7 +465,7 @@ public class CompositionC4Entity extends BlastBombEntity {
             return;
         }
 
-        float maxHealth = entity.getMaxHealth();
+        float maxHealth = entity.getMaxHealth() + 5f;
         float damage;
 
         if (distance <= instantKillRadius + 10) {

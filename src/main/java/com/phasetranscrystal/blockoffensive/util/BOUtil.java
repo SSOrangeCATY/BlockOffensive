@@ -158,7 +158,11 @@ public class BOUtil {
             return BOItemRegister.C4.get().getDefaultInstance();
         }
 
-        return attacker.getMainHandItem().isEmpty() ? ItemStack.EMPTY : attacker.getMainHandItem();
+        if(source.getDirectEntity() instanceof CompositionC4Entity){
+            return BOItemRegister.C4.get().getDefaultInstance();
+        }
+
+        return attacker == null ? ItemStack.EMPTY : attacker.getMainHandItem();
     }
 
     /**

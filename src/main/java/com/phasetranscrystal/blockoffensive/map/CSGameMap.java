@@ -662,7 +662,7 @@ public class CSGameMap extends CSMap{
     private void knifeRoundVictory(ServerTeam winnerTeam) {
         Component translation = Component.translatable("blockoffensive.cs.knife.selection");
         Component message = Component.translatable("blockoffensive.map.vote.message","System",translation);
-        this.isPause = true;
+        pause();
         this.isKnifeSelected = true;
         VoteObj knife = new VoteObj(
                 "knife",
@@ -935,23 +935,53 @@ public class CSGameMap extends CSMap{
 
     @Override
     public boolean victoryGoal() {
-        AtomicBoolean isVictory = new AtomicBoolean(false);
-        if(this.isWaitingOverTimeVote){
+        if (this.isWaitingOverTimeVote || this.isDebug()) {
             return false;
         }
-        this.getMapTeams().getNormalTeams().forEach((team) -> {
-            int overTimeRound = this.overtimeRound.get();
-            if (team.getScores() >= (isOvertime ? winnerRound.get() - 1 + (this.overCount * overTimeRound) + overTimeRound + 1 : winnerRound.get())) {
-                isVictory.set(true);
-                this.sendVictoryMessage(
-                        Component.translatable("map.cs.message.victory.head",team.name.toUpperCase(Locale.US)).withStyle(ChatFormatting.GOLD).withStyle(ChatFormatting.BOLD),
-                        Comparator.comparingDouble(PlayerData::getTotalDamage).reversed()
-                );
 
-                this.sendAllPlayerTitle(Component.translatable("blockoffensive.map.cs.winner." + team.name + ".message").withStyle(team.name.equals("ct") ? ChatFormatting.DARK_AQUA : ChatFormatting.YELLOW),null);
+        ServerTeam winnerTeam = null;
+        int requiredScore = calculateRequiredScore();
+
+        for (ServerTeam team : this.getMapTeams().getNormalTeams()) {
+            if (team.getScores() >= requiredScore) {
+                winnerTeam = team;
+                break;
             }
-        });
-        return isVictory.get() && !this.isDebug();
+        }
+
+        if (winnerTeam == null) {
+            return false;
+        }
+
+        handleVictory(winnerTeam);
+        return true;
+    }
+
+    private int calculateRequiredScore() {
+        int winner = winnerRound.get();
+        if (!isOvertime) {
+            return winner;
+        }
+
+        return winner + (this.overCount * this.overtimeRound.get()) + 1;
+    }
+
+    private void handleVictory(ServerTeam winnerTeam) {
+        // 发送胜利消息
+        this.sendVictoryMessage(
+                Component.translatable("map.cs.message.victory.head",
+                                winnerTeam.name.toUpperCase(Locale.US))
+                        .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD),
+                Comparator.comparingDouble(PlayerData::getTotalDamage).reversed()
+        );
+
+        // 发送胜利标题
+        this.sendAllPlayerTitle(
+                Component.translatable("blockoffensive.map.cs.winner." + winnerTeam.name + ".message")
+                        .withStyle(winnerTeam.name.equals("ct") ?
+                                ChatFormatting.DARK_AQUA : ChatFormatting.YELLOW),
+                null
+        );
     }
 
     public void startOvertimeVote() {
@@ -973,10 +1003,10 @@ public class CSGameMap extends CSMap{
     public void startOvertime() {
         this.isOvertime = true;
         this.isWaitingOverTimeVote = false;
-        this.isPause = false;
-        this.currentPauseTime = 0;
+        pause();
 
         this.getMapTeams().getNormalTeams().forEach(team-> {
+            team.resetCapabilities();
 
             team.getPlayers().forEach((uuid, playerData) -> {
                 playerData.setLiving(false);
@@ -985,7 +1015,7 @@ public class CSGameMap extends CSMap{
             team.getCapabilityMap().get(ShopCapability.class)
                     .flatMap(ShopCapability::getShopSafe).ifPresent(shop -> {
                         shop.setStartMoney(10000);
-                        shop.resetPlayerData();
+                        shop.resetPlayerData(true);
             });
         });
         this.startNewRound();
@@ -1034,56 +1064,142 @@ public class CSGameMap extends CSMap{
         );
     }
 
+    private void pause(){
+        isPause = true;
+        currentPauseTime = 0;
+        isWaiting = true;
+    }
+
     /**
      * 处理加时赛投票与队伍切换逻辑
      * @return 是否需要切换队伍
      */
     private boolean handleOvertimeAndTeamSwitch(int ctScore, int tScore, MapTeams mapTeams) {
-        // 非加时赛逻辑
-        int maxNormalScore = winnerRound.get() - 1;
-        int overtimeBaseScore = maxNormalScore * 2;
-        int overtimeRound = this.overtimeRound.get();
-        if (!isOvertime) {
-            // 双方均达12分，发起加时投票
-            if (ctScore == maxNormalScore && tScore == maxNormalScore) {
-                startOvertimeVote();
-                setBombEntity(null);
-                currentRoundTime = 0;
-                isPause = true;
-                currentPauseTime = 0;
-                return false;
-            }
-
-            // 计算正常队伍总分数，判断是否需要换边
-            int totalNormalTeamScores = mapTeams.getNormalTeams().stream()
-                    .mapToInt(BaseTeam::getScores)
-                    .sum();
-
-            boolean shouldSwitch = totalNormalTeamScores == maxNormalScore;
-            if (shouldSwitch) {
-                switchTeams();
-            }
-            currentPauseTime = 0;
-            return shouldSwitch;
-        }
-
-        // 加时赛逻辑：每3局换边
-        int totalRounds = ctScore + tScore;
-        int roundOffset = totalRounds - overtimeBaseScore - (overtimeRound * overCount);
-        boolean shouldSwitch = roundOffset > 0 && roundOffset % overtimeRound == 0;
-
-        if (shouldSwitch) {
-            switchTeams();
-            // 满足条件时递增加时赛计数
-            if (roundOffset == overtimeRound) {
-                int currentOvertimeScoreCap = maxNormalScore + (overtimeRound * overCount) + (maxNormalScore + 1);
-                if (ctScore < currentOvertimeScoreCap && tScore < currentOvertimeScoreCap) {
-                    overCount++;
-                }
-            }
-        }
+        // 清空暂停计时（两个分支都需要）
         currentPauseTime = 0;
-        return shouldSwitch;
+
+        // 计算关键分数阈值
+        int scoreToTriggerOvertime = calculateScoreToTriggerOvertime();
+        int maxNormalScore = winnerRound.get() - 1;
+
+        if (!isOvertime) {
+            return handleNormalTimeLogic(ctScore, tScore, maxNormalScore, scoreToTriggerOvertime);
+        } else {
+            return handleOvertimeLogic(ctScore, tScore, maxNormalScore);
+        }
+    }
+
+    /**
+     * 计算触发加时赛的分数阈值
+     */
+    private int calculateScoreToTriggerOvertime() {
+        // 假设winnerRound是获胜所需轮数（如13），则触发加时赛的分数是winnerRound-1（如12）
+        return winnerRound.get() - 1;
+    }
+
+    /**
+     * 处理正常比赛时间的逻辑
+     */
+    private boolean handleNormalTimeLogic(int ctScore, int tScore, int maxNormalScore, int overtimeTriggerScore) {
+        // 检查是否触发加时赛：双方都达到触发分数
+        if (ctScore == overtimeTriggerScore && tScore == overtimeTriggerScore) {
+            startOvertimeSequence();
+            return false; // 不切换队伍，进入加时赛投票
+        }
+
+        // 计算当前总局数
+        int totalRoundsPlayed = getMapTeams().getNormalTeams().stream()
+                .mapToInt(BaseTeam::getScores)
+                .sum();
+
+        // 是否达到换边条件：总局数达到换边阈值
+        boolean shouldSwitchTeams = totalRoundsPlayed == maxNormalScore;
+
+        if (shouldSwitchTeams) {
+            isWaiting = true;
+            switchTeams();
+        }
+
+        return shouldSwitchTeams;
+    }
+
+    /**
+     * 开始加时赛序列
+     */
+    private void startOvertimeSequence() {
+        startOvertimeVote();
+        setBombEntity(null);
+        currentRoundTime = 0;
+        isPause = true;
+        // currentPauseTime = 0; 已在主方法开头设置
+    }
+
+    /**
+     * 处理加时赛逻辑
+     */
+    private boolean handleOvertimeLogic(int ctScore, int tScore, int maxNormalScore) {
+        int overtimeRound = this.overtimeRound.get();
+
+        // 计算进入加时赛后的总局数
+        int totalRoundsInOvertime = calculateTotalRoundsInOvertime(ctScore, tScore, maxNormalScore);
+
+        // 检查是否需要换边：每overtimeRound局换一次
+        boolean shouldSwitchTeams = shouldSwitchTeamsInOvertime(totalRoundsInOvertime, overtimeRound);
+
+        if (shouldSwitchTeams) {
+            isWaiting = true;
+            switchTeams();
+
+            // 检查是否应该增加加时赛轮次
+            if (shouldIncreaseOvertimeCount(totalRoundsInOvertime, overtimeRound, ctScore, tScore, maxNormalScore)) {
+                overCount++;
+            }
+        }
+
+        return shouldSwitchTeams;
+    }
+
+    /**
+     * 计算进入加时赛后的总局数
+     */
+    private int calculateTotalRoundsInOvertime(int ctScore, int tScore, int maxNormalScore) {
+        // 总局数减去正常比赛最大可能分数（双方都达到触发加时赛的分数）
+        return (ctScore + tScore) - (maxNormalScore * 2);
+    }
+
+    /**
+     * 判断加时赛中是否需要换边
+     */
+    private boolean shouldSwitchTeamsInOvertime(int totalRoundsInOvertime, int overtimeRound) {
+        // 每overtimeRound局换一次边，且至少进行了一局加时赛
+        return totalRoundsInOvertime > 0 && totalRoundsInOvertime % overtimeRound == 0;
+    }
+
+    /**
+     * 判断是否应该增加加时赛计数
+     */
+    private boolean shouldIncreaseOvertimeCount(int totalRoundsInOvertime, int overtimeRound,
+                                                int ctScore, int tScore, int maxNormalScore) {
+        // 只有在完成第一个加时赛段时才考虑增加计数
+        if (overCount == 0 && totalRoundsInOvertime != overtimeRound) {
+            return false;
+        }
+
+        // 计算当前加时赛段的分数上限
+        int currentOvertimeScoreCap = calculateCurrentOvertimeScoreCap(maxNormalScore, overtimeRound);
+
+        // 如果双方都未达到当前加时赛段的分数上限，则增加计数
+        return ctScore < currentOvertimeScoreCap && tScore < currentOvertimeScoreCap;
+    }
+
+    /**
+     * 计算当前加时赛段的分数上限
+     * 公式解释：正常比赛最高分 + 已完成的加时赛局数 + (正常比赛最高分 + 1)
+     * 例如：12 + (3 * 0) + (3 + 1) = 16
+     * 表示第一个加时赛段需要达到16分才能获胜
+     */
+    private int calculateCurrentOvertimeScoreCap(int maxNormalScore, int overtimeRound) {
+        return maxNormalScore + (overtimeRound * overCount) + (overtimeRound + 1);
     }
 
     /**

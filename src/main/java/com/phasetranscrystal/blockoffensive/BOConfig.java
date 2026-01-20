@@ -42,8 +42,6 @@ public class BOConfig {
         public final ForgeConfigSpec.DoubleValue enemyStepVolume;
 
         public final ForgeConfigSpec.IntValue fuseTime;
-        public final ForgeConfigSpec.IntValue explosionRadius;
-
         // 新增的游戏规则配置项
         public final ForgeConfigSpec.BooleanValue keepInventory;
         public final ForgeConfigSpec.BooleanValue immediateRespawn;
@@ -75,7 +73,6 @@ public class BOConfig {
             builder.push("c4");
             {
                 fuseTime = builder.comment("Fuse Time").defineInRange("Fuse Time", 800, 1, 3200);
-                explosionRadius = builder.comment("Explosion Radius").defineInRange("Explosion Radius", 60, 10, 300);
             }
             builder.pop();
 

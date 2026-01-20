@@ -2,6 +2,7 @@ package com.phasetranscrystal.blockoffensive.map;
 
 import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.client.data.WeaponData;
+import com.phasetranscrystal.blockoffensive.compat.CSGrenadeCompat;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.item.CompositionC4;
@@ -194,7 +195,8 @@ public abstract class CSMap extends BaseMap {
     public boolean shouldDiscardEntity(Entity entity) {
         return entity instanceof ItemEntity
                 || entity instanceof CompositionC4Entity
-                || entity instanceof MatchDropEntity;
+                || entity instanceof MatchDropEntity
+                || (FPSMImpl.findCounterStrikeGrenadesMod() && CSGrenadeCompat.is(entity));
     }
 
     /**
@@ -237,20 +239,19 @@ public abstract class CSMap extends BaseMap {
         List<PlayerData> targetPlayers = target.getPlayersData();
 
         Map<UUID, Float> remainHp = mapTeams.getRemainHealth();
-        Map<UUID, PlayerData.Damage> receivedDamageMap = mapTeams.getDamageReceivedByPlayer();
 
         for (PlayerData c : currentPlayers) {
             Optional<ServerPlayer> playerOpt = c.getPlayer();
+            UUID owner = c.getOwner();
             if (playerOpt.isEmpty()) continue;
 
             ServerPlayer player = playerOpt.get();
             Map<UUID, PlayerData.Damage> damageMap = c.getDamageData();
 
-
             for (PlayerData t : targetPlayers) {
                 UUID targetId = t.getOwner();
                 PlayerData.Damage damageData = damageMap.getOrDefault(targetId,new PlayerData.Damage());
-                PlayerData.Damage receivedDamage = t.getDamageData().getOrDefault(c.getOwner(),new PlayerData.Damage());
+                PlayerData.Damage receivedDamage = t.getDamageData().getOrDefault(owner,new PlayerData.Damage());
                 // 获取目标玩家的名称
                 Component targetName = mapTeams.getPlayerName(targetId);
 
@@ -425,7 +426,6 @@ public abstract class CSMap extends BaseMap {
                 })
         );
     }
-
 
     /**
      * 添加队伍并初始化商店系统

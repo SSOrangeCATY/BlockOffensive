@@ -160,7 +160,10 @@ public class PhysicsModCompat {
                 }
 
                 if (totalDynamicBodies > 0 && sleepingCount == totalDynamicBodies) {
-                    ragdoll.setFrozen(true);
+                    try{
+                        ragdoll.setFrozen(true);
+                    }catch (Exception ignored){
+                    }
                 }
             }
         }

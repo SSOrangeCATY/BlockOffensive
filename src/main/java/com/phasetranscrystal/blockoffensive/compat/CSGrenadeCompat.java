@@ -1,11 +1,13 @@
 package com.phasetranscrystal.blockoffensive.compat;
 
+import club.pisquad.minecraft.csgrenades.entity.CounterStrikeGrenadeEntity;
 import club.pisquad.minecraft.csgrenades.event.GrenadeThrowEvent;
 import club.pisquad.minecraft.csgrenades.registry.ModItems;
 import com.phasetranscrystal.blockoffensive.client.BOClientEvent;
 import com.phasetranscrystal.blockoffensive.util.BOUtil;
 import com.phasetranscrystal.blockoffensive.util.ThrowableType;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -33,6 +35,10 @@ public class CSGrenadeCompat {
         BOUtil.registerThrowable(ThrowableType.SMOKE, items.getSMOKE_GRENADE_ITEM().get());
         BOUtil.registerThrowable(ThrowableType.INCENDIARY_GRENADE, items.getMOLOTOV_ITEM().get());
         BOUtil.registerThrowable(ThrowableType.INCENDIARY_GRENADE, items.getINCENDIARY_ITEM().get());
+    }
+
+    public static boolean is(Entity entity){
+        return entity instanceof CounterStrikeGrenadeEntity;
     }
 
     @SubscribeEvent
