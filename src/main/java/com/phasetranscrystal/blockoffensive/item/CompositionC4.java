@@ -4,7 +4,9 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.blockoffensive.map.CSGameMap;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
+import com.phasetranscrystal.fpsmatch.common.packet.FPSMSoundPlayS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.item.BlastBombItem;
 import com.phasetranscrystal.fpsmatch.core.map.*;
@@ -147,7 +149,7 @@ public class CompositionC4 extends Item implements BlastBombItem {
 
 		if (canPlace && inBombArea) {
 			player.startUsingItem(hand);
-			playClickSound(level, player);
+			playClickSound(level, player, team);
 			return InteractionResultHolder.consume(stack);
 		}
 
@@ -180,9 +182,13 @@ public class CompositionC4 extends Item implements BlastBombItem {
 		return InteractionResult.PASS;
 	}
 
-	private void playClickSound(Level level, LivingEntity entity) {
+	private void playClickSound(Level level, LivingEntity entity, ServerTeam team) {
 		level.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
 				BOSoundRegister.CLICK.get(), SoundSource.PLAYERS, 3.0F, 1.0F);
+		team.getOnline().forEach(player -> {
+			FPSMatch.sendToPlayer(player,new FPSMSoundPlayS2CPacket(BOSoundRegister.T_PLANTINGBOMB.get().getLocation()));
+		});
+
 	}
 
 	@Override
