@@ -55,6 +55,17 @@ public final class BOSpecManager {
     }
 
     public static void sendKillCamAndAttach(ServerPlayer dead,
+                                            ServerPlayer killer,
+                                            ItemStack weapon) {
+        if (dead == null || killer == null) return;
+
+        Vec3 kEye = killer.getEyePosition(1.0F);
+        Vec3 dEye = DamagePosTracker.consumeVictimEye(dead).orElseGet(() -> dead.getEyePosition(1.0F));
+
+        sendKillCamAndAttach(dead, killer, weapon, kEye, dEye);
+    }
+
+    public static void sendKillCamAndAttach(ServerPlayer dead,
                                                  ServerPlayer killer,
                                                  ItemStack weapon,
                                                  Vec3 kEye, Vec3 dEye) {
@@ -74,16 +85,14 @@ public final class BOSpecManager {
                 fmt2(kEye.x), fmt2(kEye.y), fmt2(kEye.z),
                 weaponForSend.isEmpty() ? "EMPTY" : weaponForSend.getHoverName().getString());
 
-        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> dead),
-                new KillCamS2CPacket(
-                        killer.getUUID(), killer.getName().getString(), weaponForSend,
-                        kEye.x, kEye.y, kEye.z,
-                        dEye.x, dEye.y, dEye.z));
+        FPSMatch.sendToPlayer(dead,new KillCamS2CPacket(
+                killer.getUUID(), killer.getName().getString(), weaponForSend,
+                kEye.x, kEye.y, kEye.z,
+                dEye.x, dEye.y, dEye.z));
 
         // KillCam 播放阶段：保持 FREE（客户端黑屏完后再主动请求附身）
         SPECTATE_MODE.put(dead.getUUID(), SpectateMode.FREE);
-        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> dead),
-                new SpectateModeS2CPacket(SpectateMode.FREE));
+        FPSMatch.sendToPlayer(dead, new SpectateModeS2CPacket(SpectateMode.FREE));
     }
 
     @SubscribeEvent

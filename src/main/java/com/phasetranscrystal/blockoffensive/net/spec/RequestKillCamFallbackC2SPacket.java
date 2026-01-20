@@ -26,7 +26,7 @@ public class RequestKillCamFallbackC2SPacket {
         return new RequestKillCamFallbackC2SPacket(buf.readUUID());
     }
 
-    public static void handle(RequestKillCamFallbackC2SPacket p, Supplier<NetworkEvent.Context> ctxSup){
+    public void handle(Supplier<NetworkEvent.Context> ctxSup){
         NetworkEvent.Context ctx = ctxSup.get();
         ServerPlayer victim = ctx.getSender();
         ctx.enqueueWork(() -> {
@@ -35,7 +35,7 @@ public class RequestKillCamFallbackC2SPacket {
             var mapOpt = FPSMCore.getInstance().getMapByPlayer(victim);
             if (mapOpt.isEmpty() || !victim.isSpectator()) return;
 
-            ServerPlayer killer = FPSMCore.getInstance().getPlayerByUUID(p.killerId).orElse(null);
+            ServerPlayer killer = FPSMCore.getInstance().getPlayerByUUID(killerId).orElse(null);
             if (killer == null) return;
 
             Vec3 kEye = killer.getEyePosition(1.0F);

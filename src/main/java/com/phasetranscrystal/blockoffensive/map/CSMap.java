@@ -11,6 +11,7 @@ import com.phasetranscrystal.blockoffensive.net.PxRagdollRemovalCompatS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.shop.ShopStatesS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.spec.CSGameWeaponDataS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
+import com.phasetranscrystal.blockoffensive.spectator.BOSpecManager;
 import com.phasetranscrystal.blockoffensive.util.BOUtil;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
@@ -134,7 +135,7 @@ public abstract class CSMap extends BaseMap {
     public abstract Team.Visibility nameTagVisibility();
     public boolean allowFriendlyFire(){
         return allowFriendlyFire.get();
-    };
+    }
 
     public abstract boolean isError();
     public abstract boolean isPause();
@@ -245,12 +246,11 @@ public abstract class CSMap extends BaseMap {
             ServerPlayer player = playerOpt.get();
             Map<UUID, PlayerData.Damage> damageMap = c.getDamageData();
 
-            PlayerData.Damage receivedDamage = receivedDamageMap.getOrDefault(c.getOwner() ,new PlayerData.Damage());
 
             for (PlayerData t : targetPlayers) {
                 UUID targetId = t.getOwner();
                 PlayerData.Damage damageData = damageMap.getOrDefault(targetId,new PlayerData.Damage());
-
+                PlayerData.Damage receivedDamage = t.getDamageData().getOrDefault(c.getOwner(),new PlayerData.Damage());
                 // 获取目标玩家的名称
                 Component targetName = mapTeams.getPlayerName(targetId);
 
@@ -572,9 +572,7 @@ public abstract class CSMap extends BaseMap {
         Map<ServerTeam,List<SpawnPointData>> allSpawnPoints = new HashMap<>();
 
         for (ServerTeam team : this.getMapTeams().getNormalTeams()){
-            team.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(cap->{
-                allSpawnPoints.put(team,cap.getSpawnPointsData());
-            });
+            team.getCapabilityMap().get(SpawnPointCapability.class).ifPresent(cap-> allSpawnPoints.put(team,cap.getSpawnPointsData()));
         }
 
         return allSpawnPoints;
@@ -624,27 +622,23 @@ public abstract class CSMap extends BaseMap {
 
     public void giveAllPlayersKits(Function<DropType, Boolean> checker) {
         CapabilityMap.getTeamCapability(this, StartKitsCapability.class)
-                .forEach((team, opt) -> opt.ifPresent(cap -> {
-                    team.getPlayersData().forEach(playerData -> {
-                        playerData.getPlayer().ifPresent(player -> {
-                            ArrayList<ItemStack> items = cap.getTeamKits();
-                            player.getInventory().clearContent();
-                            for (ItemStack item : items) {
-                                ItemStack copy = item.copy();
-                                DropType type = DropType.getItemDropType(copy);
-                                if(!checker.apply(type)){
-                                    continue;
-                                }
-                                if(copy.getItem() instanceof ArmorItem armorItem){
-                                    player.setItemSlot(armorItem.getEquipmentSlot(),copy);
-                                }else{
-                                    player.getInventory().add(FPSMUtil.fixGunItem(copy));
-                                }
-                            }
-                            FPSMUtil.sortPlayerInventory(player);
-                        });
-                    });
-                }));
+                .forEach((team, opt) -> opt.ifPresent(cap -> team.getPlayersData().forEach(playerData -> playerData.getPlayer().ifPresent(player -> {
+                    ArrayList<ItemStack> items = cap.getTeamKits();
+                    player.getInventory().clearContent();
+                    for (ItemStack item : items) {
+                        ItemStack copy = item.copy();
+                        DropType type = DropType.getItemDropType(copy);
+                        if(!checker.apply(type)){
+                            continue;
+                        }
+                        if(copy.getItem() instanceof ArmorItem armorItem){
+                            player.setItemSlot(armorItem.getEquipmentSlot(),copy);
+                        }else{
+                            player.getInventory().add(FPSMUtil.fixGunItem(copy));
+                        }
+                    }
+                    FPSMUtil.sortPlayerInventory(player);
+                }))));
     }
 
     /**
@@ -736,23 +730,11 @@ public abstract class CSMap extends BaseMap {
     }
 
     public void syncShopInfo(){
-        this.getMapTeams().getNormalTeams().forEach(team -> {
-            team.getPlayers().values().forEach(data -> {
-                data.getPlayer().ifPresent(player -> {
-                    syncShopInfo(team,player,getPlayerCanOpenShop().apply(player),getShopCloseTime());
-                });
-            });
-        });
+        this.getMapTeams().getNormalTeams().forEach(team -> team.getPlayers().values().forEach(data -> data.getPlayer().ifPresent(player -> syncShopInfo(team,player,getPlayerCanOpenShop().apply(player),getShopCloseTime()))));
     }
 
     public void syncShopInfo(boolean enable,int time){
-        this.getMapTeams().getNormalTeams().forEach(team -> {
-            team.getPlayers().values().forEach(data -> {
-                data.getPlayer().ifPresent(player -> {
-                    syncShopInfo(team,player,enable,time);
-                });
-            });
-        });
+        this.getMapTeams().getNormalTeams().forEach(team -> team.getPlayers().values().forEach(data -> data.getPlayer().ifPresent(player -> syncShopInfo(team,player,enable,time))));
     }
 
     public void syncShopInfo(ServerTeam team, ServerPlayer player, boolean enable, int closeTime){
@@ -815,6 +797,12 @@ public abstract class CSMap extends BaseMap {
     public void onPlayerDeathEvent(ServerPlayer deadPlayer, @Nullable ServerPlayer attacker,
                                    @NotNull ItemStack deathItem, boolean isHeadShot, boolean isPassWall, boolean isPassSmoke) {
         handleDeathEvent(deadPlayer,attacker,isHeadShot);
+
+        if (attacker != null
+                && deadPlayer.isSpectator()
+                && !attacker.getUUID().equals(deadPlayer.getUUID())) {
+            BOSpecManager.sendKillCamAndAttach(deadPlayer, attacker, deathItem);
+        }
 
         if (attacker == null) {
             return;

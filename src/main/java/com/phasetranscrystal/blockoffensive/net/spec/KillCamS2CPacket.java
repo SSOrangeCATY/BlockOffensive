@@ -3,6 +3,7 @@ package com.phasetranscrystal.blockoffensive.net.spec;
 import com.mojang.logging.LogUtils;
 import com.phasetranscrystal.blockoffensive.client.spec.KillCamClientCache;
 import com.phasetranscrystal.blockoffensive.client.spec.KillCamManager;
+import com.phasetranscrystal.fpsmatch.util.FPSMFormatUtil;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
@@ -11,6 +12,8 @@ import org.slf4j.Logger;
 
 import java.util.UUID;
 import java.util.function.Supplier;
+
+import static com.phasetranscrystal.fpsmatch.util.FPSMFormatUtil.fmt2;
 
 public class KillCamS2CPacket {
 
@@ -49,18 +52,17 @@ public class KillCamS2CPacket {
         return new KillCamS2CPacket(id, name, weapon, kx, ky, kz, vx, vy, vz);
     }
 
-    public static void handle(KillCamS2CPacket p, Supplier<NetworkEvent.Context> ctx) {
+    public void handle( Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             LOG.info("[KillCamC] RECV packet  killer='{}'  A(victimEye)=({},{},{})  B(killerEye)=({},{},{})",
-                    p.killerName,
-                    fmt2(p.victimPos.x), fmt2(p.victimPos.y), fmt2(p.victimPos.z),
-                    fmt2(p.killerPos.x), fmt2(p.killerPos.y), fmt2(p.killerPos.z));
+                    killerName,
+                    fmt2(victimPos.x), fmt2(victimPos.y), fmt2(victimPos.z),
+                    fmt2(killerPos.x), fmt2(killerPos.y), fmt2(killerPos.z));
 
-            KillCamClientCache.cache(p.killerPos, p.victimPos, p.killerId, p.killerName, p.weapon);
+            KillCamClientCache.cache(killerPos, victimPos, killerId, killerName, weapon);
             KillCamManager.startFromPacket();
         });
         ctx.get().setPacketHandled(true);
     }
 
-    private static String fmt2(double v){ return String.format(java.util.Locale.ROOT, "%.2f", v); }
 }

@@ -30,7 +30,7 @@ public class SwitchSpectateC2SPacket {
         return new SwitchSpectateC2SPacket(buf.readEnum(SwitchDirection.class));
     }
 
-    public static void handle(SwitchSpectateC2SPacket msg, Supplier<NetworkEvent.Context> ctxSup) {
+    public void handle(Supplier<NetworkEvent.Context> ctxSup) {
         NetworkEvent.Context ctx = ctxSup.get();
         ctx.enqueueWork(() -> {
             ServerPlayer sp = ctx.getSender();
@@ -63,7 +63,7 @@ public class SwitchSpectateC2SPacket {
             }
             if (currentIndex < 0) currentIndex = 0;
 
-            int newIndex = (msg.direction == SwitchDirection.NEXT)
+            int newIndex = (direction == SwitchDirection.NEXT)
                     ? (currentIndex + 1) % teammates.size()
                     : (currentIndex - 1 + teammates.size()) % teammates.size();
 

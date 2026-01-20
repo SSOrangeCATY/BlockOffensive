@@ -20,6 +20,7 @@ import com.phasetranscrystal.blockoffensive.net.shop.ShopStatesS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.spec.BombFuseS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
 import com.phasetranscrystal.blockoffensive.sound.MVPMusicManager;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.capability.map.DemolitionModeCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.map.GameEndTeleportCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.team.*;
@@ -212,8 +213,12 @@ public class CSGameMap extends CSMap{
         return defaultEconomy + compensation * compensationFactor;
     }
 
-    public static int getCompensationFactor(ServerTeam team){
-        return team.getCapabilityMap().get(CompensationCapability.class).map(CompensationCapability::getCompensationFactor).orElse(0);
+    public int getCompensationFactor(ServerTeam team){
+        return team.getCapabilityMap().get(CompensationCapability.class).map(CompensationCapability::getCompensationFactor)
+                .orElseGet(()->{
+                    FPSMatch.LOGGER.error("CSGameMap {} Compensation fail to get : Capability : {}",this.getMapName(),team.getCapabilityMap().capabilitiesString());
+                    return 0;
+                });
     }
 
     /**
@@ -342,7 +347,7 @@ public class CSGameMap extends CSMap{
     private void initializeTeams(MapTeams mapTeams) {
         mapTeams.getNormalTeams().forEach(team -> {
             team.setScores(0);
-            setCompensationFactor(team, 0); // 重置补偿因子
+            setCompensationFactor(team, 0);
             // 重置队伍内所有玩家数据
             team.getPlayers().forEach((uuid, data) -> data.reset());
         });
@@ -397,7 +402,9 @@ public class CSGameMap extends CSMap{
     }
 
     public void setCompensationFactor(ServerTeam team, int factor){
-        team.getCapabilityMap().get(CompensationCapability.class).ifPresent(cap->cap.setCompensationFactor(factor));
+        team.getCapabilityMap().get(CompensationCapability.class).ifPresentOrElse(cap->cap.setCompensationFactor(factor),()->{
+            FPSMatch.LOGGER.error("CSGameMap {} Compensation fail set to {}",this.getMapName(), factor);
+        });
     }
 
     public boolean canRestTime(){
@@ -598,12 +605,6 @@ public class CSGameMap extends CSMap{
         ));
     }
 
-    /**
-     * 安全获取补偿系数
-     */
-    private int getCompensationFactorSafely(ServerTeam team) {
-        return team != null ? getCompensationFactor(team) : 0;
-    }
 
     private void onRoundStarted(){
         this.sendNewRoundVoice();
@@ -791,7 +792,7 @@ public class CSGameMap extends CSMap{
      * 处理失败方经济奖励
      */
     private void processLoserEconomicReward(@NotNull ServerTeam loserTeam, @NotNull WinnerReason reason) {
-        int compensationFactor = getCompensationFactorSafely(loserTeam);
+        int compensationFactor = getCompensationFactor(loserTeam);
         boolean isDefuseBonusApplicable = checkCanPlacingBombs(loserTeam.getFixedName())
                 && reason == WinnerReason.DEFUSE_BOMB;
 
@@ -830,7 +831,7 @@ public class CSGameMap extends CSMap{
 
         // 超时情况：仅给死亡玩家发放
         return loserTeam.getPlayerData(uuid)
-                .map(data -> !data.isLiving())
+                .map(data -> !data.isLivingServer())
                 .orElse(false); // 无玩家数据时不发放
     }
 
@@ -864,14 +865,11 @@ public class CSGameMap extends CSMap{
 
     private void checkLoseStreaks(ServerTeam winnerTeam) {
         this.getMapTeams().getNormalTeams().forEach(team -> {
-            team.getCapabilityMap().get(CompensationCapability.class).ifPresent(cap -> {
-                int compensationFactor = cap.getCompensationFactor();
-                if (team.equals(winnerTeam)) {
-                    cap.setCompensationFactor(compensationFactor - 2);
-                } else {
-                    cap.setCompensationFactor(compensationFactor + 1);
-                }
-            });
+            if(team.equals(winnerTeam)){
+                this.setCompensationFactor(team,this.getCompensationFactor(team) + 1);
+            }else{
+                this.setCompensationFactor(team,this.getCompensationFactor(team) - 2);
+            }
         });
     }
 
