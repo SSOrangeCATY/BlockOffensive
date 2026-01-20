@@ -147,6 +147,10 @@ public class BOUtil {
             return projectile.getItem();
         }
 
+        if (source.getEntity() instanceof ThrowableItemEntity projectile) {
+            return projectile.getItem();
+        }
+
         if (FPSMImpl.findCounterStrikeGrenadesMod()) {
             ItemStack grenade = CounterStrikeGrenadesCompat.getItemFromDamageSource(source);
             if (!grenade.isEmpty()) {
