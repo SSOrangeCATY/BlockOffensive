@@ -443,14 +443,12 @@ public final class KillCamManager {
         if (id == null) return Side.UNKNOWN;
         try {
             var gd = FPSMClient.getGlobalData();
-            if (gd != null) {
-                var opt = gd.getPlayerTeam(id);
-                if (opt != null && opt.isPresent()) {
-                    String s = opt.get();
-                    s = s.trim().toLowerCase(Locale.ROOT);
-                    if (s.equals("ct") || s.contains("counter")) return Side.CT;
-                    if (s.equals("t")  || s.contains("terror"))  return Side.T;
-                }
+            var opt = gd.getTeamByUUID(id);
+            if (opt.isPresent()) {
+                String s = opt.get().getName();
+                s = s.trim().toLowerCase(Locale.ROOT);
+                if (s.equals("ct") || s.contains("counter")) return Side.CT;
+                if (s.equals("t")  || s.contains("terror"))  return Side.T;
             }
         } catch (Throwable ignored) {}
         var mc = Minecraft.getInstance();
@@ -604,8 +602,8 @@ public final class KillCamManager {
 
     private static Optional<String> getTeam(UUID id){
         try {
-            return FPSMClient.getGlobalData().getPlayerTeam(id)
-                    .map(s -> s.trim().toLowerCase(Locale.ROOT));
+            return FPSMClient.getGlobalData().getTeamByUUID(id)
+                    .map(s -> s.name.trim().toLowerCase(Locale.ROOT));
         } catch (Throwable t){
             return Optional.empty();
         }

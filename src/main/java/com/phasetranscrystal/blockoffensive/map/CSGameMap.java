@@ -776,12 +776,10 @@ public class CSGameMap extends CSMap{
      */
     private void processWinnerEconomicReward(@NotNull ServerTeam winnerTeam,WinnerReason reason) {
         winnerTeam.getPlayerList().forEach(uuid -> {
-            // 安全获取商店数据（封装工具方法，减少重复）
             getShopDataSafely(uuid).ifPresent(shopData -> {
                 shopData.addMoney(reason.winMoney);
             });
 
-            // 发送奖励消息（封装工具方法，统一格式）
             getPlayerByUUID(uuid).ifPresent(player ->
                     sendMoneyRewardMessage(player, reason.winMoney, reason.name())
             );
@@ -796,7 +794,7 @@ public class CSGameMap extends CSMap{
         boolean isDefuseBonusApplicable = checkCanPlacingBombs(loserTeam.getFixedName())
                 && reason == WinnerReason.DEFUSE_BOMB;
 
-        // 基础经济 + 拆弹额外奖励（如有）
+        // 基础经济 + 拆弹额外奖励
         int baseEconomy = defaultLoserEconomy.get() + (isDefuseBonusApplicable ? defuseBonus.get() : 0);
         // 总失败补偿 = 基础经济 + 连败补偿
         int totalLossCompensation = baseEconomy + (compensationBase.get() * compensationFactor);
@@ -963,7 +961,7 @@ public class CSGameMap extends CSMap{
             return winner;
         }
 
-        return winner + (this.overCount * this.overtimeRound.get()) + 1;
+        return winner + ((this.overCount + 1) * this.overtimeRound.get()) + 1;
     }
 
     private void handleVictory(ServerTeam winnerTeam) {
@@ -972,7 +970,7 @@ public class CSGameMap extends CSMap{
                 Component.translatable("map.cs.message.victory.head",
                                 winnerTeam.name.toUpperCase(Locale.US))
                         .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD),
-                Comparator.comparingDouble(PlayerData::getTotalDamage).reversed()
+                Comparator.comparingDouble(PlayerData::getDamage).reversed()
         );
 
         // 发送胜利标题
@@ -1003,7 +1001,7 @@ public class CSGameMap extends CSMap{
     public void startOvertime() {
         this.isOvertime = true;
         this.isWaitingOverTimeVote = false;
-        pause();
+        this.isWaiting = true;
 
         this.getMapTeams().getNormalTeams().forEach(team-> {
             team.resetCapabilities();
@@ -1415,6 +1413,7 @@ public class CSGameMap extends CSMap{
      */
     @Override
     public void syncToClient() {
+        super.syncToClient();
         this.syncToClient(true);
     }
 
@@ -1455,30 +1454,26 @@ public class CSGameMap extends CSMap{
                         });
 
                 this.sendPacketToJoinedPlayer(dead, new ShopStatesS2CPacket(false, 0, 0), true);
-                deadPlayerTeam.getPlayerData(dead.getUUID()).ifPresent(data -> {
-                    data.addDeath();
-                    data.setLiving(false);
-                    // 清除c4,并掉落c4
-                    dropC4(dead);
-                    // 清除玩家所属子弹
-                    this.getServerLevel().getEntitiesOfClass(EntityKineticBullet.class, mapArea.getAABB())
-                            .stream()
-                            .filter(entityKineticBullet -> entityKineticBullet.getOwner() != null && entityKineticBullet.getOwner().getUUID().equals(dead.getUUID()))
-                            .toList()
-                            .forEach(Entity::discard);
-                    // 清除拆弹工具,并掉落拆弹工具
-                    int ik = dead.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof BombDisposalKit, -1, dead.inventoryMenu.getCraftSlots());
-                    if (ik > 0) {
-                        dead.drop(new ItemStack(BOItemRegister.BOMB_DISPOSAL_KIT.get(), 1), false, false).setGlowingTag(true);
-                    }
-                    FPSMUtil.playerDeadDropWeapon(dead, true);
-                    dead.getInventory().clearContent();
-                    dead.heal(dead.getMaxHealth());
-                    dead.setGameMode(GameType.SPECTATOR);
-                    dead.setRespawnPosition(dead.level().dimension(), dead.getOnPos().above(), 0, true, false);
-                    this.setBystander(dead);
-                    this.syncInventory(dead);
-                });
+                // 清除c4,并掉落c4
+                dropC4(dead);
+                // 清除玩家所属子弹
+                this.getServerLevel().getEntitiesOfClass(EntityKineticBullet.class, mapArea.getAABB())
+                        .stream()
+                        .filter(entityKineticBullet -> entityKineticBullet.getOwner() != null && entityKineticBullet.getOwner().getUUID().equals(dead.getUUID()))
+                        .toList()
+                        .forEach(Entity::discard);
+                // 清除拆弹工具,并掉落拆弹工具
+                int ik = dead.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof BombDisposalKit, -1, dead.inventoryMenu.getCraftSlots());
+                if (ik > 0) {
+                    dead.drop(new ItemStack(BOItemRegister.BOMB_DISPOSAL_KIT.get(), 1), false, false).setGlowingTag(true);
+                }
+                FPSMUtil.playerDeadDropWeapon(dead, true);
+                dead.getInventory().clearContent();
+                dead.heal(dead.getMaxHealth());
+                dead.setGameMode(GameType.SPECTATOR);
+                dead.setRespawnPosition(dead.level().dimension(), dead.getOnPos().above(), 0, true, false);
+                this.setBystander(dead);
+                this.syncInventory(dead);
             });
         }
     }

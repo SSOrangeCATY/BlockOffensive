@@ -35,7 +35,7 @@ public class CSGameEvents {
             if(dm.isInSpawnProtection(event.getPlayer().getUUID())){
                 event.setCanceled(true);
             }else{
-               boolean isTeammate = FPSMUtil.getAttackerFromDamageSource(event.getSource())
+               boolean isTeammate = event.getMap().getAttackerFromDamageSource(event.getSource())
                        .map(attacker -> dm.getMapTeams().isSameTeam(event.getPlayer(), attacker))
                        .orElse(false);
 
@@ -150,7 +150,7 @@ public class CSGameEvents {
      * 玩家死亡事件处理
      */
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onLivingDeathEvent(FPSMapEvent.PlayerEvent.DeathEvent event) {
+    public static void onDeathEvent(FPSMapEvent.PlayerEvent.DeathEvent event) {
         if(!(event.getMap() instanceof CSMap csMap)) return;
 
         ServerPlayer player = event.getPlayer();

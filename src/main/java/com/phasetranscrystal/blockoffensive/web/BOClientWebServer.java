@@ -82,7 +82,7 @@ public class BOClientWebServer {
             response.put("bombTotalFuse", CSClientData.bombTotalFuse);
 
             Map<String, Object> tabData = new HashMap<>();
-            for (ClientTeam clientTeam : globalData.clientTeamData.values()) {
+            for (ClientTeam clientTeam : globalData.getTeams()) {
 
                 String team = clientTeam.name;
                 if(team.equals("spectator")) continue;

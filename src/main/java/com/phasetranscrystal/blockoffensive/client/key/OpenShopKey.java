@@ -51,7 +51,7 @@ public class OpenShopKey {
             if(CSClientData.isDebug){
                 openShop();
             }else{
-                if(FPSMClient.getGlobalData().equalsMap("fpsm_none")){
+                if(FPSMClient.getGlobalData().isCurrentMap("fpsm_none")){
                     Minecraft.getInstance().player.sendSystemMessage(Component.translatable("key.blockoffensive.open.shop.failed.no_map"));
                     return;
                 }

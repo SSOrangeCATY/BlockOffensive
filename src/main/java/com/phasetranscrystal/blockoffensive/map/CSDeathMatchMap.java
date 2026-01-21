@@ -93,6 +93,7 @@ public class CSDeathMatchMap extends CSMap {
 
     @Override
     public void syncToClient() {
+        super.syncToClient();
         super.syncToClient(false);
     }
 

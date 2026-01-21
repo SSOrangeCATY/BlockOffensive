@@ -56,7 +56,7 @@ public class BOClientEvent {
     public static void onPlayerMoveInput(MovementInputUpdateEvent event) {
         if(Minecraft.getInstance().player == null) return;
         Input input = event.getInput();
-        if(!FPSMClient.getGlobalData().equalsGame("csdm")) return;
+        if(!FPSMClient.getGlobalData().isCurrentGameType("csdm")) return;
 
         if (input.left || input.right || input.up || input.down || input.shiftKeyDown) {
             FPSMatch.sendToServer(new PlayerMoveC2SPacket());
@@ -124,7 +124,7 @@ public class BOClientEvent {
     }
 
     public static boolean isLocked(){
-        return (CSClientData.isWaiting || CSClientData.isPause) && (FPSMClient.getGlobalData().equalsGame("cs") && !FPSMClient.getGlobalData().isSpectator());
+        return (CSClientData.isWaiting || CSClientData.isPause) && (FPSMClient.getGlobalData().isCurrentGameType("cs") && !FPSMClient.getGlobalData().isSpectator());
     }
 
     @SubscribeEvent

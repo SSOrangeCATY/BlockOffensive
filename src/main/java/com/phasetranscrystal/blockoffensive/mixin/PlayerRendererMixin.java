@@ -1,6 +1,5 @@
 package com.phasetranscrystal.blockoffensive.mixin;
 
-import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.PlayerModel;
@@ -10,7 +9,6 @@ import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
-import net.minecraft.world.entity.player.PlayerModelPart;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
@@ -29,7 +27,7 @@ public abstract class PlayerRendererMixin extends LivingEntityRenderer<AbstractC
     
     @Inject(method = "setModelProperties(Lnet/minecraft/client/player/AbstractClientPlayer;)V", at = @At("HEAD"), cancellable = true)
     private void setModelProperties(AbstractClientPlayer player, CallbackInfo ci) {
-        if(player.isSpectator() && FPSMClient.getGlobalData().getPlayerTabData(player.getUUID()).isPresent()){
+        if(player.isSpectator() && FPSMClient.getGlobalData().getPlayerData(player.getUUID()).isPresent()){
             PlayerModel<AbstractClientPlayer> playermodel = this.getModel();
             playermodel.setAllVisible(true);
             playermodel.hat.visible = true;

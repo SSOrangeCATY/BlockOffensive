@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import com.phasetranscrystal.blockoffensive.util.BOUtil;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
+import com.phasetranscrystal.fpsmatch.common.client.data.FPSMClientGlobalData;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.ChatFormatting;
@@ -27,6 +28,7 @@ public class CSGameOverlay {
 
     public void render(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
         Font font = Minecraft.getInstance().font;
+        FPSMClientGlobalData data = FPSMClient.getGlobalData();
         // 计算缩放因子 (以855x480为基准)
         float scaleFactor = Math.min(screenWidth / 855.0f, screenHeight / 480.0f);
 
@@ -55,7 +57,7 @@ public class CSGameOverlay {
                 centerX + timeAreaWidth, startY + backgroundHeight, -1072689136, noColor);
 
         // 渲染CT存活信息（左侧）
-        int ctLivingCount = CSClientData.getLivingWithTeam("ct");
+        int ctLivingCount = data.getLivingWithTeam("ct");
         Component ctLivingStr = Component.literal(String.valueOf(ctLivingCount)).withStyle(ChatFormatting.BOLD);
 
         // CT背景渐变
@@ -116,7 +118,7 @@ public class CSGameOverlay {
         guiGraphics.pose().popPose();
 
         // 渲染T存活信息（右侧）
-        int tLivingCount = CSClientData.getLivingWithTeam("t");
+        int tLivingCount = data.getLivingWithTeam("t");
         Component tLivingStr = Component.literal(String.valueOf(tLivingCount)).withStyle(ChatFormatting.BOLD);
 
         // T背景渐变
@@ -312,7 +314,7 @@ public class CSGameOverlay {
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(5,screenHeight - 20,0 );
         guiGraphics.pose().scale(2,2,0);
-        guiGraphics.drawString(font, "$ "+CSClientData.getMoney(), 0,0, FPSMClient.getGlobalData().equalsTeam("ct") ? BOUtil.CT_COLOR : BOUtil.T_COLOR);
+        guiGraphics.drawString(font, "$ "+CSClientData.getMoney(), 0,0, FPSMClient.getGlobalData().isCurrentTeam("ct") ? BOUtil.CT_COLOR : BOUtil.T_COLOR);
         guiGraphics.pose().popPose();
     }
 
@@ -329,7 +331,7 @@ public class CSGameOverlay {
                                  float scaleFactor
     )
     {
-        boolean isSameTeam = FPSMClient.getGlobalData().equalsTeam(rowTeam);
+        boolean isSameTeam = FPSMClient.getGlobalData().isCurrentTeam(rowTeam);
         boolean isCT = rowTeam.equals("ct");
         if (showNameInfo) {
             rowY += 6;
@@ -372,7 +374,7 @@ public class CSGameOverlay {
                 startY += barHeight + margin;
             }
 
-            int killCount = FPSMClient.getGlobalData().getPlayerTabData(uuid).map(PlayerData::getTempKills).orElse(0);
+            int killCount = FPSMClient.getGlobalData().getPlayerData(uuid).map(PlayerData::getTempKills).orElse(0);
             if(killCount > 0){
                 drawPlayerKills(guiGraphics,font,killCount,avX + (smallAvSize/2),startY,scaleFactor);
                 startY += 5 + margin;

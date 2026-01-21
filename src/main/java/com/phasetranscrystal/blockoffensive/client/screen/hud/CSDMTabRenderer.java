@@ -50,8 +50,8 @@ public class CSDMTabRenderer extends CSGameTabRenderer {
 
         // 按得分排序
         Comparator<PlayerInfo> scoreComparator = (p1, p2) -> {
-            PlayerData t1 = FPSMClient.getGlobalData().getPlayerTabData(p1.getProfile().getId()).get();
-            PlayerData t2 = FPSMClient.getGlobalData().getPlayerTabData(p2.getProfile().getId()).get();
+            PlayerData t1 = FPSMClient.getGlobalData().getPlayerData(p1.getProfile().getId()).get();
+            PlayerData t2 = FPSMClient.getGlobalData().getPlayerData(p2.getProfile().getId()).get();
             return Float.compare(t2.getScores(), t1.getScores());
         };
 
@@ -147,7 +147,7 @@ public class CSDMTabRenderer extends CSGameTabRenderer {
     }
 
     private void renderDeathmatchPlayerRow(GuiGraphics guiGraphics, PlayerInfo player, int x, int y, int width, int height) {
-        PlayerData tabData = FPSMClient.getGlobalData().getPlayerTabData(player.getProfile().getId()).get();
+        PlayerData tabData = FPSMClient.getGlobalData().getPlayerData(player.getProfile().getId()).get();
         boolean isLocalPlayer = player.getProfile().getId().equals(minecraft.player.getUUID());
 
         // 背景 - 如果是本地玩家，使用高亮背景
@@ -185,19 +185,19 @@ public class CSDMTabRenderer extends CSGameTabRenderer {
 
         // 杀敌数
         int killsX = x + pingWidth + avatarSize + padding + nameWidth;
-        String kills = String.valueOf(tabData.getTotalKills());
+        String kills = String.valueOf(tabData.getKills());
         guiGraphics.drawString(minecraft.font, kills,
                 killsX + (killsWidth - minecraft.font.width(kills)) / 2, textY, 0xFFFFFFFF);
 
         // 死亡数
         int deathsX = killsX + killsWidth;
-        String deaths = String.valueOf(tabData.getTotalDeaths());
+        String deaths = String.valueOf(tabData.getDeaths());
         guiGraphics.drawString(minecraft.font, deaths,
                 deathsX + (deathsWidth - minecraft.font.width(deaths)) / 2, textY, 0xFFFFFFFF);
 
         // 助攻数
         int assistsX = deathsX + deathsWidth;
-        String assists = String.valueOf(tabData.getTotalAssists());
+        String assists = String.valueOf(tabData.getAssists());
         guiGraphics.drawString(minecraft.font, assists,
                 assistsX + (assistsWidth - minecraft.font.width(assists)) / 2, textY, 0xFFFFFFFF);
 
@@ -219,7 +219,7 @@ public class CSDMTabRenderer extends CSGameTabRenderer {
 
         // 伤害
         int damageX = headshotX + headshotWidth;
-        String damage = String.valueOf(Math.round(tabData.getTotalDamage()));
+        String damage = String.valueOf(Math.round(tabData.getDamage()));
         guiGraphics.drawString(minecraft.font, damage,
                 damageX + (damageWidth - minecraft.font.width(damage)) / 2, textY, 0xFFFFFFFF);
 

@@ -64,25 +64,4 @@ public class CSClientData {
     public static int getNextRoundMinMoney() {
         return nextRoundMoney;
     }
-
-    public static Optional<PlayerData> getLocalCSTabData() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null) {
-            UUID uuid = mc.player.getUUID();
-            return FPSMClient.getGlobalData().getPlayerTabData(uuid);
-        }
-        return Optional.empty();
-    }
-
-    public static int getLivingWithTeam(String team) {
-        int living = 0;
-        for (var clientTeam : FPSMClient.getGlobalData().clientTeamData.values()) {
-            if (clientTeam.name.equals(team)) {
-                for (var data :clientTeam.players.values()){
-                    if (data.isLiving()) living++;
-                }
-            }
-        }
-        return living;
-    }
 }

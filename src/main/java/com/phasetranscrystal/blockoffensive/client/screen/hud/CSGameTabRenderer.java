@@ -4,6 +4,7 @@ import com.phasetranscrystal.blockoffensive.util.BOUtil;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.tab.TabRenderer;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
+import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -53,9 +54,9 @@ public class CSGameTabRenderer implements TabRenderer {
 
         // 按伤害排序
         Comparator<PlayerInfo> damageComparator = (p1, p2) -> {
-            Optional<PlayerData> t1 = FPSMClient.getGlobalData().getPlayerTabData(p1.getProfile().getId());
-            Optional<PlayerData> t2 = FPSMClient.getGlobalData().getPlayerTabData(p2.getProfile().getId());
-            return Float.compare(t1.map(PlayerData::getTotalDamage).orElse(0F), t2.map(PlayerData::getTotalDamage).orElse(0F));
+            Optional<PlayerData> t1 = FPSMClient.getGlobalData().getPlayerData(p1.getProfile().getId());
+            Optional<PlayerData> t2 = FPSMClient.getGlobalData().getPlayerData(p2.getProfile().getId());
+            return Float.compare(t1.map(PlayerData::getDamage).orElse(0F), t2.map(PlayerData::getDamage).orElse(0F));
         };
 
         teamPlayers.get("ct").sort(damageComparator);
@@ -161,8 +162,9 @@ public class CSGameTabRenderer implements TabRenderer {
     }
 
     private void renderPlayerRow(GuiGraphics guiGraphics, PlayerInfo player, int x, int y, int width, int height, int textColor) {
-        PlayerData tabData = FPSMClient.getGlobalData().getPlayerTabData(player.getProfile().getId()).get();
-        String playerTeam = FPSMClient.getGlobalData().getPlayerTeam(player.getProfile().getId()).get();
+        UUID uuid = player.getProfile().getId();
+        PlayerData tabData = FPSMClient.getGlobalData().getPlayerData(uuid).get();
+        String playerTeam = FPSMClient.getGlobalData().getTeamByUUID(uuid).map(BaseTeam::getName).orElse("");
         String localTeam = FPSMClient.getGlobalData().getCurrentTeam();
         boolean isSameTeam = Objects.equals(playerTeam, localTeam);
         boolean isLocalPlayer = player.getProfile().getId().equals(minecraft.player.getUUID());
@@ -212,18 +214,18 @@ public class CSGameTabRenderer implements TabRenderer {
 
         // K/D/A（与表头对齐）
         int kdaX = moneyX + moneyWidth;
-        Component kills = Component.literal(String.valueOf(tabData.getTotalKills())).withStyle(ChatFormatting.BOLD);
+        Component kills = Component.literal(String.valueOf(tabData.getKills())).withStyle(ChatFormatting.BOLD);
         guiGraphics.drawString(minecraft.font, kills,
                 kdaX + (killWidth - minecraft.font.width(kills)) / 2, textY, textColor);
 
         int deathsX = kdaX + killWidth;
         guiGraphics.fill(deathsX, y, deathsX + deathWidth, y + height, 0x20FFFFFF);
-        Component deaths = Component.literal(String.valueOf(tabData.getTotalDeaths())).withStyle(ChatFormatting.BOLD);
+        Component deaths = Component.literal(String.valueOf(tabData.getDeaths())).withStyle(ChatFormatting.BOLD);
         guiGraphics.drawString(minecraft.font, deaths,
                 deathsX + (deathWidth - minecraft.font.width(deaths)) / 2, textY, textColor);
 
         int assistsX = deathsX + deathWidth;
-        Component assists = Component.literal(String.valueOf(tabData.getTotalAssists())).withStyle(ChatFormatting.BOLD);
+        Component assists = Component.literal(String.valueOf(tabData.getAssists())).withStyle(ChatFormatting.BOLD);
         guiGraphics.drawString(minecraft.font, assists,
                 assistsX + (assistWidth - minecraft.font.width(assists)) / 2, textY, textColor);
 
@@ -238,7 +240,7 @@ public class CSGameTabRenderer implements TabRenderer {
         // 伤害（与表头对齐）
         int damageX = x + width - damageWidth;
         guiGraphics.fill(damageX, y, damageX + damageWidth, y + height, 0x40FFFFFF);
-        Component damage = Component.literal(String.valueOf(Math.round(tabData.getTotalDamage()))).withStyle(ChatFormatting.BOLD);
+        Component damage = Component.literal(String.valueOf(Math.round(tabData.getDamage()))).withStyle(ChatFormatting.BOLD);
         guiGraphics.drawString(minecraft.font, damage,
                 damageX + (damageWidth - minecraft.font.width(damage)) / 2, textY, textColor);
 

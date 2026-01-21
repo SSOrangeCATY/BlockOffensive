@@ -73,7 +73,7 @@ public class ShopSlotRenderer implements MinecraftSurfaceView.Renderer {
 
     public void setIconColor(GuiGraphics gr,boolean enable){
         if(enable){
-            if(FPSMClient.getGlobalData().equalsTeam("ct")){
+            if(FPSMClient.getGlobalData().isCurrentTeam("ct")){
                 gr.setColor((float) 150 / 255, (float) 200 / 255, (float) 250 / 255,1);
             }else{
                 gr.setColor((float) 234 / 255, (float) 192 /255, (float) 85 /255,1);

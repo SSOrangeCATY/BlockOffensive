@@ -123,7 +123,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback {
 
             // 金钱文本
             moneyText = new TextView(getContext());
-            moneyText.setTextColor(FPSMClient.getGlobalData().equalsTeam("ct") ? RenderUtil.color(150, 200, 250) : RenderUtil.color(234, 192, 85));
+            moneyText.setTextColor(FPSMClient.getGlobalData().isCurrentTeam("ct") ? RenderUtil.color(150, 200, 250) : RenderUtil.color(234, 192, 85));
             moneyText.setTextSize(18);
             RelativeLayout.LayoutParams moneyParams = new RelativeLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
             moneyParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
@@ -278,7 +278,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback {
         public void updateText() {
             int money = CSClientData.getMoney() == -1 ? 16000 : CSClientData.getMoney();
             moneyText.setText("$ " + money);
-            moneyText.setTextColor(FPSMClient.getGlobalData().equalsTeam("ct") ? RenderUtil.color(150, 200, 250) : RenderUtil.color(234, 192, 85));
+            moneyText.setTextColor(FPSMClient.getGlobalData().isCurrentTeam("ct") ? RenderUtil.color(150, 200, 250) : RenderUtil.color(234, 192, 85));
             if(nextRoundMinMoneyText != null){
                 nextRoundMinMoneyText.setText(I18n.get("blockoffensive.shop.title.min.money", CSClientData.getNextRoundMinMoney()));
             }
@@ -543,7 +543,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback {
         public void setElements(boolean enable) {
             ClientShopSlot currentSlot = getSlot();
             if (enable) {
-                int color = FPSMClient.getGlobalData().equalsTeam("ct") ? RenderUtil.color(150, 200, 250) : RenderUtil.color(234, 192, 85);
+                int color = FPSMClient.getGlobalData().isCurrentTeam("ct") ? RenderUtil.color(150, 200, 250) : RenderUtil.color(234, 192, 85);
                 numText.setTextColor(color);
                 itemNameText.setTextColor(color);
                 costText.setTextColor(color);

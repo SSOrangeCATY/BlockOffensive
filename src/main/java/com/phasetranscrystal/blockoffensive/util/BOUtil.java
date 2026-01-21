@@ -52,7 +52,7 @@ public class BOUtil {
     public static SoundEvent getVoiceByThrowType(ThrowableSubType subType){
         if(subType == null) return null;
 
-        boolean isCT = FPSMClient.getGlobalData().equalsTeam("ct");
+        boolean isCT = FPSMClient.getGlobalData().isCurrentTeam("ct");
 
         if(ThrowableRegistry.GRENADE.equals(subType)){
             return isCT ? BOSoundRegister.THROWABLE_GRENADE_CT_THROW.get() : BOSoundRegister.THROWABLE_GRENADE_T_THROW.get();

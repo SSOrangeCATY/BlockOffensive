@@ -83,7 +83,6 @@ public abstract class CSMap extends BaseMap {
     protected final Setting<Boolean> autoStart = this.addSetting("autoStart", true);
     protected final Setting<Integer> autoStartTime = this.addSetting("autoStartTime", 6000);
     protected final Setting<Boolean> allowFriendlyFire = this.addSetting("allowFriendlyFire",false);
-    protected final Setting<Float> minAssistDamageRatio = this.addSetting("minAssistDamageRatio", 0.25f);
 
     private final Setting<Integer> ctLimit = this.addSetting("ctLimit",5);
     private final Setting<Integer> tLimit = this.addSetting("tLimit",5);
@@ -314,6 +313,7 @@ public abstract class CSMap extends BaseMap {
     }
 
     public void sendVictoryMessage(Component header, Comparator<PlayerData> comparator) {
+        this.getMapTeams().startNewRound();
         // 获取并按指定比较器排序玩家数据
         List<PlayerData> players = this.getMapTeams()
                 .getNormalTeams()
@@ -336,11 +336,11 @@ public abstract class CSMap extends BaseMap {
                     i + 1,
                     data.name(),
                     data.getScores(),
-                    data.getTotalKills(),
-                    data.getTotalDeaths(),
-                    data.getTotalAssists(),
+                    data.getKills(),
+                    data.getDeaths(),
+                    data.getAssists(),
                     String.format("%.2f", data.getHeadshotRate()),
-                    data.getTotalDamage()
+                    data.getDamage()
             ).withStyle(rowColor).withStyle(ChatFormatting.BOLD);
 
             messages.add(message);
@@ -718,7 +718,6 @@ public abstract class CSMap extends BaseMap {
         );
 
         this.sendPacketToAllPlayer(packet);
-        this.getMapTeams().sync();
 
         if(isStart){
             syncShopInfo();
@@ -796,62 +795,24 @@ public abstract class CSMap extends BaseMap {
 
     public void onPlayerDeathEvent(ServerPlayer deadPlayer, @Nullable ServerPlayer attacker,
                                    @NotNull ItemStack deathItem, boolean isHeadShot, boolean isPassWall, boolean isPassSmoke) {
-        handleDeathEvent(deadPlayer,attacker,isHeadShot);
-
-        if (attacker != null
-                && deadPlayer.isSpectator()
-                && !attacker.getUUID().equals(deadPlayer.getUUID())) {
-            BOSpecManager.sendKillCamAndAttach(deadPlayer, attacker, deathItem);
-        }
-
-        if (attacker == null) {
-            return;
-        }
-
-        giveEco(deadPlayer, attacker, deathItem, true);
-
-        DeathMessageS2CPacket killPacket = BOUtil.buildDeathMessagePacket(this,attacker, deadPlayer, deathItem, isHeadShot,isPassWall,isPassSmoke,minAssistDamageRatio.get());
-        sendPacketToAllPlayer(killPacket);
-    }
-
-    /**
-     * 基础死亡事件处理
-     */
-    public final void handleDeathEvent(ServerPlayer deadPlayer, @Nullable ServerPlayer killer,boolean isHeadShot) {
-        handleDeath(deadPlayer);
         if (isStart) {
-            calculateAssist(deadPlayer, killer);
-            calculateKill(deadPlayer, killer,isHeadShot);
-        }
-    }
+            handleDeath(deadPlayer);
 
-    /**
-     * 计算助攻（原calculateTabData中的助攻逻辑）
-     */
-    public void calculateAssist(ServerPlayer deadPlayer, @Nullable ServerPlayer killer) {
-        BOUtil.calculateAssistPlayer(this,deadPlayer,minAssistDamageRatio.get()).ifPresent(assistData -> {
-            UUID killerId = killer != null ? killer.getUUID() : null;
-            if (killerId != null && !killerId.equals(assistData.getOwner())) {
-                assistData.addAssist();
+            if (attacker != null
+                    && deadPlayer.isSpectator()
+                    && !attacker.getUUID().equals(deadPlayer.getUUID())) {
+                BOSpecManager.sendKillCamAndAttach(deadPlayer, attacker, deathItem);
             }
-        });
-    }
 
-    /**
-     * 计算击杀数（原calculateTabData中的击杀逻辑）
-     */
-    public void calculateKill(ServerPlayer deadPlayer, @Nullable ServerPlayer killer,boolean isHeadShot) {
-        if (killer == null || killer.getUUID().equals(deadPlayer.getUUID())) {
-            return;
+            if (attacker == null) {
+                return;
+            }
+
+            giveEco(deadPlayer, attacker, deathItem, true);
+
+            DeathMessageS2CPacket killPacket = BOUtil.buildDeathMessagePacket(this,attacker, deadPlayer, deathItem, isHeadShot,isPassWall,isPassSmoke,minAssistDamageRatio.get());
+            sendPacketToAllPlayer(killPacket);
         }
-        getMapTeams().getTeamByPlayer(killer)
-                .flatMap(team -> team.getPlayerData(killer.getUUID()))
-                .ifPresent(data->{
-                    data.addKill();
-                    if (isHeadShot) {
-                        data.addHeadshotKill();
-                    }
-                });
     }
 
     public abstract void handleDeath(ServerPlayer dead);

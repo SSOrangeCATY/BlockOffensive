@@ -108,7 +108,7 @@ public class CSGameHud implements IHudRenderer {
 
     @Override
     public void onSpectatorRender(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
-        if(!FPSMClient.getGlobalData().equalsGame("csdm")){
+        if(!FPSMClient.getGlobalData().isCurrentGameType("csdm")){
             gameOverlay.render(guiGraphics, screenWidth, screenHeight);
         }else{
             dmOverlay.render(guiGraphics, screenWidth, screenHeight);
@@ -124,7 +124,7 @@ public class CSGameHud implements IHudRenderer {
         if(BOImpl.isHitIndicationLoaded()){
             HitIndicationCompat.Renderer.render(gui.getMinecraft().getWindow(),guiGraphics);
         }
-        if(!FPSMClient.getGlobalData().equalsGame("csdm")){
+        if(!FPSMClient.getGlobalData().isCurrentGameType("csdm")){
             gameOverlay.render(guiGraphics, screenWidth, screenHeight);
         }else{
             dmOverlay.render(guiGraphics, screenWidth, screenHeight);
