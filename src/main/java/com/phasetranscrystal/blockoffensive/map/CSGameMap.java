@@ -67,7 +67,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 /**
@@ -208,17 +207,13 @@ public class CSGameMap extends CSMap{
     public int getNextRoundMinMoney(ServerTeam team){
         int defaultEconomy = 1400;
         int compensation = 500;
-        int compensationFactor = Math.min(4, getCompensationFactor(team) + 1);
+        int compensationFactor = Math.min(0, getCompensation(team).getFactor() - 2);
         // 计算失败补偿
         return defaultEconomy + compensation * compensationFactor;
     }
 
-    public int getCompensationFactor(ServerTeam team){
-        return team.getCapabilityMap().get(CompensationCapability.class).map(CompensationCapability::getCompensationFactor)
-                .orElseGet(()->{
-                    FPSMatch.LOGGER.error("CSGameMap {} Compensation fail to get : Capability : {}",this.getMapName(),team.getCapabilityMap().capabilitiesString());
-                    return 0;
-                });
+    public CompensationCapability getCompensation(ServerTeam team){
+        return team.getCapabilityMap().get(CompensationCapability.class).orElse(null);
     }
 
     /**
@@ -347,7 +342,9 @@ public class CSGameMap extends CSMap{
     private void initializeTeams(MapTeams mapTeams) {
         mapTeams.getNormalTeams().forEach(team -> {
             team.setScores(0);
-            setCompensationFactor(team, 0);
+            team.getCapabilityMap().get(CompensationCapability.class).ifPresentOrElse(cap->cap.setFactor(0),()->{
+                FPSMatch.LOGGER.error("CSGameMap {} Compensation fail set to {}",this.getMapName(), 0);
+            });
             // 重置队伍内所有玩家数据
             team.getPlayers().forEach((uuid, data) -> data.reset());
         });
@@ -399,12 +396,6 @@ public class CSGameMap extends CSMap{
             ShopCapability.setPlayerMoney(this, this.startMoney.get());
             ShopCapability.syncShopData(this);
         }
-    }
-
-    public void setCompensationFactor(ServerTeam team, int factor){
-        team.getCapabilityMap().get(CompensationCapability.class).ifPresentOrElse(cap->cap.setCompensationFactor(factor),()->{
-            FPSMatch.LOGGER.error("CSGameMap {} Compensation fail set to {}",this.getMapName(), factor);
-        });
     }
 
     public boolean canRestTime(){
@@ -614,7 +605,6 @@ public class CSGameMap extends CSMap{
      * 处理回合胜利逻辑
      * @param winnerTeam 获胜队伍
      * @param reason 胜利原因（如炸弹拆除/爆炸）
-     * @see #checkLoseStreaks(ServerTeam) 计算经济奖励
      * @see #checkMatchPoint() 检查赛点状态
      * @see MVPMusicManager MVP音乐播放逻辑
      */
@@ -752,20 +742,17 @@ public class CSGameMap extends CSMap{
     /**
      * 统一处理所有经济奖励（胜利方 + 失败方 + CT额外奖励）
      */
-    private void processEconomicRewards(@NotNull ServerTeam winnerTeam, @NotNull WinnerReason reason, @NotNull MapTeams mapTeams) {
-        List<ServerTeam> normalTeams = mapTeams.getNormalTeams();
-        List<ServerTeam> loserTeams = normalTeams.stream()
-                .filter(team -> !team.equals(winnerTeam))
-                .toList();
+    private void processEconomicRewards(@NotNull ServerTeam winTeam, @NotNull WinnerReason reason, @NotNull MapTeams mapTeams) {
+        List<ServerTeam> loseTeams = mapTeams.getNormalTeams(winTeam);
 
         // 检查连胜情况
-        checkLoseStreaks(winnerTeam);
+        checkLoseStreaks(winTeam,loseTeams);
 
         //胜利方经济奖励
-        processWinnerEconomicReward(winnerTeam, reason);
+        processWinnerEconomicReward(winTeam, reason);
 
         //失败方经济奖励
-        loserTeams.forEach(loserTeam -> processLoserEconomicReward(loserTeam, reason));
+        loseTeams.forEach(loserTeam -> processLoserEconomicReward(loserTeam, reason));
 
         //CT队伍额外奖励
         processCTTeamExtraReward();
@@ -774,8 +761,8 @@ public class CSGameMap extends CSMap{
     /**
      * 处理胜利方经济奖励
      */
-    private void processWinnerEconomicReward(@NotNull ServerTeam winnerTeam,WinnerReason reason) {
-        winnerTeam.getPlayerList().forEach(uuid -> {
+    private void processWinnerEconomicReward(@NotNull ServerTeam winTeam,WinnerReason reason) {
+        winTeam.getPlayerList().forEach(uuid -> {
             getShopDataSafely(uuid).ifPresent(shopData -> {
                 shopData.addMoney(reason.winMoney);
             });
@@ -790,7 +777,7 @@ public class CSGameMap extends CSMap{
      * 处理失败方经济奖励
      */
     private void processLoserEconomicReward(@NotNull ServerTeam loserTeam, @NotNull WinnerReason reason) {
-        int compensationFactor = getCompensationFactor(loserTeam);
+        int compensationFactor = getCompensation(loserTeam).getFactor();
         boolean isDefuseBonusApplicable = checkCanPlacingBombs(loserTeam.getFixedName())
                 && reason == WinnerReason.DEFUSE_BOMB;
 
@@ -829,7 +816,7 @@ public class CSGameMap extends CSMap{
 
         // 超时情况：仅给死亡玩家发放
         return loserTeam.getPlayerData(uuid)
-                .map(data -> !data.isLivingServer())
+                .map(data -> !data.isLivingOnServer())
                 .orElse(false); // 无玩家数据时不发放
     }
 
@@ -838,7 +825,7 @@ public class CSGameMap extends CSMap{
         ServerTeam ctTeam = getCT();
 
         long deadTCount = tTeam.getPlayersData().stream()
-                .filter(data -> data.isOnline() && !data.isLiving())
+                .filter(data -> !data.isLivingOnServer())
                 .count();
 
         int extraReward = (int) deadTCount * tDeathRewardPer.get();
@@ -853,21 +840,19 @@ public class CSGameMap extends CSMap{
             });
 
             // 发送团队奖励消息
-            ctTeam.sendMessage(Component.translatable(
-                    "blockoffensive.map.cs.reward.team",
-                    extraReward,
-                    deadTCount
-            ));
+            ctTeam.sendMessage(Component.translatable("blockoffensive.map.cs.reward.team", extraReward, deadTCount));
         });
     }
 
-    private void checkLoseStreaks(ServerTeam winnerTeam) {
-        this.getMapTeams().getNormalTeams().forEach(team -> {
-            if(team.equals(winnerTeam)){
-                this.setCompensationFactor(team,this.getCompensationFactor(team) + 1);
-            }else{
-                this.setCompensationFactor(team,this.getCompensationFactor(team) - 2);
-            }
+    private void checkLoseStreaks(ServerTeam winTeam, @NotNull List<ServerTeam> loseTeams) {
+        winTeam.getCapabilityMap().get(CompensationCapability.class).ifPresentOrElse(cap->{
+            cap.reduce(2);
+        },()->FPSMatch.LOGGER.error("Failed to reduce Compensation capability"));
+
+        loseTeams.forEach(team -> {
+            team.getCapabilityMap().get(CompensationCapability.class).ifPresentOrElse(cap->{
+                cap.add(1);
+            },()->FPSMatch.LOGGER.error("Failed to add Compensation capability"));
         });
     }
 
@@ -1340,6 +1325,7 @@ public class CSGameMap extends CSMap{
     @Override
     public void reset() {
         super.reset();
+        MapTeams mapTeams = this.getMapTeams();
         this.isOvertime = false;
         this.isWaitingOverTimeVote = false;
         this.overCount = 0;
@@ -1363,8 +1349,8 @@ public class CSGameMap extends CSMap{
         this.currentRoundTime = 0;
         this.currentPauseTime = 0;
         this.isKnifeSelected = false;
-        this.getMapTeams().getJoinedPlayers().forEach(data-> data.getPlayer().ifPresent(this::resetPlayerClientData));
-        this.getMapTeams().reset();
+        mapTeams.getJoinedPlayers().forEach(data-> data.getPlayer().ifPresent(this::resetPlayerClientData));
+        mapTeams.reset();
     }
 
     public boolean checkCanPlacingBombs(String team){

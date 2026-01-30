@@ -19,8 +19,6 @@
   "blockoffensive.death.message.headshot": "%1$s 使用 %3$s 爆头击杀 %2$s",
   "blockoffensive.kill.message.teammate": "击杀队友减少 %1$s 货币",
   "blockoffensive.kill.message.enemy": "击杀敌人奖励 %1$s 货币",
-  "blockoffensive.screen.scale.warm": "使用blockoffensive模组的商店前请检查 \n 设置->视频设置->界面尺寸是否为1~4之间，不能为自动",
-  "blockoffensive.screen.scale.warm.tips": "如果打开商店仍然显示异常可以尝试调整我的世界窗口大小，\n 并重新打开商店即可，后续可以恢复全屏或者其他尺寸",
   "blockoffensive.map.cs.team.switch": "攻防转换",
   "blockoffensive.item.c4.use.fail.notInArea": "你不在指定爆破区域内！",
   "blockoffensive.item.c4.use.fail": "你不能放置炸弹！",
@@ -28,7 +26,6 @@
   "blockoffensive.item.c4.use.fail.noMap": "你不能放置炸弹，因为你还没有加入爆破模式地图！",
   "blockoffensive.item.c4.use.fail.map.notStart": "你不能放置炸弹，因为游戏尚未开始！",
   "blockoffensive.item.c4.use.fail.team.notInTeam": "你不能放置炸弹，因为你还没有加入队伍！",
-  "blockoffensive.login.message.closeable": "上述信息可在blockoffensive Config中关闭",
   "item.blockoffensive.c4": "C4",
   "blockoffensive.map.cs.wip.fail": "这个功能尚未实现，请等待后续版本更新！",
   "blockoffensive.map.cs.pause.fail": "游戏尚未开始，或已用尽暂停次数，或已处于暂停状态！",
@@ -95,7 +92,6 @@
   "map.deathmatch.message.victory.head": "========== 比赛结果 ==========",
   "commands.blockoffensive.mvp.description": "添加MVP音乐给玩家",
   "map.cs.message.victory.message": "第%s名 | %s | 分数: %s | 杀/死/助: %s/%s/%s | 爆头率: %s | 伤害: %s",
-
   "blockoffensive.throwable.grenade.throw.message": "高爆手雷！",
   "blockoffensive.throwable.flash_bang.throw.message": "小心闪光震撼弹！",
   "blockoffensive.throwable.smoke.throw.message": "烟雾弹！",
@@ -103,7 +99,6 @@
   "blockoffensive.throwable.decoy.throw.message": "诱饵弹！",
   "blockoffensive.team_chat.title": "组队聊天",
   "key.blockoffensive.team_chat.desc": "打开组队聊天",
-
   "message.damage.hit": "命中",
   "message.damage.times": "次",
   "message.damage.damage": "伤害",

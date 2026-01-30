@@ -34,8 +34,6 @@ public class BOConfig {
     }
 
     public static class Common {
-        public final ForgeConfigSpec.BooleanValue showLogin;
-
         public final ForgeConfigSpec.DoubleValue teammateMuffledStepVolume;
         public final ForgeConfigSpec.DoubleValue teammateStepVolume;
         public final ForgeConfigSpec.DoubleValue enemyMuffledStepVolume;
@@ -55,12 +53,6 @@ public class BOConfig {
         public final ForgeConfigSpec.IntValue webServerPort;
 
         private Common(ForgeConfigSpec.Builder builder) {
-            builder.push("login");
-            {
-                showLogin = builder.comment("Show Login Message").define("showLoginMessage", true);
-            }
-            builder.pop();
-
             builder.push("step sound");
             {
                 teammateMuffledStepVolume = builder.comment("Teammate Muffled Step Volume").defineInRange("teammateMuffledStepVolume", 0.05D, 0, 10);
