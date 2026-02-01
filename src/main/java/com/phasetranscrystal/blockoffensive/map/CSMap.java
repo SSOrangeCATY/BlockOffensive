@@ -602,17 +602,19 @@ public abstract class CSMap extends BaseMap {
             return;
         }
 
-        if (!killerTeam.getFixedName().equals(deadTeam.getFixedName()) || punish){
+        if (!killerTeam.equals(deadTeam)){
             int reward = getRewardByItem(itemStack);
             ShopCapability.getPlayerShopData(this,attacker.getUUID()).ifPresent(shopData -> {
                 shopData.addMoney(reward);
                 attacker.displayClientMessage(Component.translatable("blockoffensive.kill.message.enemy",reward),false);
             });
         }else{
-            ShopCapability.getPlayerShopData(this,attacker.getUUID()).ifPresent(shopData -> {
-                shopData.reduceMoney(300);
-                attacker.displayClientMessage(Component.translatable("blockoffensive.kill.message.teammate",300),false);
-            });
+            if(punish){
+                ShopCapability.getPlayerShopData(this,attacker.getUUID()).ifPresent(shopData -> {
+                    shopData.reduceMoney(300);
+                    attacker.displayClientMessage(Component.translatable("blockoffensive.kill.message.teammate",300),false);
+                });
+            }
         }
     }
 

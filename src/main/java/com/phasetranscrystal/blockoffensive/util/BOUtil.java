@@ -1,14 +1,20 @@
 package com.phasetranscrystal.blockoffensive.util;
 
+import com.phasetranscrystal.blockoffensive.BOConfig;
+import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.map.team.capability.ColoredPlayerCapability;
 import com.phasetranscrystal.blockoffensive.net.DeathMessageS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
+import com.phasetranscrystal.blockoffensive.web.BOClientWebServer;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
+import com.phasetranscrystal.fpsmatch.common.client.data.FPSMClientGlobalData;
 import com.phasetranscrystal.fpsmatch.common.drop.ThrowableRegistry;
 import com.phasetranscrystal.fpsmatch.common.drop.ThrowableSubType;
+import com.phasetranscrystal.fpsmatch.common.packet.FPSMSoundPlayC2SPacket;
 import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
@@ -225,5 +231,20 @@ public class BOUtil {
         }
 
         return new DeathMessageS2CPacket(builder.build());
+    }
+
+    public static void buildGrenadeMessageAndSend(ItemStack itemStack) {
+        ThrowableType type = BOUtil.getThrowableType(itemStack.getItem());
+        FPSMClientGlobalData data = FPSMClient.getGlobalData();
+        if(type != ThrowableType.UNKNOWN && data.isInNormalTeam()){
+            data.getCurrentClientTeam().ifPresent(team->{
+                team.sendMessage(BOUtil.buildTeamChatMessage(type.getChat()));
+            });
+        }
+
+        SoundEvent sound = BOUtil.getVoiceByThrowType(ThrowableRegistry.getThrowableSubType(itemStack.getItem()));
+        if(sound != null){
+            FPSMatch.sendToServer(new FPSMSoundPlayC2SPacket(sound.getLocation(),true));
+        }
     }
 }

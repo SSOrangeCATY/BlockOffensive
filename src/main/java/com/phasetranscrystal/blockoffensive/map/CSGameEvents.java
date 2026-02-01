@@ -31,17 +31,24 @@ import java.util.Optional;
 public class CSGameEvents {
     @SubscribeEvent
     public static void onPlayerHurt(FPSMapEvent.PlayerEvent.HurtEvent event) {
-        if (event.getMap() instanceof CSDeathMatchMap dm){
+        BaseMap map = event.getMap();
+
+        if(!(map instanceof CSMap cs)) return;
+        boolean isTeammate = event.getMap().getAttackerFromDamageSource(event.getSource())
+                .map(attacker -> cs.getMapTeams().isSameTeam(event.getPlayer(), attacker))
+                .orElse(false);
+
+        if (cs instanceof CSDeathMatchMap dm){
             if(dm.isInSpawnProtection(event.getPlayer().getUUID())){
                 event.setCanceled(true);
             }else{
-               boolean isTeammate = event.getMap().getAttackerFromDamageSource(event.getSource())
-                       .map(attacker -> dm.getMapTeams().isSameTeam(event.getPlayer(), attacker))
-                       .orElse(false);
-
                if(dm.isTDM() && isTeammate){
                    event.setCanceled(true);
                }
+            }
+        }else{
+            if(cs.allowFriendlyFire()){
+                event.setAmount(event.getAmount() * 0.3F);
             }
         }
     }

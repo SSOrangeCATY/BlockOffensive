@@ -34,6 +34,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.MovementInputUpdateEvent;
+import net.minecraftforge.client.event.RenderNameTagEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -42,14 +43,23 @@ import net.minecraftforge.fml.common.Mod;
 public class BOClientEvent {
     @SubscribeEvent
     public static void onClientTickEvent(TickEvent.ClientTickEvent event) {
+        FPSMClientGlobalData data = FPSMClient.getGlobalData();
+        if(CSClientData.isStart && (!data.isInMap() || !data.isInGame())){
+            FPSMatch.pullGameInfo();
+        }
+
         Minecraft mc = Minecraft.getInstance();
         lockMove(mc);
 
-        pullMessage();
-
         checkOption(mc);
 
-        startWebServer();
+        if(BOConfig.common.webServerEnabled.get()){
+            if(!(!data.isInMap() || !data.isInGame()) && data.isSpectator()) {
+                BOClientWebServer.start();
+            }else {
+                BOClientWebServer.stop();
+            }
+        }
     }
 
     @SubscribeEvent
@@ -65,33 +75,7 @@ public class BOClientEvent {
 
     @SubscribeEvent
     public static void onFPSMatchThrowGrenade(FPSMThrowGrenadeEvent event){
-        buildGrenadeMessageAndSend(event.getItemStack());
-    }
-
-    public static void buildGrenadeMessageAndSend(ItemStack itemStack) {
-        ThrowableType type = BOUtil.getThrowableType(itemStack.getItem());
-        FPSMClientGlobalData data = FPSMClient.getGlobalData();
-        if(type != ThrowableType.UNKNOWN && data.isInNormalTeam()){
-            data.getCurrentClientTeam().ifPresent(team->{
-                team.sendMessage(BOUtil.buildTeamChatMessage(type.getChat()));
-            });
-        }
-
-        SoundEvent sound = BOUtil.getVoiceByThrowType(ThrowableRegistry.getThrowableSubType(itemStack.getItem()));
-        if(sound != null){
-            FPSMatch.sendToServer(new FPSMSoundPlayC2SPacket(sound.getLocation(),true));
-        }
-    }
-
-    public static void startWebServer(){
-        if(!BOConfig.common.webServerEnabled.get()) return;
-        FPSMClientGlobalData data = FPSMClient.getGlobalData();
-
-        if(!(!data.isInMap() || !data.isInGame()) && data.isSpectator()) {
-            BOClientWebServer.start();
-        }else {
-            BOClientWebServer.stop();
-        }
+        BOUtil.buildGrenadeMessageAndSend(event.getItemStack());
     }
 
     public static void checkOption(Minecraft mc){
@@ -101,13 +85,6 @@ public class BOClientEvent {
             mc.options.guiScale().set(OpenShopKey.getLastGuiScaleOption());
             mc.resizeDisplay();
             OpenShopKey.resetLastGuiScaleOption();
-        }
-    }
-
-    public static void pullMessage(){
-        FPSMClientGlobalData data = FPSMClient.getGlobalData();
-        if(CSClientData.isStart && (!data.isInMap() || !data.isInGame())){
-            FPSMatch.pullGameInfo();
         }
     }
     
