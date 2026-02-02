@@ -36,8 +36,10 @@ public final class DamagePosTracker {
         long now = System.nanoTime();
         LAST_TIME_NS.put(victim.getUUID(), now);
 
+        /*
         LOG.info("[KillCamS][Track] hurt victim='{}' at A(victimEye)=({},{},{})",
                 victim.getGameProfile().getName(), FPSMFormatUtil.fmt2(vEye.x), FPSMFormatUtil.fmt2(vEye.y), FPSMFormatUtil.fmt2(vEye.z));
+        */
     }
 
     /**
