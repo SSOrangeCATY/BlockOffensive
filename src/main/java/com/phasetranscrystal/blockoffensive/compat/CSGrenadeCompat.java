@@ -46,7 +46,7 @@ public class CSGrenadeCompat {
         if(BOClientEvent.isLocked()){
             event.setCanceled(true);
         }else{
-            BOClientEvent.buildGrenadeMessageAndSend(event.getItemStack());
+            BOUtil.buildGrenadeMessageAndSend(event.getItemStack());
         }
     }
 }

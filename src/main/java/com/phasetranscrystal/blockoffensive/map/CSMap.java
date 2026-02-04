@@ -79,7 +79,7 @@ public abstract class CSMap extends BaseMap {
     private static final Vector3f T_COLOR = new Vector3f(1, 0.75f, 0.25f);
     private static final Vector3f CT_COLOR = new Vector3f(0.25f, 0.55f, 1);
 
-    private final Map<String, Consumer<ServerPlayer>> commands = new ConcurrentHashMap<>();
+    private final Map<String, CSCommand> commands = new ConcurrentHashMap<>();
     protected final Setting<Boolean> autoStart = this.addSetting("autoStart", true);
     protected final Setting<Integer> autoStartTime = this.addSetting("autoStartTime", 6000);
     protected final Setting<Boolean> allowFriendlyFire = this.addSetting("allowFriendlyFire",false);
@@ -447,7 +447,7 @@ public abstract class CSMap extends BaseMap {
      * 切换两个队伍的阵营
      */
     public void switchTeams() {
-        MapTeams.switchAttackAndDefend(this, getT(), getCT());
+        this.getMapTeams().switchAttackAndDefend(this, getT(), getCT());
     }
 
     public final VoteObj getVote() {
@@ -466,15 +466,15 @@ public abstract class CSMap extends BaseMap {
         return this.ctTeam;
     }
 
-    public void registerCommand(String command, Consumer<ServerPlayer> consumer) {
-        commands.put(command, consumer);
+    public void registerCommand(String command, CSCommand handler) {
+        commands.put(command, handler);
     }
 
     public void handleChatCommand(String rawText,ServerPlayer player){
         String command = rawText.toLowerCase(Locale.US);
         commands.forEach((k,v)->{
             if (command.equals(k) && rawText.length() == k.length()){
-                v.accept(player);
+                v.run(player);
             }
         });
     }
@@ -851,5 +851,10 @@ public abstract class CSMap extends BaseMap {
         }else{
             return 300;
         }
+    }
+
+    @FunctionalInterface
+    public interface CSCommand{
+        void run(ServerPlayer player);
     }
 }

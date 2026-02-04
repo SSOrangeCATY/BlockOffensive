@@ -62,6 +62,7 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.scores.Team;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -164,6 +165,21 @@ public class CSGameMap extends CSMap{
         this.registerCommand("da", this::handleDisagreeCommand);
         this.registerCommand("d", this::handleDropKnifeCommand);
         this.registerCommand("drop", this::handleDropKnifeCommand);
+
+        if(!FMLEnvironment.production){
+            this.registerCommand("debug_1",(p)->{
+                getCT().setScores(winnerRound.get() - 2);
+                getT().setScores(winnerRound.get() - 1);
+            });
+
+            this.registerCommand("debug_2",(p)->{
+                this.switchTeams();
+            });
+
+            this.registerCommand("debug_3",(p)->{
+                p.displayClientMessage(Component.literal("team: " + this.getMapTeams().getTeamByPlayer(p).map(t->t.name).orElse("none")),false);
+            });
+        }
     }
 
     /**

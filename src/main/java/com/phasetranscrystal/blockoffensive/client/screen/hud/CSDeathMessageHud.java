@@ -148,7 +148,7 @@ public class CSDeathMessageHud{
             guiGraphics.fill(x + width - 1, y, x + width, y + height, 0xFFFF0000);
         }
 
-        boolean isSuicide = message.getDeadUUID().equals(message.getKillerUUID());
+        boolean isSuicide = message.getDeadUUID().equals(message.getKillerUUID()) || message.getWeapon().getItem() == BOItemRegister.C4.get();
 
         int currentX = x + 5;
         int rightPadding = x + width - 5;
@@ -158,7 +158,7 @@ public class CSDeathMessageHud{
             currentX += 14;
         }
 
-        MutableComponent component = message.getKiller().copy();
+        MutableComponent component = isSuicide ? message.getDead().copy() : message.getKiller().copy();
         if(!message.getAssistUUID().equals(message.getKillerUUID())){
             component.append(" + ");
             component.append(message.getAssist());
@@ -225,13 +225,13 @@ public class CSDeathMessageHud{
         Font font = minecraft.font;
         int width = 10;
 
-        boolean isSuicide = message.getDeadUUID().equals(message.getKillerUUID());
+        boolean isSuicide = message.getDeadUUID().equals(message.getKillerUUID()) || message.getWeapon().getItem() == BOItemRegister.C4.get();
 
         if (message.isBlinded()) {
             width += 14;
         }
 
-        MutableComponent killerComponent = message.getKiller().copy();
+        MutableComponent killerComponent = isSuicide ? message.getDead().copy() : message.getKiller().copy();
         if (!message.getAssistUUID().equals(message.getKillerUUID())) {
             killerComponent.append(" + ").append(message.getAssist());
         }

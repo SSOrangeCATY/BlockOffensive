@@ -170,8 +170,7 @@ public class CSGameEvents {
         event.setCanceled(true);
 
         if(event.getSource().is(ModDamageTypes.BULLETS_TAG)) return;
-
-        Optional<ServerPlayer> attackerOpt = event.getKiller();
+        Optional<ServerPlayer> attackerOpt = event.getAttacker();
         ItemStack deathItem = BOUtil.getDeathItemStack(attackerOpt.orElse(null), event.getSource());
         csMap.onPlayerDeathEvent(player, attackerOpt.orElse(player), deathItem, false,false,false);
     }
