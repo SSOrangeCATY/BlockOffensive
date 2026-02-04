@@ -78,6 +78,8 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
     mavenLocal()
+    mavenCentral()
+
     maven {
         name 'Curse Maven'
         url "https://www.cursemaven.com"
@@ -194,16 +196,4 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-}
-
-allprojects {
-    apply plugin: 'java'
-
-    configurations.all {
-        resolutionStrategy {
-            // 避免缓存冲突
-            cacheChangingModulesFor 0, 'seconds'
-            cacheDynamicVersionsFor 0, 'seconds'
-        }
-    }
 }
