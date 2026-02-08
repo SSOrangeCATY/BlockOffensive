@@ -74,7 +74,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public abstract class CSMap extends BaseMap {
+public abstract class CSMap extends BaseMap  {
 
     private static final Vector3f T_COLOR = new Vector3f(1, 0.75f, 0.25f);
     private static final Vector3f CT_COLOR = new Vector3f(0.25f, 0.55f, 1);
@@ -83,6 +83,7 @@ public abstract class CSMap extends BaseMap {
     protected final Setting<Boolean> autoStart = this.addSetting("autoStart", true);
     protected final Setting<Integer> autoStartTime = this.addSetting("autoStartTime", 6000);
     protected final Setting<Boolean> allowFriendlyFire = this.addSetting("allowFriendlyFire",false);
+    protected final Setting<Boolean> allowSpecAttach = this.addSetting("allowSpecAttach", true);
 
     private final Setting<Integer> ctLimit = this.addSetting("ctLimit",5);
     private final Setting<Integer> tLimit = this.addSetting("tLimit",5);
@@ -800,10 +801,12 @@ public abstract class CSMap extends BaseMap {
         if (isStart) {
             handleDeath(deadPlayer);
 
-            if (attacker != null
-                    && deadPlayer.isSpectator()
-                    && !attacker.getUUID().equals(deadPlayer.getUUID())) {
-                BOSpecManager.sendKillCamAndAttach(deadPlayer, attacker, deathItem);
+            if(allowSpecAttach.get()){
+                if (attacker != null
+                        && deadPlayer.isSpectator()
+                        && !attacker.getUUID().equals(deadPlayer.getUUID())) {
+                    BOSpecManager.sendKillCamAndAttach(deadPlayer, attacker, deathItem);
+                }
             }
 
             if (attacker == null) {
