@@ -34,9 +34,8 @@ public class CSGameEvents {
         BaseMap map = event.getMap();
 
         if(!(map instanceof CSMap cs)) return;
-        boolean isTeammate = event.getMap().getAttackerFromDamageSource(event.getSource())
-                .map(attacker -> cs.getMapTeams().isSameTeam(event.getPlayer(), attacker))
-                .orElse(false);
+        Optional<ServerPlayer> opt = event.getMap().getAttackerFromDamageSource(event.getSource());
+        boolean isTeammate = opt.map(attacker -> cs.getMapTeams().isSameTeam(event.getPlayer(), attacker)).orElse(false);
 
         if (cs instanceof CSDeathMatchMap dm){
             if(dm.isInSpawnProtection(event.getPlayer().getUUID())){
@@ -49,6 +48,9 @@ public class CSGameEvents {
         }else{
             if(cs.allowFriendlyFire()){
                 event.setAmount(event.getAmount() * 0.3F);
+                if(isTeammate){
+                    cs.handleTeammateAttack(opt.get(),event.getPlayer());
+                }
             }
         }
     }

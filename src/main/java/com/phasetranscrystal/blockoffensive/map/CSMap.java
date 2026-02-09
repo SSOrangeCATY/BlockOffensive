@@ -1,5 +1,6 @@
 package com.phasetranscrystal.blockoffensive.map;
 
+import com.mojang.datafixers.util.Pair;
 import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.client.data.WeaponData;
 import com.phasetranscrystal.blockoffensive.compat.CSGrenadeCompat;
@@ -71,7 +72,6 @@ import org.joml.Vector3f;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 public abstract class CSMap extends BaseMap  {
@@ -85,13 +85,19 @@ public abstract class CSMap extends BaseMap  {
     protected final Setting<Boolean> allowFriendlyFire = this.addSetting("allowFriendlyFire",false);
     protected final Setting<Boolean> allowSpecAttach = this.addSetting("allowSpecAttach", true);
 
-    private final Setting<Integer> ctLimit = this.addSetting("ctLimit",5);
-    private final Setting<Integer> tLimit = this.addSetting("tLimit",5);
+    protected final Setting<Integer> knifeKillEconomy = this.addSetting("knifeKillEconomy", 1500);
+    protected final Setting<Integer> smgKillEconomy = this.addSetting("smgKillEconomy", 600);
+    protected final Setting<Integer> sniperKillEconomy = this.addSetting("sniperKillEconomy", 100);
+    protected final Setting<Integer> shotgunKillEconomy = this.addSetting("shotgunKillEconomy", 900);
+    protected final Setting<Integer> defaultKillEconomy = this.addSetting("defaultKillEconomy", 300);
+
+    protected final Setting<Integer> ctLimit = this.addSetting("ctLimit",5);
+    protected final Setting<Integer> tLimit = this.addSetting("tLimit",5);
 
     private final ServerTeam ctTeam;
     private final ServerTeam tTeam;
 
-    private VoteObj voteObj;
+    protected VoteObj voteObj;
 
     private int autoStartTimer = 0;
     private boolean autoStartFirstMessageFlag = false;
@@ -115,13 +121,21 @@ public abstract class CSMap extends BaseMap  {
         super(serverLevel, mapName, areaData, capabilities);
         this.setup();
         this.loadConfig();
-        this.ctTeam = this.addTeam(TeamData.of("ct",ctLimit.get(), ctCapabilities));
+        this.ctTeam = this.addTeam(TeamData.of("ct",getCTLimit(), ctCapabilities));
         this.ctTeam.setColor(CT_COLOR);
         this.ctTeam.getPlayerTeam().setColor(ChatFormatting.BLUE);
 
-        this.tTeam = this.addTeam(TeamData.of("t",tLimit.get(), tCapabilities));
+        this.tTeam = this.addTeam(TeamData.of("t",getTLimit(), tCapabilities));
         this.tTeam.setColor(T_COLOR);
         this.tTeam.getPlayerTeam().setColor(ChatFormatting.YELLOW);
+    }
+
+    public int getCTLimit(){
+        return this.ctLimit.get();
+    }
+
+    public int getTLimit(){
+        return this.tLimit.get();
     }
 
     // Config
@@ -824,12 +838,12 @@ public abstract class CSMap extends BaseMap  {
 
     public int getRewardByItem(ItemStack itemStack){
         if(FPSMImpl.findLrtacticalMod() && LrtacticalCompat.isKnife(itemStack)){
-            return 1500;
+            return knifeKillEconomy.get();
         }else{
             if(itemStack.getItem() instanceof IGun iGun){
                 return gerRewardByGunId(iGun.getGunId(itemStack));
             }else{
-                return 300;
+                return defaultKillEconomy.get();
             }
         }
     }
@@ -839,21 +853,32 @@ public abstract class CSMap extends BaseMap  {
         if(optional.isPresent()){
             switch(optional.get()){
                 case SHOTGUN -> {
-                    return 900;
+                    return shotgunKillEconomy.get();
                 }
                 case SMG -> {
-                    return 600;
+                    return smgKillEconomy.get();
                 }
                 case SNIPER -> {
-                    return 100;
+                    return sniperKillEconomy.get();
                 }
                 default -> {
-                    return 300;
+                    return defaultKillEconomy.get();
                 }
             }
         }else{
-            return 300;
+            return defaultKillEconomy.get();
         }
+    }
+
+    public void handleTeammateAttack(ServerPlayer attacker, ServerPlayer hurt) {
+        MapTeams mapTeams = this.getMapTeams();
+        mapTeams.getPlayerTeamAndData(attacker).ifPresent(pair->{
+            ServerTeam team = pair.getFirst();
+            PlayerData data = pair.getSecond();
+            if(!data.isHurtTo(hurt.getUUID())){
+                team.sendMessage(Component.translatable("blockoffensive.hurt.message.teammate",attacker.getDisplayName()));
+            }
+        });
     }
 
     @FunctionalInterface

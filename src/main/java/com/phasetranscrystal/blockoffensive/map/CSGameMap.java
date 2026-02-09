@@ -205,9 +205,9 @@ public class CSGameMap extends CSMap{
         warmUpTime = this.addSetting("warmUpTime",1200);
         waitingTime = this.addSetting("waitingTime",300);
         roundTimeLimit = this.addSetting("roundTimeLimit",2300);
-        startMoney = this.addSetting("startMoney",800);
+        startMoney = this.addSetting("startEconomy",800);
         defaultLoserEconomy = this.addSetting("defaultLoserEconomy",1400);
-        defuseBonus = this.addSetting("defuseBonus",600);
+        defuseBonus = this.addSetting("defuseEconomy",600);
         compensationBase = this.addSetting("compensationBase",500);
         tDeathRewardPer = this.addSetting("tDeathRewardPer",50);
         closeShopTime = this.addSetting("closeShopTime",200);

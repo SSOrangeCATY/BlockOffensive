@@ -87,6 +87,8 @@ public class CSGameHud implements IHudRenderer {
     }
 
     public void addKill(DeathMessage deathMessage) {
+        if(BOImpl.isGD656KillIconLoaded()) return;
+
         if(killAnimator.isActive() || isStarted){
             killAnimator.addKill(deathMessage);
         }else{

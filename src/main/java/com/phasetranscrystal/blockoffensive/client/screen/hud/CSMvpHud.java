@@ -43,7 +43,6 @@ public class CSMvpHud {
     // 基础分辨率（用于缩放计算）
     private static final int BASE_WIDTH = 1920;
     private static final int BASE_HEIGHT = 1080;
-    private static final float MIN_SCALE = 0.5f;
 
     // UI尺寸配置（基础分辨率下）
     private static final int ROUND_BANNER_WIDTH = 400;
@@ -110,12 +109,8 @@ public class CSMvpHud {
      * 渲染MVP HUD（适配MC原生GUI缩放）
      */
     public void render(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
-        // 获取MC缩放后的GUI尺寸（核心适配点）
-        int scaledGuiWidth = minecraft.getWindow().getGuiScaledWidth();
-        int scaledGuiHeight = minecraft.getWindow().getGuiScaledHeight();
-
         if (isClosing) {
-            renderCloseAnimation(guiGraphics, scaledGuiWidth, scaledGuiHeight);
+            renderCloseAnimation(guiGraphics, screenWidth, screenHeight);
             return;
         }
 
@@ -123,15 +118,13 @@ public class CSMvpHud {
 
         long currentTime = System.currentTimeMillis();
         PoseStack pose = guiGraphics.pose();
-        // 计算适配缩放因子：结合MC原生GUI缩放 + 基础分辨率适配
-        float guiScale = (float) minecraft.getWindow().getGuiScale();
-        float scaleFactor = Math.max(guiScale * ((float) scaledGuiWidth / BASE_WIDTH), MIN_SCALE);
+        float scaleFactor = ((float) screenWidth / BASE_WIDTH);
 
         // 回合胜利横幅动画
         if (roundBannerStartTime != -1) {
             float bannerProgress = Math.min((currentTime - roundBannerStartTime) / (float) ROUND_BANNER_DURATION, 1f);
             renderRoundVictoryBanner(guiGraphics, pose, bannerProgress, scaleFactor,
-                    scaledGuiWidth, scaledGuiHeight, currentTime);
+                    screenWidth, screenHeight, currentTime);
 
             // 横幅动画完成后触发MVP面板动画
             if (bannerProgress >= 1f && mvpInfoStartTime == -1) {
@@ -143,7 +136,7 @@ public class CSMvpHud {
         // MVP信息面板动画
         if (mvpInfoStartTime != -1 && currentTime > mvpInfoStartTime && !currentPlayerName.getString().isEmpty()) {
             float mvpProgress = Math.min((currentTime - mvpInfoStartTime) / (float) MVP_PANEL_DURATION, 1f);
-            renderMVPInfoPanel(guiGraphics, pose, mvpProgress, scaleFactor, scaledGuiWidth, scaledGuiHeight, currentTime);
+            renderMVPInfoPanel(guiGraphics, pose, mvpProgress, scaleFactor, screenWidth, screenHeight, currentTime);
         }
     }
 
@@ -310,7 +303,6 @@ public class CSMvpHud {
         pose.pushPose();
         pose.translate(x, y, 0);
         pose.scale(scale, scale, 1f);
-        // 文本样式（粗体）已在Component中设置，直接渲染即可
         guiGraphics.drawString(font, text, 0, 0, color, false);
         pose.popPose();
     }
@@ -358,11 +350,8 @@ public class CSMvpHud {
     private void renderCloseAnimation(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
         long currentTime = System.currentTimeMillis();
         float progress = Math.min((currentTime - closeAnimationStartTime) / (float) CLOSING_ANIMATION_DURATION, 1f);
-        PoseStack pose = guiGraphics.pose();
 
-        // 使用MC原生GUI缩放因子
-        float guiScale = (float) minecraft.getWindow().getGuiScale();
-        float scaleFactor = Math.max(guiScale * ((float) screenWidth / BASE_WIDTH), MIN_SCALE);
+        float scaleFactor = ((float) screenWidth / BASE_WIDTH);
 
         // 颜色过渡（更快变白）
         int bgColor = lerpColor(0xAA000000, 0xFFFFFFFF, Math.min(progress * CLOSING_SPEED_FACTOR, 1f));
@@ -421,15 +410,6 @@ public class CSMvpHud {
                 rightEnd,
                 panelY + (int) (MVP_PANEL_HEIGHT * scaleFactor),
                 color);
-    }
-
-    /**
-     * 获取当前缩放因子（适配MC设置）
-     */
-    private float getCurrentScaleFactor() {
-        int scaledWidth = minecraft.getWindow().getGuiScaledWidth();
-        float guiScale = (float) minecraft.getWindow().getGuiScale();
-        return Math.max(guiScale * ((float) scaledWidth / BASE_WIDTH), MIN_SCALE);
     }
 
     /**

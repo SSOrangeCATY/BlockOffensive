@@ -104,5 +104,6 @@
   "message.damage.times": "times",
   "message.damage.damage": "damage",
   "message.damage.received": "Received",
-  "message.damage.remain": "Remaining"
+  "message.damage.remain": "Remaining",
+  "blockoffensive.hurt.message.teammate": "%s hurt a teammate"
 }
