@@ -179,6 +179,11 @@ public class CSGameMap extends CSMap{
             this.registerCommand("debug_3",(p)->{
                 p.displayClientMessage(Component.literal("team: " + this.getMapTeams().getTeamByPlayer(p).map(t->t.name).orElse("none")),false);
             });
+
+            this.registerCommand("debug_4",(p)->{
+                p.displayClientMessage(Component.literal("Victory Round: " + calculateRequiredScore()),false);
+                p.displayClientMessage(Component.literal("OverCount: " + overCount),false);
+            });
         }
     }
 
@@ -492,7 +497,7 @@ public class CSGameMap extends CSMap{
 
     public boolean checkWinnerTime(){
         if(this.isWaitingWinner && currentPauseTime < winnerWaitingTime.get()){
-            if(!isKnifeSelectingVote()) this.currentPauseTime++;
+            if(!isKnifeSelectingVote() && !isWaitingOverTimeVote) this.currentPauseTime++;
         }else{
             if(this.canRestTime()) currentPauseTime = 0;
         }
@@ -962,7 +967,7 @@ public class CSGameMap extends CSMap{
             return winner;
         }
 
-        return winner + ((this.overCount + 1) * this.overtimeRound.get()) + 1;
+        return winner + ((this.overCount + 1) * this.overtimeRound.get());
     }
 
     private void handleVictory(ServerTeam winnerTeam) {
@@ -1002,7 +1007,6 @@ public class CSGameMap extends CSMap{
     public void startOvertime() {
         this.isOvertime = true;
         this.isWaitingOverTimeVote = false;
-        this.isWaiting = true;
 
         this.getMapTeams().getNormalTeams().forEach(team-> {
             team.resetCapabilities();
@@ -1033,7 +1037,7 @@ public class CSGameMap extends CSMap{
         cleanupSpecificEntities();
         notifySpectatorsOfBombFuse();
 
-        boolean shouldSwitchTeams = handleOvertimeAndTeamSwitch(ctScore, tScore, mapTeams);
+        boolean shouldSwitchTeams = handleOvertimeAndTeamSwitch(ctScore, tScore);
 
         resetMapBaseState();
 
@@ -1073,7 +1077,7 @@ public class CSGameMap extends CSMap{
      * 处理加时赛投票与队伍切换逻辑
      * @return 是否需要切换队伍
      */
-    private boolean handleOvertimeAndTeamSwitch(int ctScore, int tScore, MapTeams mapTeams) {
+    private boolean handleOvertimeAndTeamSwitch(int ctScore, int tScore) {
         // 清空暂停计时（两个分支都需要）
         currentPauseTime = 0;
 
@@ -1103,7 +1107,7 @@ public class CSGameMap extends CSMap{
         // 检查是否触发加时赛：双方都达到触发分数
         if (ctScore == overtimeTriggerScore && tScore == overtimeTriggerScore) {
             startOvertimeSequence();
-            return false; // 不切换队伍，进入加时赛投票
+            return false;
         }
 
         // 计算当前总局数
@@ -1129,8 +1133,6 @@ public class CSGameMap extends CSMap{
         startOvertimeVote();
         setBombEntity(null);
         currentRoundTime = 0;
-        isPause = true;
-        // currentPauseTime = 0; 已在主方法开头设置
     }
 
     /**
@@ -1170,8 +1172,7 @@ public class CSGameMap extends CSMap{
      * 判断加时赛中是否需要换边
      */
     private boolean shouldSwitchTeamsInOvertime(int totalRoundsInOvertime, int overtimeRound) {
-        // 每overtimeRound局换一次边，且至少进行了一局加时赛
-        return totalRoundsInOvertime > 0 && totalRoundsInOvertime % overtimeRound == 0;
+        return totalRoundsInOvertime != 0 && totalRoundsInOvertime % overtimeRound == 0;
     }
 
     /**
@@ -1179,8 +1180,10 @@ public class CSGameMap extends CSMap{
      */
     private boolean shouldIncreaseOvertimeCount(int totalRoundsInOvertime, int overtimeRound,
                                                 int ctScore, int tScore, int maxNormalScore) {
-        // 只有在完成第一个加时赛段时才考虑增加计数
-        if (overCount == 0 && totalRoundsInOvertime != overtimeRound) {
+        // 只有在完成一个加时赛段时才考虑增加计数
+        int currentOverTimeRound = totalRoundsInOvertime - overCount * overtimeRound;
+
+        if(currentOverTimeRound != overtimeRound * 2){
             return false;
         }
 

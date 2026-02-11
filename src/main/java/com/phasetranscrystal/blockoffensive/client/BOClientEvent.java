@@ -25,6 +25,7 @@ import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.util.InputExtraCheck;
 import icyllis.modernui.mc.MuiScreen;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.Options;
 import net.minecraft.client.player.Input;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -111,10 +112,12 @@ public class BOClientEvent {
 
 
     @SubscribeEvent
-    public static void onUse(InputEvent.MouseButton.Pre event){
-        if((CSClientData.isWaiting || CSClientData.isPause) && InputExtraCheck.isInGame()){
+    public static void onInput(InputEvent.MouseButton.Pre event){
+        if(isLocked() && InputExtraCheck.isInGame()){
             if(checkLocalPlayerHand()){
-                event.setCanceled(true);
+                if(event.getAction() == 1){
+                    event.setCanceled(true);
+                }
             }
         }
     }
