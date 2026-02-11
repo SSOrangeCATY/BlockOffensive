@@ -122,7 +122,7 @@ dependencies {
         exclude group: "it.unimi.dsi", module: "fastutil"
     }
 
-    additionalRuntimeClasspath(modCompileOnly('org.apache.commons:commons-math3:3.6.1'))
+    modCompileOnly('org.apache.commons:commons-math3:3.6.1');
 
     compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.5.3"))
     implementation(jarJar("io.github.llamalad7:mixinextras-forge:0.5.3"))
