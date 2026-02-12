@@ -19,6 +19,7 @@ import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import me.xjqsh.lrtactical.entity.ThrowableItemEntity;
@@ -32,8 +33,11 @@ import net.minecraft.network.chat.TextColor;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
@@ -91,6 +95,7 @@ public class BOUtil {
         }
     }
 
+    @OnlyIn(Dist.CLIENT)
     public static MutableComponent buildTeamChatMessage(MutableComponent message) {
         return buildTeamChatMessage(message, Component.empty());
     }
@@ -110,6 +115,32 @@ public class BOUtil {
                .orElse(RenderUtil.WHITE);
     }
 
+    public static MutableComponent buildTeamChatMessage(Player player, BaseTeam team, MutableComponent message, MutableComponent location, TextColor textColor){
+        if (player == null) return message;
+
+        MutableComponent head = Component.literal("[" + team.name.toUpperCase(Locale.US) + "]")
+                .withStyle(Style.EMPTY.withColor(textColor));
+
+        MutableComponent teamColor = Component.literal(" ● ");
+
+        team.getCapabilityMap().get(ColoredPlayerCapability.class).ifPresent(cap -> {
+            TeamPlayerColor c = cap.getColor(player.getUUID());
+            if (c != null) {
+                teamColor.withStyle(Style.EMPTY.withColor(TextColor.parseColor(c.getHex())));
+            }
+        });
+
+        MutableComponent playerName = ((MutableComponent) player.getName()).withStyle(Style.EMPTY.withColor(textColor));
+
+        return head.append(teamColor)
+                .append(playerName)
+                .append(location.withStyle(ChatFormatting.GREEN))
+                .append(Component.literal(":"))
+                .append(message)
+                .withStyle(ChatFormatting.BOLD);
+    }
+
+    @OnlyIn(Dist.CLIENT)
     public static MutableComponent buildTeamChatMessage(MutableComponent message, MutableComponent location) {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null) return message;

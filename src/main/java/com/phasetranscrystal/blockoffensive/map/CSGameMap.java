@@ -172,13 +172,9 @@ public class CSGameMap extends CSMap{
                 getT().setScores(winnerRound.get() - 1);
             });
 
-            this.registerCommand("debug_2",(p)->{
-                this.switchTeams();
-            });
+            this.registerCommand("debug_2",(p)-> this.switchTeams());
 
-            this.registerCommand("debug_3",(p)->{
-                p.displayClientMessage(Component.literal("team: " + this.getMapTeams().getTeamByPlayer(p).map(t->t.name).orElse("none")),false);
-            });
+            this.registerCommand("debug_3",(p)-> p.displayClientMessage(Component.literal("team: " + this.getMapTeams().getTeamByPlayer(p).map(t->t.name).orElse("none")),false));
 
             this.registerCommand("debug_4",(p)->{
                 p.displayClientMessage(Component.literal("Victory Round: " + calculateRequiredScore()),false);
@@ -195,9 +191,7 @@ public class CSGameMap extends CSMap{
     @Override
     public ServerTeam addTeam(TeamData data){
         ServerTeam team = super.addTeam(data);
-        CapabilityMap.getTeamCapability(this,ShopCapability.class).forEach((t,opt)->{
-                opt.ifPresent(cap -> cap.initialize("cs",startMoney.get()));
-        });
+        CapabilityMap.getTeamCapability(this,ShopCapability.class).forEach((t,opt)-> opt.ifPresent(cap -> cap.initialize("cs",startMoney.get())));
         return team;
     }
 
@@ -364,15 +358,9 @@ public class CSGameMap extends CSMap{
         mapTeams.getNormalTeams().forEach(team -> {
             team.setScores(0);
             CapabilityMap<BaseTeam, TeamCapability> map = team.getCapabilityMap();
-            map.get(CompensationCapability.class).ifPresentOrElse(cap->cap.setFactor(0),()->{
-                FPSMatch.LOGGER.error("CSGameMap {} Compensation fail set to {}",this.getMapName(), 0);
-            });
+            map.get(CompensationCapability.class).ifPresentOrElse(cap->cap.setFactor(0),()-> FPSMatch.LOGGER.error("CSGameMap {} Compensation fail set to {}",this.getMapName(), 0));
             int money = startMoney.get();
-            map.get(ShopCapability.class).ifPresentOrElse(cap->{
-                cap.setStartMoney(money);
-            },()->{
-                FPSMatch.LOGGER.error("CSGameMap {} {} Shop fail set start money {}",this.getMapName(),team.name, money);
-            });
+            map.get(ShopCapability.class).ifPresentOrElse(cap-> cap.setStartMoney(money),()-> FPSMatch.LOGGER.error("CSGameMap {} {} Shop fail set start money {}",this.getMapName(),team.name, money));
             // 重置队伍内所有玩家数据
             team.getPlayers().forEach((uuid, data) -> data.reset());
         });
@@ -791,9 +779,7 @@ public class CSGameMap extends CSMap{
      */
     private void processWinnerEconomicReward(@NotNull ServerTeam winTeam,WinnerReason reason) {
         winTeam.getPlayerList().forEach(uuid -> {
-            getShopDataSafely(uuid).ifPresent(shopData -> {
-                shopData.addMoney(reason.winMoney);
-            });
+            ShopCapability.getShop(winTeam).ifPresent(shop -> shop.addMoney(uuid,reason.winMoney));
 
             getPlayerByUUID(uuid).ifPresent(player ->
                     sendMoneyRewardMessage(player, reason.winMoney, reason.name())
@@ -821,10 +807,7 @@ public class CSGameMap extends CSMap{
             int finalReward = shouldGiveCompensation ? totalLossCompensation : 0;
             String finalDesc = shouldGiveCompensation ? rewardDesc : "timeout living";
 
-            // 更新商店数据
-            getShopDataSafely(uuid).ifPresent(shopData -> {
-                shopData.addMoney(finalReward);
-            });
+            ShopCapability.getShop(loserTeam).ifPresent(shop -> shop.addMoney(uuid,finalReward));
 
             // 发送奖励消息
             getPlayerByUUID(uuid).ifPresent(player ->
@@ -862,10 +845,7 @@ public class CSGameMap extends CSMap{
         }
 
         ctTeam.getPlayerList().forEach(uuid -> {
-            // 更新商店数据
-            getShopDataSafely(uuid).ifPresent(shopData -> {
-                shopData.addMoney(extraReward);
-            });
+            ShopCapability.getShop(ctTeam).ifPresent(shop -> shop.addMoney(uuid,extraReward));
 
             // 发送团队奖励消息
             ctTeam.sendMessage(Component.translatable("blockoffensive.map.cs.reward.team", extraReward, deadTCount));
@@ -873,15 +853,9 @@ public class CSGameMap extends CSMap{
     }
 
     private void checkLoseStreaks(ServerTeam winTeam, @NotNull List<ServerTeam> loseTeams) {
-        winTeam.getCapabilityMap().get(CompensationCapability.class).ifPresentOrElse(cap->{
-            cap.reduce(2);
-        },()->FPSMatch.LOGGER.error("Failed to reduce Compensation capability"));
+        winTeam.getCapabilityMap().get(CompensationCapability.class).ifPresentOrElse(cap-> cap.reduce(2),()->FPSMatch.LOGGER.error("Failed to reduce Compensation capability"));
 
-        loseTeams.forEach(team -> {
-            team.getCapabilityMap().get(CompensationCapability.class).ifPresentOrElse(cap->{
-                cap.add(1);
-            },()->FPSMatch.LOGGER.error("Failed to add Compensation capability"));
-        });
+        loseTeams.forEach(team -> team.getCapabilityMap().get(CompensationCapability.class).ifPresentOrElse(cap-> cap.add(1),()->FPSMatch.LOGGER.error("Failed to add Compensation capability")));
     }
 
     public void startNewRound() {
@@ -1018,9 +992,7 @@ public class CSGameMap extends CSMap{
         this.getMapTeams().getNormalTeams().forEach(team-> {
             team.resetCapabilities();
 
-            team.getPlayers().forEach((uuid, playerData) -> {
-                playerData.setLiving(false);
-            });
+            team.getPlayers().forEach((uuid, playerData) -> playerData.setLiving(false));
 
             team.getCapabilityMap().get(ShopCapability.class)
                     .flatMap(ShopCapability::getShopSafe).ifPresent(shop -> {
@@ -1357,15 +1329,6 @@ public class CSGameMap extends CSMap{
         this.overCount = 0;
         this.isShopLocked = false;
         this.roundStarted = false;
-        this.cleanupMap();
-        this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> this.getPlayerByUUID(uuid).ifPresent(player->{
-            this.getServerLevel().getServer().getScoreboard().removePlayerFromTeam(player.getScoreboardName());
-            player.getInventory().clearContent();
-            player.removeAllEffects();
-        })));
-        this.teleportPlayerToMatchEndPoint();
-        this.sendPacketToAllPlayer(new FPSMatchStatsResetS2CPacket());
-        this.isShopLocked = false;
         this.isError = false;
         this.isStart = false;
         this.isWaiting = false;
@@ -1461,9 +1424,7 @@ public class CSGameMap extends CSMap{
             MapTeams teams = this.getMapTeams();
             teams.getTeamByPlayer(dead).ifPresent(deadPlayerTeam -> {
                 CapabilityMap.getTeamCapability(deadPlayerTeam, ShopCapability.class)
-                        .flatMap(ShopCapability::getShopSafe).ifPresent(shop -> {
-                            shop.getDefaultAndPutData(dead.getUUID());
-                        });
+                        .flatMap(ShopCapability::getShopSafe).ifPresent(shop -> shop.getDefaultAndPutData(dead.getUUID()));
 
                 this.sendPacketToJoinedPlayer(dead, new ShopStatesS2CPacket(false, 0, 0), true);
                 // 清除c4,并掉落c4

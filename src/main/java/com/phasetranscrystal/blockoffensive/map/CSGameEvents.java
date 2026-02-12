@@ -68,9 +68,7 @@ public class CSGameEvents {
                             return dm;
                         }
                         return null;
-                    }).ifPresent(dm->{
-                        dm.handlePlayerFire(player.getUUID());
-                    });
+                    }).ifPresent(dm-> dm.handlePlayerFire(player.getUUID()));
         }
     }
 

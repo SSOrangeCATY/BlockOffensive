@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.blockoffensive.map.CSGameMap;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
+import com.phasetranscrystal.blockoffensive.util.BOUtil;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.capability.team.ShopCapability;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMSoundPlayS2CPacket;
@@ -17,6 +18,7 @@ import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
@@ -150,6 +152,7 @@ public class CompositionC4 extends Item implements BlastBombItem {
 		if (canPlace && inBombArea) {
 			player.startUsingItem(hand);
 			playClickSound(level, player, team);
+			team.sendMessage(BOUtil.buildTeamChatMessage(player,team,Component.translatable("blockoffensive.place.message.c4"),Component.empty(), TextColor.parseColor(team.name.equals("ct") ? "#96C8FA" : "#EAC055")));
 			return InteractionResultHolder.consume(stack);
 		}
 

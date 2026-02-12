@@ -593,7 +593,7 @@ public abstract class CSMap extends BaseMap  {
         return allSpawnPoints;
     }
 
-    public void giveEco(ServerPlayer player, Player attacker, ItemStack itemStack, boolean punish) {
+    public void giveEco(ServerPlayer player, ServerPlayer attacker, ItemStack itemStack, boolean punish) {
         if(!canGiveEconomy()) return;
         if(itemStack.getItem() == BOItemRegister.C4.get()) return;
 
@@ -619,14 +619,14 @@ public abstract class CSMap extends BaseMap  {
 
         if (!killerTeam.equals(deadTeam)){
             int reward = getRewardByItem(itemStack);
-            ShopCapability.getPlayerShopData(this,attacker.getUUID()).ifPresent(shopData -> {
-                shopData.addMoney(reward);
+            ShopCapability.getShopByPlayer(attacker).ifPresent(shopData -> {
+                shopData.addMoney(attacker,reward);
                 attacker.displayClientMessage(Component.translatable("blockoffensive.kill.message.enemy",reward),false);
             });
         }else{
             if(punish){
-                ShopCapability.getPlayerShopData(this,attacker.getUUID()).ifPresent(shopData -> {
-                    shopData.reduceMoney(300);
+                ShopCapability.getShopByPlayer(attacker).ifPresent(shopData -> {
+                    shopData.reduceMoney(attacker,300);
                     attacker.displayClientMessage(Component.translatable("blockoffensive.kill.message.teammate",300),false);
                 });
             }
@@ -656,13 +656,6 @@ public abstract class CSMap extends BaseMap  {
                     }
                     FPSMUtil.sortPlayerInventory(player);
                 }))));
-    }
-
-    /**
-     * 安全获取玩家商店数据
-     */
-    public Optional<ShopData<?>> getShopDataSafely(UUID playerUuid) {
-        return ShopCapability.getPlayerShopData(this, playerUuid);
     }
 
     public abstract void givePlayerKits(ServerPlayer player);
@@ -800,6 +793,19 @@ public abstract class CSMap extends BaseMap  {
 
         CSGameWeaponDataS2CPacket weaponDataS2CPacket = new CSGameWeaponDataS2CPacket(weaponDataMap);
         this.sendPacketToSpecPlayer(weaponDataS2CPacket);
+    }
+
+    @Override
+    public void reset() {
+        super.reset();
+        this.cleanupMap();
+        this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> this.getPlayerByUUID(uuid).ifPresent(player->{
+            this.getServerLevel().getServer().getScoreboard().removePlayerFromTeam(player.getScoreboardName());
+            player.getInventory().clearContent();
+            player.removeAllEffects();
+        })));
+        this.teleportPlayerToMatchEndPoint();
+        this.sendPacketToAllPlayer(new FPSMatchStatsResetS2CPacket());
     }
 
     @Override

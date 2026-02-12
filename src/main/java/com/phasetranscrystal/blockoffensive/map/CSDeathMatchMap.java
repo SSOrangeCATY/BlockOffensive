@@ -107,9 +107,7 @@ public class CSDeathMatchMap extends CSMap {
     @Override
     public ServerTeam addTeam(TeamData data){
         ServerTeam team = super.addTeam(data);
-        CapabilityMap.getTeamCapability(this,ShopCapability.class).forEach((t,opt)->{
-            opt.ifPresent(cap -> cap.initialize("cs",16000));
-        });
+        CapabilityMap.getTeamCapability(this,ShopCapability.class).forEach((t,opt)-> opt.ifPresent(cap -> cap.initialize("cs",16000)));
         return team;
     }
     
@@ -185,14 +183,6 @@ public class CSDeathMatchMap extends CSMap {
     @Override
     public void reset(){
         super.reset();
-        this.cleanupMap();
-        this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> this.getPlayerByUUID(uuid).ifPresent(player->{
-            this.getServerLevel().getServer().getScoreboard().removePlayerFromTeam(player.getScoreboardName());
-            player.getInventory().clearContent();
-            player.removeAllEffects();
-        })));
-        this.teleportPlayerToMatchEndPoint();
-        this.sendPacketToAllPlayer(new FPSMatchStatsResetS2CPacket());
         this.isError = false;
         this.isStart = false;
         this.currentMatchTime = 0;
@@ -368,9 +358,7 @@ public class CSDeathMatchMap extends CSMap {
         spawnPoints.clear();
         for (ServerTeam team : this.getMapTeams().getNormalTeams()) {
             Optional<SpawnPointCapability> spawnCapOpt = team.getCapabilityMap().get(SpawnPointCapability.class);
-            spawnCapOpt.ifPresent(cap -> {
-                spawnPoints.addAll(cap.getSpawnPointsData());
-            });
+            spawnCapOpt.ifPresent(cap -> spawnPoints.addAll(cap.getSpawnPointsData()));
         }
 
         if(spawnPoints.isEmpty()) return false;

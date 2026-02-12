@@ -105,6 +105,6 @@
   "message.damage.received": "被击中",
   "message.damage.remain": "剩",
   "blockoffensive.kill.message.suicide": "你因为 %s 的自杀得到了 %s 补偿",
-  "blockoffensive.hurt.message.teammate": "%s 伤害了一名队友"
-
+  "blockoffensive.hurt.message.teammate": "%s 伤害了一名队友",
+  "blockoffensive.place.message.c4" : "正在安放炸弹"
 }
