@@ -51,6 +51,8 @@ public class CSGameEvents {
                 if(isTeammate){
                     cs.handleTeammateAttack(opt.get(),event.getPlayer());
                 }
+            }else{
+                event.setCanceled(true);
             }
         }
     }

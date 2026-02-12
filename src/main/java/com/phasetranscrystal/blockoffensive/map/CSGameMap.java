@@ -363,8 +363,15 @@ public class CSGameMap extends CSMap{
     private void initializeTeams(MapTeams mapTeams) {
         mapTeams.getNormalTeams().forEach(team -> {
             team.setScores(0);
-            team.getCapabilityMap().get(CompensationCapability.class).ifPresentOrElse(cap->cap.setFactor(0),()->{
+            CapabilityMap<BaseTeam, TeamCapability> map = team.getCapabilityMap();
+            map.get(CompensationCapability.class).ifPresentOrElse(cap->cap.setFactor(0),()->{
                 FPSMatch.LOGGER.error("CSGameMap {} Compensation fail set to {}",this.getMapName(), 0);
+            });
+            int money = startMoney.get();
+            map.get(ShopCapability.class).ifPresentOrElse(cap->{
+                cap.setStartMoney(money);
+            },()->{
+                FPSMatch.LOGGER.error("CSGameMap {} {} Shop fail set start money {}",this.getMapName(),team.name, money);
             });
             // 重置队伍内所有玩家数据
             team.getPlayers().forEach((uuid, data) -> data.reset());
