@@ -47,12 +47,14 @@ public class CSGameEvents {
             }
         }else{
             if(cs.allowFriendlyFire()){
-                event.setAmount(event.getAmount() * 0.3F);
                 if(isTeammate){
+                    event.setAmount(event.getAmount() * 0.3F);
                     cs.handleTeammateAttack(opt.get(),event.getPlayer());
                 }
             }else{
-                event.setCanceled(true);
+                if(isTeammate){
+                    event.setCanceled(true);
+                }
             }
         }
     }
