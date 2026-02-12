@@ -8,6 +8,7 @@ import com.phasetranscrystal.blockoffensive.net.bomb.BombActionS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombDemolitionProgressS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.spec.BombFuseS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
+import com.phasetranscrystal.blockoffensive.util.BOUtil;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.entity.BlastBombEntity;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
@@ -15,6 +16,8 @@ import com.phasetranscrystal.fpsmatch.core.map.BlastBombState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -320,6 +323,9 @@ public class CompositionC4Entity extends BlastBombEntity {
             if (player != null && checkDemolisher(player)) {
                 this.playDefusingSound();
                 this.demolisher = player;
+                map.getMapTeams().getTeamByPlayer(player).ifPresent(team->{
+                    team.sendMessage(BOUtil.buildTeamChatMessage(player,team, Component.translatable("blockoffensive.demolish.message.c4"),Component.empty(), TextColor.parseColor(team.name.equals("ct") ? "#96C8FA" : "#EAC055")));
+                });
             }
         }
     }

@@ -1,7 +1,7 @@
 package com.phasetranscrystal.blockoffensive.client.screen.hud;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.phasetranscrystal.blockoffensive.client.spec.SpechudAPI;
+import com.phasetranscrystal.blockoffensive.client.spec.SpecHudAPI;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.screen.texture.NamecardResolver;
@@ -384,7 +384,7 @@ public final class CSSpectatorHudOverlay {
             case "ct" -> TEAM_COLOR_CT;
             default -> TEAM_COLOR_DEFAULT;
         };
-        int stripeColor = SpechudAPI.style().stripeColor(lastTargetUuid, team, baseColor);
+        int stripeColor = SpecHudAPI.style().stripeColor(lastTargetUuid, team, baseColor);
 
         int mainColor = mulAlpha(stripeColor, alpha);
         int brightColor = mulAlpha(0xFFFFFFFF, alpha * 0.35f);
@@ -446,7 +446,7 @@ public final class CSSpectatorHudOverlay {
     private void renderPlayerName(GuiGraphics g, Minecraft mc, int leftX, int centerY, float alpha) {
         String playerName = lastTargetPlayer != null ? lastTargetPlayer.getScoreboardName() :
                 (lastTargetUuid != null ? lastTargetUuid.toString() : "-");
-        float nameScale = SpechudAPI.style().nameScale(1.5f);
+        float nameScale = SpecHudAPI.style().nameScale(1.5f);
         int lineHeight = mc.font.lineHeight;
         int scaledLineHeight = Math.round(lineHeight * nameScale);
         int textY = centerY - (scaledLineHeight + 2 * lineHeight + 8) / 2; // 8 = 2*gap
@@ -473,7 +473,7 @@ public final class CSSpectatorHudOverlay {
             }
         }
 
-        float nameScale = SpechudAPI.style().nameScale(1.5f);
+        float nameScale = SpecHudAPI.style().nameScale(1.5f);
         int lineHeight = mc.font.lineHeight;
         int scaledLineHeight = Math.round(lineHeight * nameScale);
         int gap = 4;

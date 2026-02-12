@@ -106,5 +106,6 @@
   "message.damage.received": "Received",
   "message.damage.remain": "Remaining",
   "blockoffensive.hurt.message.teammate": "%s hurt a teammate",
-  "blockoffensive.place.message.c4" : "I am placing the bomb"
+  "blockoffensive.place.message.c4" : "The bomb is being planted!",
+  "blockoffensive.demolish.message.c4": "Dismantling the bomb!"
 }
