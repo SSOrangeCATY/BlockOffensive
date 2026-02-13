@@ -8,6 +8,7 @@ import com.phasetranscrystal.blockoffensive.item.BombDisposalKit;
 import com.phasetranscrystal.blockoffensive.item.CompositionC4;
 import com.phasetranscrystal.blockoffensive.net.PxDeathCompatS2CPacket;
 import com.phasetranscrystal.blockoffensive.util.BOUtil;
+import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchRespawnS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.common.event.FPSMapEvent;
@@ -79,6 +80,7 @@ public class CSGameEvents {
             ServerPlayer player = event.getPlayer();
             CSMap.dropC4(player);
             player.getInventory().clearContent();
+            BulletproofArmorAttribute.removePlayer(player);
             event.setCanceled(true);
         }
     }

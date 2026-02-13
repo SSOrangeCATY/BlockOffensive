@@ -21,6 +21,7 @@ import com.phasetranscrystal.blockoffensive.net.spec.BombFuseS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
 import com.phasetranscrystal.blockoffensive.sound.MVPMusicManager;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
+import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
 import com.phasetranscrystal.fpsmatch.common.capability.map.DemolitionModeCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.map.GameEndTeleportCapability;
 import com.phasetranscrystal.fpsmatch.common.capability.team.*;
@@ -870,10 +871,12 @@ public class CSGameMap extends CSMap{
             this.cleanupMap();
             this.sendRoundDamageMessage();
             this.getMapTeams().startNewRound();
-            this.getMapTeams().getJoinedPlayers().forEach((data -> data.getPlayer().ifPresent(player->{
+            this.getMapTeams().getJoinedPlayers().forEach((data -> data.getPlayer().ifPresentOrElse(player->{
                 player.removeAllEffects();
                 player.addEffect(new MobEffectInstance(MobEffects.SATURATION,-1,2,false,false,false));
                 this.teleportPlayerToReSpawnPoint(player);
+            },()->{
+                BulletproofArmorAttribute.removePlayer(data.getOwner());
             })));
 
             if(knifeSelection.get() && !isKnifeSelected){
@@ -1338,7 +1341,10 @@ public class CSGameMap extends CSMap{
         this.currentRoundTime = 0;
         this.currentPauseTime = 0;
         this.isKnifeSelected = false;
-        mapTeams.getJoinedPlayers().forEach(data-> data.getPlayer().ifPresent(this::resetPlayerClientData));
+        mapTeams.getJoinedPlayers().forEach(data-> {
+            data.getPlayer().ifPresent(this::resetPlayerClientData);
+            BulletproofArmorAttribute.removePlayer(data.getOwner());
+        });
         mapTeams.reset();
     }
 

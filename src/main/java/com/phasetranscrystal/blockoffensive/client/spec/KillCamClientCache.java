@@ -6,7 +6,6 @@ import net.minecraft.world.phys.Vec3;
 import java.util.UUID;
 
 public final class KillCamClientCache {
-
     private static Vec3 killerPos;
     private static Vec3 victimPos;
 
