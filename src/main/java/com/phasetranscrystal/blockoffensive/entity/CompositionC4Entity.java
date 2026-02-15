@@ -14,6 +14,7 @@ import com.phasetranscrystal.fpsmatch.core.entity.BlastBombEntity;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.BlastBombState;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -35,6 +36,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Vector3f;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -205,6 +207,10 @@ public class CompositionC4Entity extends BlastBombEntity {
                     this.explode();
                 }
             }
+            if(i % 20 == 0){
+                if (i > 200) this.playBeepSound();
+                ((ServerLevel)this.level()).sendParticles(new DustParticleOptions(new Vector3f(1,0.1f,0.1f),1),this.getX(),this.getY() + 0.1,this.getZ(),1,0,0,0,1);
+            }
 
             if(i < 200){
                 if(i < 100){
@@ -213,10 +219,6 @@ public class CompositionC4Entity extends BlastBombEntity {
                         this.playBeepSound();
                     }
                 }else if( i % 10 == 0){
-                    this.playBeepSound();
-                }
-            } else{
-                if(i % 20 == 0){
                     this.playBeepSound();
                 }
             }

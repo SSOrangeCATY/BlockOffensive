@@ -1,20 +1,29 @@
 package com.phasetranscrystal.blockoffensive.spectator;
 
 import com.mojang.logging.LogUtils;
+import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.blockoffensive.net.spec.KillCamS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.spec.RequestKillCamFallbackC2SPacket;
 import com.phasetranscrystal.blockoffensive.net.spec.SwitchSpectateC2SPacket;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.spec.SpectateMode;
+import com.phasetranscrystal.fpsmatch.common.entity.MatchDropEntity;
 import com.phasetranscrystal.fpsmatch.common.packet.spec.SpectateModeS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
+import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
+import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.targeting.TargetingConditions;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -25,10 +34,7 @@ import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.phasetranscrystal.fpsmatch.util.FPSMFormatUtil.fmt2;
@@ -129,8 +135,6 @@ public final class BOSpecManager {
         boolean ok = forceAttachToNearestTeammate(sp);
         if (ok) {
             markAttach(sp);
-        } else {
-            // 没有可附身队友：仍保持 FREE
         }
     }
 
@@ -160,22 +164,43 @@ public final class BOSpecManager {
     private static boolean forceAttachToNearestTeammate(ServerPlayer sp) {
         Optional<BaseMap> mapOpt = FPSMCore.getInstance().getMapByPlayer(sp);
         if (mapOpt.isEmpty()) return false;
-        MapTeams teams = mapOpt.get().getMapTeams();
+        BaseMap map = mapOpt.get();
+        MapTeams teams = map.getMapTeams();
         if (teams == null) return false;
 
         var myTeamOpt = teams.getTeamByPlayer(sp.getUUID());
         if (myTeamOpt.isEmpty()) return false;
 
-        ServerPlayer tgt = teams.getJoinedPlayers().stream()
-                .map(pd -> pd.getPlayer().orElse(null))
-                .filter(p -> p != null && p != sp && p.isAlive() && !p.isSpectator())
-                .filter(p -> teams.getTeamByPlayer(p.getUUID()).orElse(null) == myTeamOpt.get())
-                .min(Comparator.comparingDouble(p -> p.distanceToSqr(sp)))
-                .orElse(null);
+        Entity tgt = getOtherEntity(teams,sp,map.mapArea.getAABB());
 
         if (tgt != null) {
             sp.setCamera(tgt);
             return true;
+        }
+        return false;
+    }
+
+    private static Entity getOtherEntity(MapTeams teams, ServerPlayer player, AABB aabb){
+        ServerLevel level = player.serverLevel();
+        Optional<ServerTeam> teamOpt = teams.getTeamByPlayer(player);
+        if (teamOpt.isEmpty()) return null;
+        ServerTeam team = teamOpt.get();
+        TargetingConditions conditions = TargetingConditions.forNonCombat().ignoreInvisibilityTesting().ignoreLineOfSight().selector(entity-> selector(entity, team));
+        List<Player> teammate = level.getNearbyPlayers(conditions,player,aabb);
+        if(!teammate.isEmpty()) return teammate.get(0);
+
+        List<CompositionC4Entity> c4 = level.getEntitiesOfClass(CompositionC4Entity.class,aabb);
+        if(!c4.isEmpty()) return c4.get(0);
+
+        List<MatchDropEntity> drops = level.getEntitiesOfClass(MatchDropEntity.class,aabb);
+        if(!drops.isEmpty()) return drops.get(0);
+
+        return null;
+    }
+
+    private static boolean selector(LivingEntity entity, ServerTeam team){
+        if(entity instanceof ServerPlayer player){
+            return team.getPlayerData(player.getUUID()).map(PlayerData::isLiving).orElse(false);
         }
         return false;
     }

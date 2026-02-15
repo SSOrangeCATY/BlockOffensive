@@ -30,7 +30,6 @@ public class BOCommandRegister {
                                 .executes(BOCommandRegister::handleMvp))));
         FPSMHelpManager.getInstance().registerCommandHelp("fpsm mvp", Component.translatable("commands.blockoffensive.mvp.description"));
         FPSMHelpManager.getInstance().registerCommandParameters("fpsm mvp", "*targets", "*sound");
-
     }
 
     private static int handleMvp(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {

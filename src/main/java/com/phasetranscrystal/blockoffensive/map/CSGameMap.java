@@ -20,6 +20,7 @@ import com.phasetranscrystal.blockoffensive.net.shop.ShopStatesS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.spec.BombFuseS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
 import com.phasetranscrystal.blockoffensive.sound.MVPMusicManager;
+import com.phasetranscrystal.blockoffensive.spectator.BOSpecManager;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
 import com.phasetranscrystal.fpsmatch.common.capability.map.DemolitionModeCapability;
@@ -147,6 +148,8 @@ public class CSGameMap extends CSMap{
         super(serverLevel,mapName,areaData, MAP_CAPABILITIES,TEAM_CAPABILITIES);
         this.registerCommands();
         CapabilityMap.getMapCapability(this, DemolitionModeCapability.class).ifPresent(cap -> cap.setDemolitionTeam(this.getT()));
+        this.getT().setEnableRounds(true);
+        this.getCT().setEnableRounds(true);
     }
 
     private CSGameMap(String mapName,AreaData areaData,ResourceLocation serverLevel, Map<String, JsonElement> capabilities, Map<String, CapabilityMap.Wrapper> teams) {
@@ -278,6 +281,9 @@ public class CSGameMap extends CSMap{
     @Override
     public void join(String teamName, ServerPlayer player) {
         super.join(teamName, player);
+        if(allowSpecAttach.get() && teamName.equals("spectator")){
+            BOSpecManager.requestAttachTeammate(player);
+        }
     }
 
     @Override
@@ -315,14 +321,13 @@ public class CSGameMap extends CSMap{
         }
 
         cleanupMap();
-        mapTeams.startNewRound();
-        mapTeams.resetLivingPlayers();
         initializeTeams(mapTeams);
 
         initializeAllJoinedPlayers(mapTeams);
 
         handleKnifeSelectionPhase();
 
+        mapTeams.startNewRound();
         syncNormalRoundStartMessage();
 
         return true;
@@ -411,7 +416,6 @@ public class CSGameMap extends CSMap{
         if (!isKnifeSelectionPhase) {
             this.giveBlastTeamBomb();
             ShopCapability.setPlayerMoney(this, this.startMoney.get());
-            ShopCapability.syncShopData(this);
         }
     }
 
@@ -645,9 +649,6 @@ public class CSGameMap extends CSMap{
         processRoundScoreAndOvertimeVote(winnerTeam, mapTeams);
 
         processEconomicRewards(winnerTeam, reason, mapTeams);
-
-        //同步商店金钱数据
-        ShopCapability.syncShopData(this);
     }
 
     /**
@@ -870,7 +871,6 @@ public class CSGameMap extends CSMap{
             this.roundStarted = false;
             this.cleanupMap();
             this.sendRoundDamageMessage();
-            this.getMapTeams().startNewRound();
             this.getMapTeams().getJoinedPlayers().forEach((data -> data.getPlayer().ifPresentOrElse(player->{
                 player.removeAllEffects();
                 player.addEffect(new MobEffectInstance(MobEffects.SATURATION,-1,2,false,false,false));
@@ -884,9 +884,9 @@ public class CSGameMap extends CSMap{
             }else {
                 syncShopInfo(true,getShopCloseTime());
                 this.giveBlastTeamBomb();
-                ShopCapability.syncShopData(this);
                 this.checkMatchPoint();
             }
+            this.getMapTeams().startNewRound();
             syncNormalRoundStartMessage();
         }
     }
@@ -1026,7 +1026,6 @@ public class CSGameMap extends CSMap{
         resetAllJoinedPlayersState(mapTeams, shouldSwitchTeams);
 
         knifeCache.clear();
-        ShopCapability.syncShopData(this);
 
         return true;
     }

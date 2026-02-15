@@ -16,11 +16,13 @@ import com.phasetranscrystal.fpsmatch.common.client.data.FPSMClientGlobalData;
 import com.phasetranscrystal.fpsmatch.common.client.event.FPSMClientResetEvent;
 import com.phasetranscrystal.fpsmatch.common.drop.ThrowableRegistry;
 import com.phasetranscrystal.fpsmatch.common.event.FPSMThrowGrenadeEvent;
+import com.phasetranscrystal.fpsmatch.common.event.RequestSpectatorOutlinesEvent;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMSoundPlayC2SPacket;
 import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
+import com.phasetranscrystal.fpsmatch.core.team.ClientTeam;
 import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.util.InputExtraCheck;
 import icyllis.modernui.mc.MuiScreen;
@@ -61,6 +63,11 @@ public class BOClientEvent {
                 BOClientWebServer.stop();
             }
         }
+    }
+
+    @SubscribeEvent
+    public static void onRequestSpectatorOutlinesEvent(RequestSpectatorOutlinesEvent event){
+        event.setCanceled(FPSMClient.getGlobalData().getCurrentClientTeam().map(ClientTeam::isNormal).orElse(false));
     }
 
     @SubscribeEvent

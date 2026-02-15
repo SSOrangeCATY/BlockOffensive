@@ -5,12 +5,20 @@ import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import com.phasetranscrystal.blockoffensive.client.renderer.ShopSlotRenderer;
 import com.phasetranscrystal.blockoffensive.map.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
+import com.phasetranscrystal.fpsmatch.common.client.music.FPSClientMusicManager;
 import com.phasetranscrystal.fpsmatch.common.client.shop.ClientShopSlot;
+import com.phasetranscrystal.fpsmatch.common.packet.FPSMSoundPlayC2SPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.ShopActionC2SPacket;
+import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
+import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
+import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopAction;
+import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import com.tacz.guns.api.TimelessAPI;
+import com.tacz.guns.api.item.GunTabType;
+import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.client.resource.GunDisplayInstance;
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.animation.ValueAnimator;
@@ -29,6 +37,7 @@ import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.RelativeLayout;
 import icyllis.modernui.widget.TextView;
 import net.minecraft.client.resources.language.I18n;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
@@ -221,7 +230,6 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback {
             RelativeLayout.LayoutParams moneyParams = (RelativeLayout.LayoutParams) moneyText.getLayoutParams();
             moneyParams.leftMargin = (int) (25 * scale);
             moneyText.setLayoutParams(moneyParams);
-
 
             // 设置自身尺寸
             setMeasuredDimension(width, height);
@@ -530,8 +538,24 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback {
             // 点击事件
             setOnClickListener((v) -> {
                 boolean enable = CSClientData.getMoney() >= currentSlot.cost() && !currentSlot.itemStack().isEmpty() && !currentSlot.isLocked();
-                if (enable)
+                if (enable){
                     NetworkPacketRegister.getChannelFromCache(ShopActionC2SPacket.class).sendToServer(new ShopActionC2SPacket(FPSMClient.getGlobalData().getCurrentMap(), this.type, this.index, ShopAction.BUY));
+                    ItemStack itemStack = currentSlot.itemStack();
+                    if (itemStack.getItem() instanceof IGun iGun) {
+                        Optional<GunTabType> t = FPSMUtil.getGunTypeByGunId(iGun.getGunId(itemStack));
+                        t.ifPresent(t1 -> {
+                            FPSClientMusicManager.playSound(FPSMSoundRegister.getGunDropSound(t1));
+                        });
+                    } else {
+                        SoundEvent sound;
+                        if(FPSMImpl.findLrtacticalMod() && LrtacticalCompat.isKnife(itemStack.getItem())){
+                            sound = FPSMSoundRegister.getKnifeDropSound();
+                        }else{
+                            sound = FPSMSoundRegister.getItemDropSound(itemStack.getItem());
+                        }
+                        FPSClientMusicManager.playSound(sound);
+                    }
+                }
             });
         }
 
