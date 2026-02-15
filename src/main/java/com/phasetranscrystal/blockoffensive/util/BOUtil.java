@@ -1,14 +1,11 @@
 package com.phasetranscrystal.blockoffensive.util;
 
-import com.phasetranscrystal.blockoffensive.BOConfig;
-import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.map.team.capability.ColoredPlayerCapability;
 import com.phasetranscrystal.blockoffensive.net.DeathMessageS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
-import com.phasetranscrystal.blockoffensive.web.BOClientWebServer;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.data.FPSMClientGlobalData;
@@ -121,7 +118,7 @@ public class BOUtil {
         MutableComponent head = Component.literal("[" + team.name.toUpperCase(Locale.US) + "]")
                 .withStyle(Style.EMPTY.withColor(textColor));
 
-        MutableComponent teamColor = Component.literal(" ● ");
+        MutableComponent teamColor = Component.literal(" • ");
 
         team.getCapabilityMap().get(ColoredPlayerCapability.class).ifPresent(cap -> {
             TeamPlayerColor c = cap.getColor(player.getUUID());
@@ -151,7 +148,7 @@ public class BOUtil {
             MutableComponent head = Component.literal("[" + team.name.toUpperCase(Locale.US) + "]")
                     .withStyle(Style.EMPTY.withColor(textColor));
 
-            MutableComponent teamColor = Component.literal(" ● ");
+            MutableComponent teamColor = Component.literal(" • ");
 
             team.getCapabilityMap().get(ColoredPlayerCapability.class).ifPresent(cap -> {
                 TeamPlayerColor c = cap.getColor(player.getUUID());

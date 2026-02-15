@@ -110,7 +110,6 @@ public class CSDeathMatchMap extends CSMap {
         CapabilityMap.getTeamCapability(this,ShopCapability.class).forEach((t,opt)-> opt.ifPresent(cap -> cap.initialize("cs",16000)));
         return team;
     }
-    
 
     @Override
     public String getGameType() {
@@ -127,7 +126,6 @@ public class CSDeathMatchMap extends CSMap {
             }
         });
     }
-
 
     @Override
     public void leave(ServerPlayer player){

@@ -209,7 +209,7 @@ public class CompositionC4Entity extends BlastBombEntity {
             }
             if(i % 20 == 0){
                 if (i > 200) this.playBeepSound();
-                ((ServerLevel)this.level()).sendParticles(new DustParticleOptions(new Vector3f(1,0.1f,0.1f),1),this.getX(),this.getY() + 0.1,this.getZ(),1,0,0,0,1);
+                ((ServerLevel)this.level()).sendParticles(new DustParticleOptions(new Vector3f(1,0.1f,0.1f),1),this.getX(),this.getY() + 0.25,this.getZ(),1,0,0,0,1);
             }
 
             if(i < 200){
