@@ -171,7 +171,7 @@ public final class BOSpecManager {
         var myTeamOpt = teams.getTeamByPlayer(sp.getUUID());
         if (myTeamOpt.isEmpty()) return false;
 
-        Entity tgt = getOtherEntity(teams,sp,map.mapArea.getAABB());
+        Entity tgt = getOtherEntity(teams,sp,map.mapArea.aabb());
 
         if (tgt != null) {
             sp.setCamera(tgt);

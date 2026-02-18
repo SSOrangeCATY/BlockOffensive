@@ -1445,7 +1445,7 @@ public class CSGameMap extends CSMap{
                 // 清除c4,并掉落c4
                 dropC4(dead);
                 // 清除玩家所属子弹
-                this.getServerLevel().getEntitiesOfClass(EntityKineticBullet.class, mapArea.getAABB())
+                this.getServerLevel().getEntitiesOfClass(EntityKineticBullet.class, mapArea.aabb())
                         .stream()
                         .filter(entityKineticBullet -> entityKineticBullet.getOwner() != null && entityKineticBullet.getOwner().getUUID().equals(dead.getUUID()))
                         .toList()

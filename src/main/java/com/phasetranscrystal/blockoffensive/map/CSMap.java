@@ -214,7 +214,7 @@ public abstract class CSMap extends BaseMap  {
      * 清理指定区域内的特定实体
      */
     public void cleanupSpecificEntities() {
-        getServerLevel().getEntitiesOfClass(Entity.class, getMapArea().getAABB())
+        getServerLevel().getEntitiesOfClass(Entity.class, getMapArea().aabb())
                 .stream()
                 .filter(this::shouldDiscardEntity)
                 .forEach(Entity::discard);
