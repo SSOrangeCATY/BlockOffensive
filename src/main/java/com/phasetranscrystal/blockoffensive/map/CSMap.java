@@ -139,7 +139,7 @@ public abstract class CSMap extends BaseMap  {
     public abstract void setup();
 
     //Shop
-    public abstract Function<ServerPlayer,Boolean> getPlayerCanOpenShop();
+    public abstract boolean getPlayerCanOpenShop(ShopCapability cap, ServerPlayer player);
     public abstract int getNextRoundMinMoney(ServerTeam team);
     public abstract int getShopCloseTime();
 
@@ -736,7 +736,16 @@ public abstract class CSMap extends BaseMap  {
     }
 
     public void syncShopInfo(){
-        this.getMapTeams().getNormalTeams().forEach(team -> team.getPlayers().values().forEach(data -> data.getPlayer().ifPresent(player -> syncShopInfo(team,player,getPlayerCanOpenShop().apply(player),getShopCloseTime()))));
+        for (ServerTeam team : this.getMapTeams().getNormalTeams()){
+            ShopCapability cap = team.getCapabilityMap().get(ShopCapability.class).orElse(null);
+            if(cap == null) continue;
+
+            for (PlayerData data : team.getPlayersData()){
+                data.getPlayer().ifPresent(player -> {
+                    syncShopInfo(team,player,getPlayerCanOpenShop(cap,player),getShopCloseTime());
+                });
+            }
+        }
     }
 
     public void syncShopInfo(boolean enable,int time){

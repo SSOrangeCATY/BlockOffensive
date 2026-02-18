@@ -2,6 +2,7 @@ package com.phasetranscrystal.blockoffensive.item;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
+import com.phasetranscrystal.blockoffensive.event.CSGameMapEvent;
 import com.phasetranscrystal.blockoffensive.map.CSGameMap;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
 import com.phasetranscrystal.blockoffensive.util.BOUtil;
@@ -35,6 +36,7 @@ import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -258,6 +260,10 @@ public class CompositionC4 extends Item implements BlastBombItem {
 		baseMap.getMapTeams().getJoinedPlayers().forEach(data ->
 				data.getPlayer().ifPresent(p -> p.displayClientMessage(message, true))
 		);
+
+		map.getMapTeams().getTeamByPlayer(player).ifPresent(team -> {
+			MinecraftForge.EVENT_BUS.post(new CSGameMapEvent.PlayerEvent.PlacedC4Event(map,team,player));
+		});
 
 		return ItemStack.EMPTY;
 	}

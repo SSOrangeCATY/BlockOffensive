@@ -62,8 +62,6 @@ public class MvpReason{
         this.extraInfo2 = extraInfo2;
     }
 
-
-
     public static class Builder{
         public final UUID uuid;
         MutableComponent teamName;

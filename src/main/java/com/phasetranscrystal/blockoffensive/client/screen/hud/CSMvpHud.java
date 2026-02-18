@@ -2,6 +2,7 @@ package com.phasetranscrystal.blockoffensive.client.screen.hud;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.phasetranscrystal.blockoffensive.data.MvpReason;
+import com.phasetranscrystal.blockoffensive.event.CSHUDRenderEvent;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -13,23 +14,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.level.GameType;
-import net.minecraft.world.scores.PlayerTeam;
+import net.minecraftforge.common.MinecraftForge;
 
-import java.util.Comparator;
-import java.util.Optional;
 import java.util.UUID;
 
 public class CSMvpHud {
-    // 修正Optionull拼写错误，使用标准Optional
-    private static final Comparator<PlayerInfo> PLAYER_COMPARATOR = Comparator.<PlayerInfo>comparingInt((p_253306_) -> {
-        return p_253306_.getGameMode() == GameType.SPECTATOR ? 1 : 0;
-    }).thenComparing((p_269613_) -> {
-        return Optional.ofNullable(p_269613_.getTeam()).map(PlayerTeam::getName).orElse("");
-    }).thenComparing((p_253305_) -> {
-        return p_253305_.getProfile().getName();
-    }, String::compareToIgnoreCase);
-
     private static final Minecraft minecraft = Minecraft.getInstance();
     private static final Font font = minecraft.font;
 
@@ -70,9 +59,9 @@ public class CSMvpHud {
     private Component mvpReason = Component.empty();
 
     public void triggerAnimation(MvpReason reason) {
+        MinecraftForge.EVENT_BUS.post(new CSHUDRenderEvent.RenderMvpHud.TriggeredAnimation(reason));
         this.player = reason.uuid;
-        // 所有文本添加粗体样式
-        this.currentTeamName = ((MutableComponent) reason.getTeamName())
+        this.currentTeamName = reason.getTeamName()
                 .append(Component.translatable("cs.game.winner.mvpNameSub"))
                 .withStyle(ChatFormatting.BOLD);
         this.currentPlayerName = reason.getPlayerName().withStyle(ChatFormatting.BOLD);
@@ -87,7 +76,6 @@ public class CSMvpHud {
         this.mvpColorTransitionStartTime = -1;
         this.animationPlaying = true;
 
-        // MVP音效播放（优化代码结构）
         boolean isCtTeam = reason.getTeamName().getString().equals("CT");
         if (minecraft.level != null && minecraft.player != null) {
             minecraft.level.playLocalSound(
@@ -116,6 +104,8 @@ public class CSMvpHud {
 
         if (!animationPlaying) return;
 
+        MinecraftForge.EVENT_BUS.post(new CSHUDRenderEvent.RenderMvpHud.Pre(guiGraphics,screenWidth,screenHeight,this));
+
         long currentTime = System.currentTimeMillis();
         PoseStack pose = guiGraphics.pose();
         float scaleFactor = ((float) screenWidth / BASE_WIDTH);
@@ -138,6 +128,8 @@ public class CSMvpHud {
             float mvpProgress = Math.min((currentTime - mvpInfoStartTime) / (float) MVP_PANEL_DURATION, 1f);
             renderMVPInfoPanel(guiGraphics, pose, mvpProgress, scaleFactor, screenWidth, screenHeight, currentTime);
         }
+
+        MinecraftForge.EVENT_BUS.post(new CSHUDRenderEvent.RenderMvpHud.Post(guiGraphics,screenWidth,screenHeight,this));
     }
 
     /**
@@ -420,6 +412,54 @@ public class CSMvpHud {
         CSGameHud.getInstance().stopKillAnim();
         isClosing = true;
         closeAnimationStartTime = System.currentTimeMillis();
+    }
+
+    public long getRoundBannerStartTime() {
+        return roundBannerStartTime;
+    }
+
+    public long getColorTransitionStartTime() {
+        return colorTransitionStartTime;
+    }
+
+    public long getMvpColorTransitionStartTime() {
+        return mvpColorTransitionStartTime;
+    }
+
+    public boolean isAnimationPlaying() {
+        return animationPlaying;
+    }
+
+    public long getCloseAnimationStartTime() {
+        return closeAnimationStartTime;
+    }
+
+    public boolean isClosing() {
+        return isClosing;
+    }
+
+    public Component getCurrentTeamName() {
+        return currentTeamName;
+    }
+
+    public Component getCurrentPlayerName() {
+        return currentPlayerName;
+    }
+
+    public UUID getPlayer() {
+        return player;
+    }
+
+    public Component getExtraInfo2() {
+        return extraInfo2;
+    }
+
+    public Component getExtraInfo1() {
+        return extraInfo1;
+    }
+
+    public Component getMvpReason() {
+        return mvpReason;
     }
 
     /**

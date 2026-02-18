@@ -88,7 +88,7 @@
   "blockoffensive.killed_by": "Killed by",
   "blockoffensive.tab.header.score": "得分",
   "blockoffensive.tab.header.kd": "K/D",
-  "map.cs.message.victory.head": "========== %s Victory ==========",
+  "map.cs.message.victory.head": "========== %s 胜利 ==========",
   "map.deathmatch.message.victory.head": "========== 比赛结果 ==========",
   "commands.blockoffensive.mvp.description": "添加MVP音乐给玩家",
   "map.cs.message.victory.message": "第%s名 | %s | 分数: %s | 杀/死/助: %s/%s/%s | 爆头率: %s | 伤害: %s",

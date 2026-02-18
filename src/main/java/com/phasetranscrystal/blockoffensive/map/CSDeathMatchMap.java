@@ -376,8 +376,8 @@ public class CSDeathMatchMap extends CSMap {
     }
     
     @Override
-    public Function<ServerPlayer, Boolean> getPlayerCanOpenShop() {
-        return player -> getDMPlayerData(player.getUUID()).map(DMPlayerData::isSpawning).orElse(false);
+    public boolean getPlayerCanOpenShop(ShopCapability cap, ServerPlayer player) {
+        return getDMPlayerData(player.getUUID()).map(DMPlayerData::isSpawning).orElse(false);
     }
     
     @Override

@@ -6,6 +6,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.data.MvpReason;
+import com.phasetranscrystal.blockoffensive.event.CSGameMapEvent;
 import com.phasetranscrystal.blockoffensive.event.CSGamePlayerGetMvpEvent;
 import com.phasetranscrystal.blockoffensive.event.CSGameRoundEndEvent;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
@@ -219,8 +220,8 @@ public class CSGameMap extends CSMap{
     }
 
     @Override
-    public Function<ServerPlayer, Boolean> getPlayerCanOpenShop() {
-        return player -> !isShopLocked;
+    public boolean getPlayerCanOpenShop(ShopCapability cap, ServerPlayer player) {
+        return !isShopLocked && cap.getShopSafe().map(shop->shop.isInArea(player)).orElse(false);
     }
 
     public int getNextRoundMinMoney(ServerTeam team){
@@ -1345,6 +1346,15 @@ public class CSGameMap extends CSMap{
             BulletproofArmorAttribute.removePlayer(data.getOwner());
         });
         mapTeams.reset();
+    }
+
+    /**
+     * 切换两个队伍的阵营
+     */
+    @Override
+    public void switchTeams() {
+        super.switchTeams();
+        MinecraftForge.EVENT_BUS.post(new CSGameMapEvent.TeamSwitchEvent(this));
     }
 
     public boolean checkCanPlacingBombs(String team){
