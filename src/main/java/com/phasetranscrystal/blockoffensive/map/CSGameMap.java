@@ -122,6 +122,11 @@ public class CSGameMap extends CSMap{
     private Setting<Boolean> knifeSelection;
     private Setting<Integer> c4InstantKillRadius;
 
+    private Setting<Integer> timeoutEconomy;
+    private Setting<Integer> aceEconomy;
+    private Setting<Integer> defuseBombEconomy;
+    private Setting<Integer> detonateBombEconomy;
+
     private int currentPauseTime = 0;
     private int currentRoundTime = 0;
     private boolean isError = false;
@@ -217,6 +222,10 @@ public class CSGameMap extends CSMap{
         closeShopTime = this.addSetting("closeShopTime",200);
         knifeSelection = this.addSetting("knifeSelection",false);
         c4InstantKillRadius = this.addSetting("c4InstantKillRadius",20);
+        timeoutEconomy = this.addSetting("timeoutEconomy",3250);
+        aceEconomy = this.addSetting("aceEconomy",3250);
+        defuseBombEconomy = this.addSetting("defuseBombEconomy",3500);
+        detonateBombEconomy = this.addSetting("detonateBombEconomy",3500);
     }
 
     @Override
@@ -647,7 +656,7 @@ public class CSGameMap extends CSMap{
         sendPacketToAllPlayer(new MvpMessageS2CPacket(mvpReason));
         MinecraftForge.EVENT_BUS.post(new CSGameRoundEndEvent(this, winnerTeam, reason));
 
-        processRoundScoreAndOvertimeVote(winnerTeam, mapTeams);
+        processRoundScoreAndOvertimeVote(winnerTeam);
 
         processEconomicRewards(winnerTeam, reason, mapTeams);
     }
@@ -739,20 +748,12 @@ public class CSGameMap extends CSMap{
     /**
      * 处理比分更新和加时投票逻辑
      */
-    private void processRoundScoreAndOvertimeVote(@NotNull ServerTeam winnerTeam, @NotNull MapTeams mapTeams) {
-        int currentScore = winnerTeam.getScores();
-        int newScore = currentScore + 1;
+    private void processRoundScoreAndOvertimeVote(@NotNull ServerTeam winnerTeam) {
         int targetForOvertime = winnerRound.get() - 1;
-        winnerTeam.setScores(newScore);
+        winnerTeam.setScores(winnerTeam.getScores() + 1);
 
-        // 仅当双方比分均为targetForOvertime且未进入加时时，触发加时投票
-        List<ServerTeam> normalTeams = mapTeams.getNormalTeams();
-        if (newScore == targetForOvertime && !isOvertime) {
-            List<ServerTeam> otherTeams = normalTeams.stream()
-                    .filter(team -> !team.equals(winnerTeam))
-                    .toList();
-
-            if (!otherTeams.isEmpty() && otherTeams.get(0).getScores() == targetForOvertime) {
+        if (!isOvertime) {
+            if (getT().getScores() == targetForOvertime && getCT().getScores() == targetForOvertime) {
                 this.isWaitingOverTimeVote = true;
             }
         }
@@ -782,10 +783,11 @@ public class CSGameMap extends CSMap{
      */
     private void processWinnerEconomicReward(@NotNull ServerTeam winTeam,WinnerReason reason) {
         winTeam.getPlayerList().forEach(uuid -> {
-            ShopCapability.getShop(winTeam).ifPresent(shop -> shop.addMoney(uuid,reason.winMoney));
+            int money = reason.getWinMoney(this);
+            ShopCapability.getShop(winTeam).ifPresent(shop -> shop.addMoney(uuid,money));
 
             getPlayerByUUID(uuid).ifPresent(player ->
-                    sendMoneyRewardMessage(player, reason.winMoney, reason.name())
+                    sendMoneyRewardMessage(player, money, reason.name())
             );
         });
     }
@@ -955,20 +957,21 @@ public class CSGameMap extends CSMap{
         return winner + ((this.overCount + 1) * this.overtimeRound.get());
     }
 
-    private void handleVictory(ServerTeam winnerTeam) {
+    private void handleVictory(@Nullable ServerTeam winnerTeam) {
+        boolean isNull = winnerTeam == null;
+
         // 发送胜利消息
+        ChatFormatting titleFormat = isNull ? ChatFormatting.GREEN : winnerTeam.name.equals("ct") ? ChatFormatting.DARK_AQUA : ChatFormatting.YELLOW;
+
         this.sendVictoryMessage(
-                Component.translatable("map.cs.message.victory.head",
-                                winnerTeam.name.toUpperCase(Locale.US))
-                        .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD),
+                isNull ? Component.translatable("map.cs.message.victory.draw.head").withStyle(ChatFormatting.GOLD, ChatFormatting.GREEN) : Component.translatable("map.cs.message.victory.head", winnerTeam.name.toUpperCase(Locale.US)).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD),
                 Comparator.comparingDouble(PlayerData::getDamage).reversed()
         );
 
         // 发送胜利标题
         this.sendAllPlayerTitle(
-                Component.translatable("blockoffensive.map.cs.winner." + winnerTeam.name + ".message")
-                        .withStyle(winnerTeam.name.equals("ct") ?
-                                ChatFormatting.DARK_AQUA : ChatFormatting.YELLOW),
+                !isNull ? Component.translatable("blockoffensive.map.cs.winner.message",winnerTeam.name).withStyle(titleFormat) :
+                        Component.translatable("blockoffensive.map.cs.winner.draw.message").withStyle(titleFormat),
                 null
         );
     }
@@ -982,7 +985,10 @@ public class CSGameMap extends CSMap{
                 20,
                 0.6F,
                 this::startOvertime,
-                this::reset,
+                ()->{
+                    handleVictory(null);
+                    reset();
+                },
                 this.getMapTeams().getJoinedUUID()
         );
 
@@ -1060,7 +1066,6 @@ public class CSGameMap extends CSMap{
      * @return 是否需要切换队伍
      */
     private boolean handleOvertimeAndTeamSwitch(int ctScore, int tScore) {
-        // 清空暂停计时（两个分支都需要）
         currentPauseTime = 0;
 
         // 计算关键分数阈值
@@ -1466,15 +1471,35 @@ public class CSGameMap extends CSMap{
         }
     }
 
-    public enum WinnerReason{
-        TIME_OUT(3250),
-        ACED(3250),
-        DEFUSE_BOMB(3500),
-        DETONATE_BOMB(3500);
-        public final int winMoney;
+    public int getDefuseBombEconomy() {
+        return defuseBombEconomy.get();
+    }
 
-        WinnerReason(int winMoney) {
+    public int getTimeoutEconomy() {
+        return timeoutEconomy.get();
+    }
+
+    public int getDetonateBombEconomy() {
+        return detonateBombEconomy.get();
+    }
+
+    public int getAceEconomy() {
+        return aceEconomy.get();
+    }
+
+    public enum WinnerReason{
+        TIME_OUT(CSGameMap::getTimeoutEconomy),
+        ACED(CSGameMap::getAceEconomy),
+        DEFUSE_BOMB(CSGameMap::getDefuseBombEconomy),
+        DETONATE_BOMB(CSGameMap::getDetonateBombEconomy);
+        private final Function<CSGameMap,Integer> winMoney;
+
+        WinnerReason(Function<CSGameMap,Integer> winMoney) {
             this.winMoney = winMoney;
+        }
+
+        public int getWinMoney(CSGameMap map) {
+            return winMoney.apply(map);
         }
     }
 

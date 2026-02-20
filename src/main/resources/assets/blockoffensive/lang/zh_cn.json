@@ -11,8 +11,7 @@
   "key.blockoffensive.open.shop.failed.game_type.no_shop": "因为加入的游戏不支持商店，所以无法打开商店",
   "key.blockoffensive.dismantle_bomb.desc": "拆除炸弹",
   "commands.blockoffensive.save.success": "保存成功",
-  "blockoffensive.map.cs.winner.ct.message": "CT 阵营游戏胜利",
-  "blockoffensive.map.cs.winner.t.message": "T 阵营游戏胜利",
+  "blockoffensive.map.cs.winner.message": "%s 阵营游戏胜利",
   "blockoffensive.map.cs.winner.ct.round.message": "CT 阵营回合胜利",
   "blockoffensive.map.cs.winner.t.round.message": "T 阵营回合胜利",
   "blockoffensive.death.message": "%1$s 使用 %3$s 击杀 %2$s",
@@ -89,6 +88,7 @@
   "blockoffensive.tab.header.score": "得分",
   "blockoffensive.tab.header.kd": "K/D",
   "map.cs.message.victory.head": "========== %s 胜利 ==========",
+  "map.cs.message.victory.draw.head": "========== 平局 ==========",
   "map.deathmatch.message.victory.head": "========== 比赛结果 ==========",
   "commands.blockoffensive.mvp.description": "添加MVP音乐给玩家",
   "map.cs.message.victory.message": "第%s名 | %s | 分数: %s | 杀/死/助: %s/%s/%s | 爆头率: %s | 伤害: %s",
@@ -107,5 +107,6 @@
   "blockoffensive.kill.message.suicide": "你因为 %s 的自杀得到了 %s 补偿",
   "blockoffensive.hurt.message.teammate": "%s 伤害了一名队友",
   "blockoffensive.place.message.c4" : "炸弹安放中！",
-  "blockoffensive.demolish.message.c4": "正在拆除炸弹！"
+  "blockoffensive.demolish.message.c4": "正在拆除炸弹！",
+  "blockoffensive.map.cs.winner.draw.message": "平局"
 }
