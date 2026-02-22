@@ -2,6 +2,7 @@ package com.phasetranscrystal.blockoffensive;
 
 import com.phasetranscrystal.blockoffensive.command.CSCommand;
 import com.phasetranscrystal.blockoffensive.compat.BOImpl;
+import com.phasetranscrystal.blockoffensive.compat.BOMenuIntegration;
 import com.phasetranscrystal.blockoffensive.compat.CSGrenadeCompat;
 import com.phasetranscrystal.blockoffensive.compat.PhysicsModCompat;
 import com.phasetranscrystal.blockoffensive.entity.BOEntityRegister;
@@ -24,16 +25,21 @@ import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegist
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.tacz.guns.api.item.GunTabType;
+import com.tacz.guns.client.gui.compat.ClothConfigScreen;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.InterModEnqueueEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 @Mod(BlockOffensive.MODID)
@@ -120,6 +126,19 @@ public class BlockOffensive {
 
             if(FPSMImpl.findCounterStrikeGrenadesMod()){
                 CSGrenadeCompat.init();
+            }
+        });
+    }
+
+    @SubscribeEvent
+    public void onEnqueue(final InterModEnqueueEvent event) {
+        event.enqueueWork(()->{
+            if(FPSMImpl.findClothConfig()){
+                DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> BOMenuIntegration::registerModsPage);
+            }else{
+                if (FMLEnvironment.dist == Dist.CLIENT) {
+                    ClothConfigScreen.registerNoClothConfigPage();
+                }
             }
         });
     }
