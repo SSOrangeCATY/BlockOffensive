@@ -132,7 +132,7 @@ public class BOUtil {
         return head.append(teamColor)
                 .append(playerName)
                 .append(location.withStyle(ChatFormatting.GREEN))
-                .append(Component.literal(":"))
+                .append(Component.literal(": "))
                 .append(message)
                 .withStyle(ChatFormatting.BOLD);
     }

@@ -971,7 +971,7 @@ public class CSGameMap extends CSMap{
             return "win score : " + winner;
         }
 
-        return "win score = " + winner + "+ (" + this.overCount + "+1) " + "*" + this.overtimeRound + "=" + winner + ((this.overCount + 1) * this.overtimeRound.get());
+        return "win score = " + winner + "+ (" + this.overCount + "+1) " + "*" + this.overtimeRound + "=" + calculateRequiredScore();
     }
 
     private void handleVictory(@Nullable ServerTeam winnerTeam) {
