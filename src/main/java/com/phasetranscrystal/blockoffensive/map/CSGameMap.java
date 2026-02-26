@@ -176,21 +176,29 @@ public class CSGameMap extends CSMap{
         this.registerCommand("d", this::handleDropKnifeCommand);
         this.registerCommand("drop", this::handleDropKnifeCommand);
 
-        if(!FMLEnvironment.production){
-            this.registerCommand("debug_1",(p)->{
-                getCT().setScores(winnerRound.get() - 2);
-                getT().setScores(winnerRound.get() - 1);
-            });
+        this.registerCommand("debug_1",(p)->{
+            if(!p.hasPermissions(2)) return;
+            getCT().setScores(winnerRound.get() - 2);
+            getT().setScores(winnerRound.get() - 1);
+        });
 
-            this.registerCommand("debug_2",(p)-> this.switchTeams());
+        this.registerCommand("debug_2",(p)-> {
+            if(!p.hasPermissions(2)) return;
+            this.switchTeams();
+        });
 
-            this.registerCommand("debug_3",(p)-> p.displayClientMessage(Component.literal("team: " + this.getMapTeams().getTeamByPlayer(p).map(t->t.name).orElse("none")),false));
+        this.registerCommand("debug_3",(p)-> {
+            if(!p.hasPermissions(2)) return;
 
-            this.registerCommand("debug_4",(p)->{
-                p.displayClientMessage(Component.literal("Victory Round: " + calculateRequiredScore()),false);
-                p.displayClientMessage(Component.literal("OverCount: " + overCount),false);
-            });
-        }
+            p.displayClientMessage(Component.literal("team: " + this.getMapTeams().getTeamByPlayer(p).map(t -> t.name).orElse("none")), false);
+        });
+
+        this.registerCommand("debug_4",(p)->{
+            if(!p.hasPermissions(2)) return;
+
+            p.displayClientMessage(Component.literal("Victory Round: " + requiredScoreStr()),false);
+            p.displayClientMessage(Component.literal("OverCount: " + overCount),false);
+        });
     }
 
     /**
@@ -957,6 +965,15 @@ public class CSGameMap extends CSMap{
         return winner + ((this.overCount + 1) * this.overtimeRound.get());
     }
 
+    private String requiredScoreStr(){
+        int winner = winnerRound.get();
+        if (!isOvertime) {
+            return "win score : " + winner;
+        }
+
+        return "win score = " + winner + "+ (" + this.overCount + "+1) " + "*" + this.overtimeRound + "=" + winner + ((this.overCount + 1) * this.overtimeRound.get());
+    }
+
     private void handleVictory(@Nullable ServerTeam winnerTeam) {
         boolean isNull = winnerTeam == null;
 
@@ -1008,7 +1025,7 @@ public class CSGameMap extends CSMap{
                     .flatMap(ShopCapability::getShopSafe).ifPresent(shop -> {
                         shop.setStartMoney(10000);
                         shop.resetPlayerData(true);
-            });
+                    });
         });
         this.startNewRound();
     }
@@ -1245,7 +1262,7 @@ public class CSGameMap extends CSMap{
                     if(team.hasPlayer(player.getUUID())){
                         opt.ifPresent(cap -> cap.givePlayerKits(player));
                     }
-        });
+                });
     }
 
     /**
@@ -1256,25 +1273,25 @@ public class CSGameMap extends CSMap{
     public void giveBlastTeamBomb() {
         this.getCapabilityMap().get(DemolitionModeCapability.class)
                 .flatMap(cap -> this.getMapTeams().getTeamByFixedName(cap.getDemolitionTeam())).ifPresent((team) -> {
-            List<UUID> onlinePlayers = team.getOnlinePlayers();
-            if (onlinePlayers.isEmpty()) {
-                return;
-            }
-            // 清理队伍所有成员的C4
-            team.getPlayerList().forEach(uuid ->
-                    clearInventory(uuid, itemStack -> itemStack.getItem() instanceof CompositionC4)
-            );
+                    List<UUID> onlinePlayers = team.getOnlinePlayers();
+                    if (onlinePlayers.isEmpty()) {
+                        return;
+                    }
+                    // 清理队伍所有成员的C4
+                    team.getPlayerList().forEach(uuid ->
+                            clearInventory(uuid, itemStack -> itemStack.getItem() instanceof CompositionC4)
+                    );
 
-            // 随机选择一名在线玩家
-            UUID selectedUuid = onlinePlayers.get(new Random().nextInt(onlinePlayers.size()));
-            this.getPlayerByUUID(selectedUuid).ifPresent(player -> {
-                // 添加C4并更新库存
-                player.getInventory().add(BOItemRegister.C4.get().getDefaultInstance());
-                team.sendMessage(Component.translatable("blockoffensive.map.cs.team.giveBomb", player.getDisplayName()).withStyle(ChatFormatting.GREEN));
-                FPSMUtil.sortPlayerInventory(player);
-                this.syncInventory(player);
-            });
-        });
+                    // 随机选择一名在线玩家
+                    UUID selectedUuid = onlinePlayers.get(new Random().nextInt(onlinePlayers.size()));
+                    this.getPlayerByUUID(selectedUuid).ifPresent(player -> {
+                        // 添加C4并更新库存
+                        player.getInventory().add(BOItemRegister.C4.get().getDefaultInstance());
+                        team.sendMessage(Component.translatable("blockoffensive.map.cs.team.giveBomb", player.getDisplayName()).withStyle(ChatFormatting.GREEN));
+                        FPSMUtil.sortPlayerInventory(player);
+                        this.syncInventory(player);
+                    });
+                });
 
     }
 
