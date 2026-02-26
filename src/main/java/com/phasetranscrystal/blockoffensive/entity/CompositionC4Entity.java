@@ -76,7 +76,7 @@ public class CompositionC4Entity extends BlastBombEntity {
         int ikr = map.getC4InstantKillRadius();
         this.setFuse(BOConfig.common.fuseTime.get());
         this.setExplosionRadius(ikr + 31);
-        this.setInstantKillRadius(ikr); // 从配置获取即死范围
+        this.setInstantKillRadius(ikr);
         this.setPos(pX, pY, pZ);
         this.owner = pOwner;
         this.map.setBombEntity(this);
@@ -136,7 +136,6 @@ public class CompositionC4Entity extends BlastBombEntity {
     public void onAddedToWorld() {
         super.onAddedToWorld();
     }
-
 
     @Override
     public void onRemovedFromWorld() {
@@ -465,7 +464,7 @@ public class CompositionC4Entity extends BlastBombEntity {
 
     private void applyExplosionDamage(LivingEntity entity, double distance, double blockageFactor, int instantKillRadius) {
         if (distance <= instantKillRadius) {
-            entity.hurt(entity.level().damageSources().explosion(this, null), Float.MAX_VALUE);
+            entity.hurt(entity.level().damageSources().explosion(this, null), entity.getHealth());
             return;
         }
 
@@ -486,7 +485,6 @@ public class CompositionC4Entity extends BlastBombEntity {
             damage = maxHealth * (float)interpolate(0.25, 0.5,
                     (distance - instantKillRadius - 20) / 5.0);
         } else {
-            // 25-31格：10%-25%最大生命值
             damage = maxHealth * (float)interpolate(0.1, 0.25,
                     (distance - instantKillRadius - 25) / 6.0);
         }
@@ -499,17 +497,6 @@ public class CompositionC4Entity extends BlastBombEntity {
 
         // 应用伤害
         entity.hurt(entity.level().damageSources().explosion(this, this.owner), damage);
-
-        // 添加击退效果
-        if (damage > 0) {
-            Vec3 knockbackDir = entity.position().subtract(this.position()).normalize();
-            double knockbackStrength = 2.0 * (1.0 - distance / (instantKillRadius + 31)) * blockageFactor;
-            entity.setDeltaMovement(entity.getDeltaMovement().add(
-                    knockbackDir.x * knockbackStrength,
-                    Math.min(knockbackStrength, 1.0),
-                    knockbackDir.z * knockbackStrength
-            ));
-        }
     }
 
     // 线性插值函数
