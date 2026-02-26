@@ -562,7 +562,6 @@ public abstract class CSMap extends BaseMap  {
 
     @Override
     public void join(String teamName, ServerPlayer player) {
-        FPSMCore.checkAndLeaveTeam(player);
         MapTeams mapTeams = this.getMapTeams();
         mapTeams.joinTeam(teamName, player);
         mapTeams.getTeamByPlayer(player).ifPresent(team -> {

@@ -507,7 +507,7 @@ public class CSGameMap extends CSMap{
 
     public boolean checkWinnerTime(){
         if(this.isWaitingWinner && currentPauseTime < winnerWaitingTime.get()){
-            if(!isKnifeSelectingVote() && !isWaitingOverTimeVote) this.currentPauseTime++;
+            if(!isKnifeSelectingVote()) this.currentPauseTime++;
         }else{
             if(this.canRestTime()) currentPauseTime = 0;
         }
@@ -1450,11 +1450,7 @@ public class CSGameMap extends CSMap{
                 // 清除c4,并掉落c4
                 dropC4(dead);
                 // 清除玩家所属子弹
-                this.getServerLevel().getEntitiesOfClass(EntityKineticBullet.class, mapArea.aabb())
-                        .stream()
-                        .filter(entityKineticBullet -> entityKineticBullet.getOwner() != null && entityKineticBullet.getOwner().getUUID().equals(dead.getUUID()))
-                        .toList()
-                        .forEach(Entity::discard);
+                discardAmmo(dead.getUUID());
                 // 清除拆弹工具,并掉落拆弹工具
                 int ik = dead.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof BombDisposalKit, -1, dead.inventoryMenu.getCraftSlots());
                 if (ik > 0) {
@@ -1469,6 +1465,14 @@ public class CSGameMap extends CSMap{
                 this.syncInventory(dead);
             });
         }
+    }
+
+    public void discardAmmo(UUID uuid){
+        this.getServerLevel().getEntitiesOfClass(EntityKineticBullet.class, mapArea.aabb())
+                .stream()
+                .filter(entityKineticBullet -> entityKineticBullet.getOwner() != null && entityKineticBullet.getOwner().getUUID().equals(uuid))
+                .toList()
+                .forEach(Entity::discard);
     }
 
     public int getDefuseBombEconomy() {

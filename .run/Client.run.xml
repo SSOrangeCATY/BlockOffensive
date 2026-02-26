@@ -1,0 +1,15 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Client" type="Application" factoryName="Application">
+    <envs>
+      <env name="MOD_CLASSES" value="blockoffensive%%F:\BlockOffensive\build\classes\java\main;blockoffensive%%F:\BlockOffensive\build\resources\main" />
+    </envs>
+    <option name="MAIN_CLASS_NAME" value="net.neoforged.devlaunch.Main" />
+    <module name="blockoffensive.main" />
+    <option name="PROGRAM_PARAMETERS" value="@F:\\BlockOffensive\\build\\moddev\\2clientRunProgramArgs.txt" />
+    <option name="VM_PARAMETERS" value="@F:\\BlockOffensive\\build\\moddev\\clientRunVmArgs.txt -Dfml.modFolders=blockoffensive%%F:\\BlockOffensive\\build\\classes\\java\\main;blockoffensive%%F:\\BlockOffensive\\build\\resources\\main" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/run" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
