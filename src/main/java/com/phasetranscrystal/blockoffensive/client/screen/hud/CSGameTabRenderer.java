@@ -59,8 +59,8 @@ public class CSGameTabRenderer implements TabRenderer {
             return Float.compare(t1.map(PlayerData::getDamage).orElse(0F), t2.map(PlayerData::getDamage).orElse(0F));
         };
 
-        teamPlayers.get("ct").sort(damageComparator);
-        teamPlayers.get("t").sort(damageComparator);
+        teamPlayers.get("ct").sort(damageComparator.reversed());
+        teamPlayers.get("t").sort(damageComparator.reversed());
 
         // 计算实际玩家数量
         int ctPlayerCount = teamPlayers.get("ct").size();

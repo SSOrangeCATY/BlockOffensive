@@ -355,9 +355,8 @@ public class CSGameMap extends CSMap{
      * 设置队伍名称颜色（CT蓝、T黄）
      */
     private void setTeamNameColors() {
-        MapTeams mapTeams = getMapTeams();
-        mapTeams.setTeamNameColor(this, "ct", ChatFormatting.BLUE);
-        mapTeams.setTeamNameColor(this, "t", ChatFormatting.YELLOW);
+        getT().getPlayerTeam().setColor(ChatFormatting.YELLOW);
+        getCT().getPlayerTeam().setColor(ChatFormatting.BLUE);
     }
 
 
@@ -859,10 +858,9 @@ public class CSGameMap extends CSMap{
 
         ctTeam.getPlayerList().forEach(uuid -> {
             ShopCapability.getShop(ctTeam).ifPresent(shop -> shop.addMoney(uuid,extraReward));
-
-            // 发送团队奖励消息
-            ctTeam.sendMessage(Component.translatable("blockoffensive.map.cs.reward.team", extraReward, deadTCount));
         });
+
+        ctTeam.sendMessage(Component.translatable("blockoffensive.map.cs.reward.team", extraReward, deadTCount));
     }
 
     private void checkLoseStreaks(ServerTeam winTeam, @NotNull List<ServerTeam> loseTeams) {
