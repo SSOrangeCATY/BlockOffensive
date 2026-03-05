@@ -1,8 +1,4 @@
 # BlockOffensive [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/SSOrangeCATY/BlockOffensive) - [中文页](README_ZH-CN.md)
-[Click here to jump to Command Help](https://github.com/SSOrangeCATY/FPSMacth/blob/master/CommandHelper_en-us.md)
-
-## Building
-- To build BlockOffensive, you must first download [FPSMatch](https://github.com/SSOrangeCATY/FPSMacth/) and run the publishing task before setting up the BlockOffensive build environment
 
 ### Basic Introduction
 - Additional game mode created based on the [FPSMatch](https://github.com/SSOrangeCATY/FPSMacth/) competition framework
@@ -10,6 +6,7 @@
 - Supports team shop editing
 - Kill feedback/death messages/TAB/Overlay/HUD
 - C4 and defuse tools
+- Type `/fpsm help` in-game to view all command help
 - ...
 
 ### 📌 INFO
@@ -26,4 +23,5 @@
 
 #### User Notice:
 - By using the Block Offensive mod, you agree to the terms of GPL v3.
+
 The complete license can be found in the [LICENSE](LICENSE) file.
