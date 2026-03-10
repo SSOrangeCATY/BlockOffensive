@@ -69,6 +69,7 @@ import org.joml.Vector3f;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public abstract class CSMap extends BaseMap  {
@@ -894,6 +895,23 @@ public abstract class CSMap extends BaseMap  {
 
     @FunctionalInterface
     public interface CSCommand{
+
         void run(ServerPlayer player);
+
+        /**
+         * 创建一个需要特定权限等级的CSCommand。
+         * @param level 所需权限等级（0-4）
+         * @param action 命令执行的动作
+         * @return 带权限检查的CSCommand实例
+         */
+        static CSCommand withPermission(int level, Consumer<ServerPlayer> action) {
+            if (level < 0 || level > 4) {
+                FPSMatch.LOGGER.error("CSCommand Permission level must be between 0 and 4");
+                return action::accept;
+            }
+            return player -> {
+                if(player.hasPermissions(level)) action.accept(player);
+            };
+        }
     }
 }

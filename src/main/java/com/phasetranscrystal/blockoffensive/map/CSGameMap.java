@@ -182,23 +182,18 @@ public class CSGameMap extends CSMap{
             getT().setScores(winnerRound.get() - 1);
         });
 
-        this.registerCommand("debug_2",(p)-> {
-            if(!p.hasPermissions(2)) return;
+        this.registerCommand("debug_2",CSCommand.withPermission(2,(p)-> {
             this.switchTeams();
-        });
+        }));
 
-        this.registerCommand("debug_3",(p)-> {
-            if(!p.hasPermissions(2)) return;
-
+        this.registerCommand("debug_3",CSCommand.withPermission(2,(p)-> {
             p.displayClientMessage(Component.literal("team: " + this.getMapTeams().getTeamByPlayer(p).map(t -> t.name).orElse("none")), false);
-        });
+        }));
 
-        this.registerCommand("debug_4",(p)->{
-            if(!p.hasPermissions(2)) return;
-
+        this.registerCommand("debug_4",CSCommand.withPermission(2,(p)->{
             p.displayClientMessage(Component.literal("Victory Round: " + requiredScoreStr()),false);
             p.displayClientMessage(Component.literal("OverCount: " + overCount),false);
-        });
+        }));
     }
 
     /**

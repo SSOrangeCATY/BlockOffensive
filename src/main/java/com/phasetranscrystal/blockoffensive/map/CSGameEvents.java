@@ -1,5 +1,6 @@
 package com.phasetranscrystal.blockoffensive.map;
 
+import com.phasetranscrystal.blockoffensive.event.CSGameMapEvent;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.compat.BOImpl;
 import com.phasetranscrystal.blockoffensive.compat.IPassThroughEntity;
@@ -30,6 +31,7 @@ import java.util.Optional;
 
 @Mod.EventBusSubscriber(modid = BlockOffensive.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CSGameEvents {
+
     @SubscribeEvent
     public static void onPlayerHurt(FPSMapEvent.PlayerEvent.HurtEvent event) {
         BaseMap map = event.getMap();
@@ -177,6 +179,16 @@ public class CSGameEvents {
         Optional<ServerPlayer> attackerOpt = event.getAttacker();
         ItemStack deathItem = BOUtil.getDeathItemStack(attackerOpt.orElse(null), event.getSource());
         csMap.onPlayerDeathEvent(player, attackerOpt.orElse(player), deathItem, false,false,false);
+    }
+
+    /**
+     * 队伍换边事件处理 - 移除所有玩家的防弹衣属性
+     */
+    @SubscribeEvent
+    public static void onTeamSwitch(CSGameMapEvent.TeamSwitchEvent event) {
+        event.getMap().getMapTeams().getJoinedPlayers().forEach(data ->
+            data.getPlayer().ifPresent(BulletproofArmorAttribute::removePlayer)
+        );
     }
 
 }
