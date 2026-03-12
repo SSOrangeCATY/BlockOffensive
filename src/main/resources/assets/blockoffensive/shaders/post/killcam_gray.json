@@ -1,0 +1,26 @@
+{
+  "targets": [
+    "swap"
+  ],
+  "passes": [
+    {
+      "name": "blockoffensive:killcam_gray",
+      "intarget": "minecraft:main",
+      "outtarget": "swap",
+      "uniforms": [
+        { "name": "Strength", "values": [ 1.0 ] },
+        { "name": "Saturation", "values": [ 0.0 ] },
+        { "name": "Contrast", "values": [ 1.06 ] },
+        { "name": "Lift", "values": [ 0.01 ] },
+        { "name": "Vignette", "values": [ 0.42 ] },
+        { "name": "Grain", "values": [ 0.018 ] },
+        { "name": "Tint", "values": [ 1.0, 1.0, 1.0 ] }
+      ]
+    },
+    {
+      "name": "minecraft:blit",
+      "intarget": "swap",
+      "outtarget": "minecraft:main"
+    }
+  ]
+}

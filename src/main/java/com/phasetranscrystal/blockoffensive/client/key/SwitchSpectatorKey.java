@@ -6,11 +6,14 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.level.GameType;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 
 
+@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class SwitchSpectatorKey {
     public static final KeyMapping KEY_SPECTATE_PREV = new KeyMapping(
             "key.blockoffensive.switch_spec_previous.desc", GLFW.GLFW_KEY_A, "key.category.blockoffensive.spec");

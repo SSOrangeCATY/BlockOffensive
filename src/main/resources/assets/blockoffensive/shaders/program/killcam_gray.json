@@ -1,0 +1,42 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "one",
+    "dstrgb": "zero",
+    "srcalpha": "one",
+    "dstalpha": "zero"
+  },
+  "vertex": "killcam_gray",
+  "fragment": "killcam_gray",
+  "attributes": [
+    "Position",
+    "UV0"
+  ],
+  "samplers": [
+    { "name": "DiffuseSampler" }
+  ],
+  "uniforms": [
+    {
+      "name": "ProjMat",
+      "type": "matrix4x4",
+      "count": 16,
+      "values": [
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0
+      ]
+    },
+    { "name": "InSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+    { "name": "OutSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+    { "name": "Time", "type": "float", "count": 1, "values": [ 0.0 ] },
+
+    { "name": "Strength", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "Saturation", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "Contrast", "type": "float", "count": 1, "values": [ 1.06 ] },
+    { "name": "Lift", "type": "float", "count": 1, "values": [ 0.01 ] },
+    { "name": "Vignette", "type": "float", "count": 1, "values": [ 0.42 ] },
+    { "name": "Grain", "type": "float", "count": 1, "values": [ 0.018 ] },
+    { "name": "Tint", "type": "float", "count": 3, "values": [ 1.0, 1.0, 1.0 ] }
+  ]
+}
