@@ -13,7 +13,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 
 
-@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class SwitchSpectatorKey {
     public static final KeyMapping KEY_SPECTATE_PREV = new KeyMapping(
             "key.blockoffensive.switch_spec_previous.desc", GLFW.GLFW_KEY_A, "key.category.blockoffensive.spec");
