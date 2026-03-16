@@ -1,6 +1,7 @@
 package com.phasetranscrystal.blockoffensive.spectator;
 
 import com.mojang.logging.LogUtils;
+import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.blockoffensive.net.spec.KillCamS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.spec.RequestKillCamFallbackC2SPacket;
@@ -208,11 +209,11 @@ public final class BOSpecManager {
 
     @OnlyIn(Dist.CLIENT)
     public static void requestKillCamFallback(@NotNull UUID killer){
-        FPSMatch.INSTANCE.sendToServer(new RequestKillCamFallbackC2SPacket(killer));
+        BlockOffensive.INSTANCE.sendToServer(new RequestKillCamFallbackC2SPacket(killer));
     }
 
     @OnlyIn(Dist.CLIENT)
     public static void sendSwitchSpectate(SwitchSpectateC2SPacket.SwitchDirection dir){
-        FPSMatch.INSTANCE.sendToServer(new SwitchSpectateC2SPacket(dir));
+        BlockOffensive.INSTANCE.sendToServer(new SwitchSpectateC2SPacket(dir));
     }
 }
