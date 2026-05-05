@@ -121,7 +121,7 @@ public class BlockOffensive {
             BOUtil.registerThrowable(ThrowableType.INCENDIARY_GRENADE, FPSMItemRegister.CT_INCENDIARY_GRENADE.get());
             BOUtil.registerThrowable(ThrowableType.FLASH_BANG, FPSMItemRegister.FLASH_BOMB.get());
             if(BOImpl.isPhysicsModLoaded()){
-                DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> PhysicsModCompat::init);
+                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> PhysicsModCompat.init());
             }
 
             if(FPSMImpl.findCounterStrikeGrenadesMod()){
