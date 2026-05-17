@@ -825,7 +825,7 @@ public abstract class CSMap extends BaseMap  {
     public void onPlayerDeathEvent(ServerPlayer deadPlayer, @Nullable ServerPlayer attacker,
                                    @NotNull ItemStack deathItem, boolean isHeadShot, boolean isPassWall, boolean isPassSmoke) {
         if (isStart) {
-            handleDeath(deadPlayer);
+//            handleDeath(deadPlayer, Optional.ofNullable(attacker), null);
 
             if(allowSpecAttach.get()){
                 if (attacker != null
