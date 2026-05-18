@@ -2,12 +2,15 @@ package com.phasetranscrystal.blockoffensive.map;
 
 import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.client.data.WeaponData;
+import com.phasetranscrystal.blockoffensive.compat.BOImpl;
 import com.phasetranscrystal.blockoffensive.compat.CSGrenadeCompat;
+import com.phasetranscrystal.blockoffensive.compat.IPassThroughEntity;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.item.CompositionC4;
 import com.phasetranscrystal.blockoffensive.net.CSGameSettingsS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.DeathMessageS2CPacket;
+import com.phasetranscrystal.blockoffensive.net.PxDeathCompatS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.PxRagdollRemovalCompatS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.shop.ShopStatesS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.spec.CSGameWeaponDataS2CPacket;
@@ -36,6 +39,7 @@ import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.map.DeathContext;
 import com.phasetranscrystal.fpsmatch.core.map.VoteObj;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
@@ -822,31 +826,62 @@ public abstract class CSMap extends BaseMap  {
         return true;
     }
 
-    public void onPlayerDeathEvent(ServerPlayer deadPlayer, @Nullable ServerPlayer attacker,
-                                   @NotNull ItemStack deathItem, boolean isHeadShot, boolean isPassWall, boolean isPassSmoke) {
-        if (isStart) {
-//            handleDeath(deadPlayer, Optional.ofNullable(attacker), null);
+    @Override
+    public void handleDeath(DeathContext context) {
+        super.handleDeath(context);
 
-            if(allowSpecAttach.get()){
-                if (attacker != null
-                        && deadPlayer.isSpectator()
-                        && !attacker.getUUID().equals(deadPlayer.getUUID())) {
-                    BOSpecManager.sendKillCamAndAttach(deadPlayer, attacker, deathItem);
-                }
-            }
-
-            if (attacker == null) {
-                return;
-            }
-
-            giveEco(deadPlayer, attacker, deathItem, true);
-
-            DeathMessageS2CPacket killPacket = BOUtil.buildDeathMessagePacket(this,attacker, deadPlayer, deathItem, isHeadShot,isPassWall,isPassSmoke,minAssistDamageRatio.get());
-            sendPacketToAllPlayer(killPacket);
+        if (!isStart) {
+            return;
         }
+
+        ServerPlayer deadPlayer = context.getDeadPlayer();
+        ServerPlayer attacker = context.getAttacker();
+        ItemStack deathItem = context.getDeathItem();
+
+        if (BOImpl.isPhysicsModLoaded()) {
+            this.sendPacketToAllPlayer(new PxDeathCompatS2CPacket(deadPlayer.getId()));
+        }
+
+        if (allowSpecAttach.get()) {
+            if (attacker != null
+                    && deadPlayer.isSpectator()
+                    && !attacker.getUUID().equals(deadPlayer.getUUID())) {
+                BOSpecManager.sendKillCamAndAttach(deadPlayer, attacker, deathItem);
+            }
+        }
+
+        if (attacker == null) {
+            return;
+        }
+
+        boolean passWall = context.isPassWall();
+        boolean passSmoke = context.isPassSmoke();
+        if (context.getGunBullet() instanceof IPassThroughEntity passed) {
+            passWall = passWall || passed.blockoffensive$isWall();
+            passSmoke = passSmoke || passed.blockoffensive$isSmoke();
+            context.setPassWall(passWall);
+            context.setPassSmoke(passSmoke);
+        }
+
+        giveEco(deadPlayer, attacker, deathItem, true);
+
+        DeathMessageS2CPacket killPacket = BOUtil.buildDeathMessagePacket(
+                this,
+                attacker,
+                deadPlayer,
+                deathItem,
+                context.isHeadShot(),
+                passWall,
+                passSmoke,
+                minAssistDamageRatio.get()
+        );
+        sendPacketToAllPlayer(killPacket);
     }
 
-    public abstract void handleDeath(ServerPlayer dead);
+    @Override
+    public ItemStack resolveDeathItem(@Nullable ServerPlayer attacker, net.minecraft.world.damagesource.DamageSource source) {
+        return BOUtil.getDeathItemStack(attacker, source);
+    }
 
     public int getRewardByItem(ItemStack itemStack){
         if(FPSMImpl.findLrtacticalMod() && LrtacticalCompat.isKnife(itemStack)){

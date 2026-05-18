@@ -17,6 +17,7 @@ import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
+import com.phasetranscrystal.fpsmatch.core.map.DeathContext;
 import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
@@ -230,9 +231,10 @@ public class CSDeathMatchMap extends CSMap {
     }
     
     @Override
-    public void handleDeath(ServerPlayer dead) {
+    public void handleDeath(DeathContext context) {
+        super.handleDeath(context);
         // 立即重生玩家
-        respawnPlayer(dead);
+        respawnPlayer(context.getDeadPlayer());
     }
 
     public void respawnPlayer(ServerPlayer player) {
@@ -299,12 +301,6 @@ public class CSDeathMatchMap extends CSMap {
         }
 
         return weightMap.keySet().iterator().next();
-    }
-    
-    @Override
-    public void onPlayerDeathEvent(ServerPlayer player, @Nullable ServerPlayer attacker, @NotNull ItemStack itemStack,boolean isHeadShot,boolean isPassWall, boolean isPassSmoke) {
-        super.onPlayerDeathEvent(player, attacker, itemStack, isHeadShot,isPassWall,isPassSmoke);
-        respawnPlayer(player);
     }
     
     @Override

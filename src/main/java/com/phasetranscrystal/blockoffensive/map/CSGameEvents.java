@@ -2,27 +2,18 @@ package com.phasetranscrystal.blockoffensive.map;
 
 import com.phasetranscrystal.blockoffensive.event.CSGameMapEvent;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
-import com.phasetranscrystal.blockoffensive.compat.BOImpl;
-import com.phasetranscrystal.blockoffensive.compat.IPassThroughEntity;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.item.BombDisposalKit;
 import com.phasetranscrystal.blockoffensive.item.CompositionC4;
-import com.phasetranscrystal.blockoffensive.net.PxDeathCompatS2CPacket;
-import com.phasetranscrystal.blockoffensive.util.BOUtil;
 import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
-import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchRespawnS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.common.event.FPSMapEvent;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
-import com.tacz.guns.api.event.common.EntityKillByGunEvent;
 import com.tacz.guns.api.event.common.GunShootEvent;
-import com.tacz.guns.api.item.IGun;
-import com.tacz.guns.init.ModDamageTypes;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.common.Mod;
@@ -122,63 +113,6 @@ public class CSGameEvents {
                 FPSMUtil.sortPlayerInventory(player);
             }
         }
-    }
-
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onPlayerKilledByGun(EntityKillByGunEvent event) {
-        if (event.getLogicalSide() != LogicalSide.SERVER || !(event.getKilledEntity() instanceof ServerPlayer deadPlayer)) {
-            return;
-        }
-
-        Optional<CSMap> csMapOpt = FPSMCore.getInstance().getMapByPlayer(deadPlayer)
-                .filter(map -> map instanceof CSMap)
-                .map(map -> (CSMap) map);
-        if (csMapOpt.isEmpty()) {
-            return;
-        }
-        CSMap csMap = csMapOpt.get();
-
-        if (!(event.getAttacker() instanceof ServerPlayer attacker) || !IGun.mainHandHoldGun(attacker)) {
-            return;
-        }
-
-        if (!FPSMCore.getInstance().getMapByPlayer(attacker).map(map -> map.equals(csMap)).orElse(false)) {
-            return;
-        }
-
-        boolean isPassWall = false;
-        boolean isPassSmoke = false;
-
-        if(event.getBullet() instanceof IPassThroughEntity passed){
-            isPassWall = passed.blockoffensive$isWall();
-            isPassSmoke = passed.blockoffensive$isSmoke();
-        }
-
-        ItemStack deathItem = attacker.getMainHandItem();
-        csMap.onPlayerDeathEvent(deadPlayer, attacker, deathItem, event.isHeadShot(),isPassWall,isPassSmoke);
-    }
-
-    /**
-     * 玩家死亡事件处理
-     */
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onDeathEvent(FPSMapEvent.PlayerEvent.DeathEvent event) {
-        if(!(event.getMap() instanceof CSMap csMap)) return;
-
-        ServerPlayer player = event.getPlayer();
-
-        if (BOImpl.isPhysicsModLoaded()) {
-            csMap.sendPacketToAllPlayer(new PxDeathCompatS2CPacket(player.getId()));
-        }
-
-        csMap.sendPacketToJoinedPlayer(player, new FPSMatchRespawnS2CPacket(), true);
-        event.setCanceled(true);
-
-        if(event.getSource().is(ModDamageTypes.BULLETS_TAG)) return;
-        Optional<ServerPlayer> attackerOpt = event.getAttacker();
-        ItemStack deathItem = BOUtil.getDeathItemStack(attackerOpt.orElse(null), event.getSource());
-        csMap.onPlayerDeathEvent(player, attackerOpt.orElse(player), deathItem, false,false,false);
     }
 
     /**

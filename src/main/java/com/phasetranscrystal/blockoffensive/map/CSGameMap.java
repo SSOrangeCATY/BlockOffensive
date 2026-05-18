@@ -38,6 +38,7 @@ import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.entity.BlastBombEntity;
 import com.phasetranscrystal.fpsmatch.core.map.*;
+import com.phasetranscrystal.fpsmatch.core.map.DeathContext;
 import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
@@ -1449,7 +1450,8 @@ public class CSGameMap extends CSMap{
     }
 
     @Override
-    public void handleDeath(ServerPlayer dead){
+    public void handleDeath(DeathContext context){
+        ServerPlayer dead = context.getDeadPlayer();
         if(this.isStart){
             MapTeams teams = this.getMapTeams();
             teams.getTeamByPlayer(dead).ifPresent(deadPlayerTeam -> {
@@ -1475,6 +1477,8 @@ public class CSGameMap extends CSMap{
                 this.syncInventory(dead);
             });
         }
+
+        super.handleDeath(context);
     }
 
     public void discardAmmo(UUID uuid){
