@@ -21,6 +21,10 @@ public class BlockOffensiveMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+        if (mixinClassName.startsWith("com.phasetranscrystal.blockoffensive.mixin.compat.PhysicsModBlockifyGuardMixin")) {
+            return FPSMImpl.findPhysicsMod();
+        }
+
         if(targetClassName.startsWith("com.phasetranscrystal.blockoffensive.mixin.ammo.DefaultAmmoMixin")){
             return !FPSMImpl.findTaczTweaks();
         }
