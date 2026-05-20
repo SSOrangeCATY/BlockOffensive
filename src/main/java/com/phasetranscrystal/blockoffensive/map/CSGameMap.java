@@ -9,6 +9,7 @@ import com.phasetranscrystal.blockoffensive.data.MvpReason;
 import com.phasetranscrystal.blockoffensive.event.CSGameMapEvent;
 import com.phasetranscrystal.blockoffensive.event.CSGamePlayerGetMvpEvent;
 import com.phasetranscrystal.blockoffensive.event.CSGameRoundEndEvent;
+import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.item.BombDisposalKit;
 import com.phasetranscrystal.blockoffensive.item.CompositionC4;
@@ -57,6 +58,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -923,6 +925,7 @@ public class CSGameMap extends CSMap{
 
     @Override
     public void victory() {
+        super.victory();
         reset();
     }
 
@@ -1479,6 +1482,19 @@ public class CSGameMap extends CSMap{
         }
 
         super.handleDeath(context);
+    }
+
+    @Override
+    public void recordHurtData(ServerPlayer hurt, DamageSource source, float amount) {
+        if (isC4Damage(source)) {
+            return;
+        }
+        super.recordHurtData(hurt, source, amount);
+    }
+
+    private boolean isC4Damage(DamageSource source) {
+        return source.getDirectEntity() instanceof CompositionC4Entity
+                || source.getEntity() instanceof CompositionC4Entity;
     }
 
     public void discardAmmo(UUID uuid){

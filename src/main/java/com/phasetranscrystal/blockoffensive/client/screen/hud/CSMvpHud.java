@@ -61,7 +61,7 @@ public class CSMvpHud {
     public void triggerAnimation(MvpReason reason) {
         MinecraftForge.EVENT_BUS.post(new CSHUDRenderEvent.RenderMvpHud.TriggeredAnimation(reason));
         this.player = reason.uuid;
-        this.currentTeamName = reason.getTeamName()
+        this.currentTeamName = reason.getTeamName().copy()
                 .append(Component.translatable("cs.game.winner.mvpNameSub"))
                 .withStyle(ChatFormatting.BOLD);
         this.currentPlayerName = reason.getPlayerName().withStyle(ChatFormatting.BOLD);

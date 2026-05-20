@@ -176,6 +176,7 @@ public class CSDeathMatchMap extends CSMap {
         this.sendVictoryMessage(
                 Component.translatable("map.deathmatch.message.victory.head").withStyle(ChatFormatting.GOLD).withStyle(ChatFormatting.BOLD),
                 Comparator.comparingInt(PlayerData::getScores));
+        super.victory();
         this.reset();
     }
 

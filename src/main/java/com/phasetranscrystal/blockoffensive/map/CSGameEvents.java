@@ -5,13 +5,16 @@ import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.item.BombDisposalKit;
 import com.phasetranscrystal.blockoffensive.item.CompositionC4;
+import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.common.event.FPSMapEvent;
+import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.event.common.GunShootEvent;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -41,6 +44,9 @@ public class CSGameEvents {
             }
         }else{
             if(isTeammate){
+                if (isC4Kill(event.getSource())) {
+                    return;
+                }
                 if(cs.allowFriendlyFire()){
                     event.setAmount(event.getAmount() * 0.3F);
                     cs.handleTeammateAttack(opt.get(),event.getPlayer());
@@ -49,6 +55,28 @@ public class CSGameEvents {
                 }
             }
         }
+    }
+
+    @SubscribeEvent
+    public static void onKillRecord(FPSMapEvent.PlayerEvent.KillRecordEvent event) {
+        if (event.getMap() instanceof CSMap && isC4Kill(event.getSource())) {
+            event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onTeamKillPenalty(FPSMapEvent.PlayerEvent.KillEvent event) {
+        if (!(event.getMap() instanceof CSMap cs)) return;
+
+        ServerPlayer killer = event.getPlayer();
+        ServerPlayer dead = event.getDead();
+        if (cs.getMapTeams().isSameTeam(killer, dead) && !isC4Kill(event.getSource())) {
+            cs.getMapTeams().getPlayerData(killer).ifPresent(PlayerData::removeKill);
+        }
+    }
+
+    private static boolean isC4Kill(DamageSource source) {
+        return source.getDirectEntity() instanceof CompositionC4Entity;
     }
 
     @SubscribeEvent
