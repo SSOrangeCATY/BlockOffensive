@@ -850,8 +850,12 @@ public abstract class CSMap extends BaseMap  {
             }
         }
 
-        if (attacker == null) {
-            return;
+        if (attacker != null) {
+            giveEco(deadPlayer, attacker, deathItem, true);
+        }else {
+            //若无伤害源实体 将击杀者设置为自己
+            context.setAttacker(deadPlayer);
+            attacker = deadPlayer;
         }
 
         boolean passWall = context.isPassWall();
@@ -862,8 +866,6 @@ public abstract class CSMap extends BaseMap  {
             context.setPassWall(passWall);
             context.setPassSmoke(passSmoke);
         }
-
-        giveEco(deadPlayer, attacker, deathItem, true);
 
         DeathMessageS2CPacket killPacket = BOUtil.buildDeathMessagePacket(
                 this,
