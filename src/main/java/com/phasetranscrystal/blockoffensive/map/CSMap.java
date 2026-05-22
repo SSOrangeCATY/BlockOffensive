@@ -48,6 +48,7 @@ import com.phasetranscrystal.fpsmatch.core.team.TeamData;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.item.GunTabType;
 import com.tacz.guns.api.item.IGun;
+import com.xuebi1145.xuplus_client.hud.WeaponItemIdS2CPacket;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
@@ -763,12 +764,14 @@ public abstract class CSMap extends BaseMap  {
 
     public void syncWeaponData(){
         Map<UUID, WeaponData> weaponDataMap = new HashMap<>();
+        Map<UUID, Map<String, List<ResourceLocation>>> itemIdMap = new HashMap<>();
 
         for (PlayerData data : this.getMapTeams().getJoinedPlayers()){
             Optional<ServerPlayer> optional = data.getPlayer();
             if(optional.isEmpty()) continue;
             ServerPlayer player = optional.get();
             Map<String, List<String>> weaponData = new HashMap<>();
+            Map<String, List<ResourceLocation>> itemIds = new HashMap<>();
 
             List<List<ItemStack>> items = new ArrayList<>();
             items.add(player.getInventory().items);
@@ -780,6 +783,12 @@ public abstract class CSMap extends BaseMap  {
                     for (DropType dropType : DropType.values()) {
                         if(dropType.itemMatch().test(itemStack)){
                             weaponData.computeIfAbsent(dropType.name(), k -> new ArrayList<>()).add(itemStack.getHoverName().getString());
+                            ResourceLocation regId = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(itemStack.getItem());
+                            if (itemStack.getItem() instanceof IGun iGun) {
+                                itemIds.computeIfAbsent(dropType.name(), k -> new ArrayList<>()).add(iGun.getGunId(itemStack));
+                            } else {
+                                itemIds.computeIfAbsent(dropType.name(), k -> new ArrayList<>()).add(regId);
+                            }
                             break;
                         }
                     }
@@ -787,6 +796,13 @@ public abstract class CSMap extends BaseMap  {
             }
             // carried
             weaponData.computeIfAbsent("CARRIED", k -> new ArrayList<>()).add(player.getMainHandItem().getHoverName().getString());
+            ItemStack mainHand = player.getMainHandItem();
+            if (mainHand.getItem() instanceof IGun iGun) {
+                itemIds.computeIfAbsent("CARRIED", k -> new ArrayList<>()).add(iGun.getGunId(mainHand));
+            } else {
+                ResourceLocation carriedId = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(mainHand.getItem());
+                itemIds.computeIfAbsent("CARRIED", k -> new ArrayList<>()).add(carriedId);
+            }
 
             boolean hasHelmet;
             int durability;
@@ -799,10 +815,18 @@ public abstract class CSMap extends BaseMap  {
                 durability = 0;
             }
             weaponDataMap.put(player.getUUID(),new WeaponData(weaponData,hasHelmet,durability));
+            itemIdMap.put(player.getUUID(), itemIds);
         }
 
         CSGameWeaponDataS2CPacket weaponDataS2CPacket = new CSGameWeaponDataS2CPacket(weaponDataMap);
+        WeaponItemIdS2CPacket itemIdS2CPacket = new WeaponItemIdS2CPacket(itemIdMap);
         this.sendPacketToSpecPlayer(weaponDataS2CPacket);
+
+        for (ServerTeam team : this.getMapTeams().getNormalTeams()) {
+            for (PlayerData pd : team.getPlayers().values()) {
+                pd.getPlayer().ifPresent(player -> this.sendPacketToJoinedPlayer(player, itemIdS2CPacket, true));
+            }
+        }
     }
 
     @Override

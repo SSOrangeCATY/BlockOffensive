@@ -26,6 +26,7 @@ import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.tacz.guns.api.item.GunTabType;
 import com.tacz.guns.client.gui.compat.ClothConfigScreen;
+import com.xuebi1145.xuplus_client.hud.WeaponItemIdS2CPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraftforge.api.distmarker.Dist;
@@ -85,6 +86,7 @@ public class BlockOffensive {
         PACKET_REGISTER.registerPacket(PxDeathCompatS2CPacket.class);
         PACKET_REGISTER.registerPacket(PxRagdollRemovalCompatS2CPacket.class);
         PACKET_REGISTER.registerPacket(CSGameWeaponDataS2CPacket.class);
+        PACKET_REGISTER.registerPacket(WeaponItemIdS2CPacket.class);
         PACKET_REGISTER.registerPacket(BombFuseS2CPacket.class);
         PACKET_REGISTER.registerPacket(PlayerMoveC2SPacket.class);
         PACKET_REGISTER.registerPacket(KillCamS2CPacket.class);

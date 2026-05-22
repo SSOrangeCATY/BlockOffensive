@@ -161,5 +161,6 @@
   "config.blockoffensive.common.web_server.enabled": "启用Web服务器",
   "config.blockoffensive.common.web_server.enabled.tooltip": "启动内置Web服务器",
   "config.blockoffensive.common.web_server.port": "Web服务器端口",
-  "config.blockoffensive.common.web_server.port.tooltip": "Web服务器的端口号（1-65535）"
+  "config.blockoffensive.common.web_server.port.tooltip": "Web服务器的端口号（1-65535）",
+  "xuplus.c4.timer": "炸弹将在 %s 秒后爆炸"
 }

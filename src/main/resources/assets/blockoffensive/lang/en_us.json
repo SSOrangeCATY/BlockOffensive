@@ -161,5 +161,6 @@
   "config.blockoffensive.common.web_server.enabled": "Enable Web Server",
   "config.blockoffensive.common.web_server.enabled.tooltip": "Start embedded web server",
   "config.blockoffensive.common.web_server.port": "Web Server Port",
-  "config.blockoffensive.common.web_server.port.tooltip": "Port for web server (1-65535)"
+  "config.blockoffensive.common.web_server.port.tooltip": "Port for web server (1-65535)",
+  "xuplus.c4.timer": "Bomb explodes in %s seconds"
 }
