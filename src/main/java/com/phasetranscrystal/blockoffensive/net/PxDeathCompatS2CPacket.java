@@ -19,12 +19,7 @@ public record PxDeathCompatS2CPacket(int entityId) {
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            PhysicsDeathProxyGuard.setActive(true);
-            try {
-                PhysicsModCompat.handleDead(entityId);
-            } finally {
-                PhysicsDeathProxyGuard.setActive(false);
-            }
+            PhysicsModCompat.handleDead(entityId);
         });
         ctx.get().setPacketHandled(true);
     }

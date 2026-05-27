@@ -17,6 +17,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
  */
 @Pseudo
 @Mixin(targets = "net.diebuddies.physics.PhysicsMod", remap = false)
+@Deprecated
 public class PhysicsModBlockifyGuardMixin {
 
     @Redirect(

@@ -10,7 +10,6 @@
   "plugin": "com.phasetranscrystal.blockoffensive.BlockOffensiveMixinPlugin",
   "mixins": [
     "C4KitsItemEntityMixin",
-    "compat.PhysicsModBlockifyGuardMixin",
     "StepSoundMixin",
     "accessor.BOClipContextAccessor",
     "ammo.AmmoEntityMixin",
