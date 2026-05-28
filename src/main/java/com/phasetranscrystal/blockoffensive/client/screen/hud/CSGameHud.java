@@ -24,7 +24,6 @@ import com.tacz.guns.client.resource.pojo.display.gun.AmmoCountStyle;
 import com.tacz.guns.resource.pojo.data.gun.Bolt;
 import com.tacz.guns.resource.pojo.data.gun.GunData;
 import com.tacz.guns.util.AttachmentDataUtils;
-import com.xuebi1145.xuplus_client.hud.c4.C4TimerHUD;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -50,7 +49,6 @@ public class CSGameHud implements IHudRenderer {
     private final CSGameOverlay gameOverlay = new CSGameOverlay();
     private final CSDMOverlay dmOverlay = new CSDMOverlay();
     private final CSSpectatorHudOverlay spectatorHudOverlay = new CSSpectatorHudOverlay();
-    private final C4TimerHUD c4TimerHud = new C4TimerHUD();
     private static final ResourceLocation SEMI = ResourceLocation.tryBuild("tacz", "textures/hud/fire_mode_semi.png");
     private static final ResourceLocation AUTO = ResourceLocation.tryBuild("tacz", "textures/hud/fire_mode_auto.png");
     private static final ResourceLocation BURST = ResourceLocation.tryBuild("tacz", "textures/hud/fire_mode_burst.png");
@@ -169,7 +167,6 @@ public class CSGameHud implements IHudRenderer {
         }
 
         renderCombatKillTips(mc,gui, guiGraphics,centerX,y);
-        c4TimerHud.render(guiGraphics, screenWidth, screenHeight);
     }
 
     public void renderHealthBar(Minecraft mc, ForgeGui gui, GuiGraphics guiGraphics, int centerX, int lineWidth, int y) {

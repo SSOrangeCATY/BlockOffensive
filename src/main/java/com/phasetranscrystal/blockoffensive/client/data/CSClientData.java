@@ -3,7 +3,6 @@ package com.phasetranscrystal.blockoffensive.client.data;
 import com.phasetranscrystal.blockoffensive.client.screen.hud.CSGameHud;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
-import com.xuebi1145.xuplus_client.hud.ClientWeaponItemCache;
 import net.minecraft.client.Minecraft;
 
 import java.util.*;
@@ -62,7 +61,6 @@ public class CSClientData {
         bombFuse = 0;
         bombTotalFuse = 0;
         weaponData.clear();
-        ClientWeaponItemCache.clear();
     }
 
     public static int getNextRoundMinMoney() {

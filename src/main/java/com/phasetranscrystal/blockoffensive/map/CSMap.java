@@ -48,7 +48,6 @@ import com.phasetranscrystal.fpsmatch.core.team.TeamData;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.item.GunTabType;
 import com.tacz.guns.api.item.IGun;
-import com.xuebi1145.xuplus_client.hud.WeaponItemIdS2CPacket;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
@@ -819,14 +818,7 @@ public abstract class CSMap extends BaseMap  {
         }
 
         CSGameWeaponDataS2CPacket weaponDataS2CPacket = new CSGameWeaponDataS2CPacket(weaponDataMap);
-        WeaponItemIdS2CPacket itemIdS2CPacket = new WeaponItemIdS2CPacket(itemIdMap);
         this.sendPacketToSpecPlayer(weaponDataS2CPacket);
-
-        for (ServerTeam team : this.getMapTeams().getNormalTeams()) {
-            for (PlayerData pd : team.getPlayers().values()) {
-                pd.getPlayer().ifPresent(player -> this.sendPacketToJoinedPlayer(player, itemIdS2CPacket, true));
-            }
-        }
     }
 
     @Override
