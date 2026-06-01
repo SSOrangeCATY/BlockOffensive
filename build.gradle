@@ -109,6 +109,19 @@ repositories {
         name = "Modrinth"
         url = "https://api.modrinth.com/maven"
     }
+    maven {
+        url "https://maven.latvian.dev/releases"
+        content {
+            includeGroup "dev.latvian.mods"
+            includeGroup "dev.latvian.apps"
+        }
+    }
+    maven {
+        url = "https://maven.architectury.dev"
+        content {
+            includeGroup "dev.architectury"
+        }
+    }
 }
 
 dependencies {
@@ -152,6 +165,9 @@ dependencies {
     modImplementation("maven.modrinth:tacz-tweaks:${tacztweak_version}")
     modRuntimeOnly("maven.modrinth:yacl:${yacl_version}")
     modRuntimeOnly("maven.modrinth:jade:${jade_version}")
+    modImplementation("dev.latvian.mods:kubejs-forge:${kubejs_version}")
+    modRuntimeOnly("dev.latvian.mods:rhino-forge:${rhino_version}")
+    modRuntimeOnly("dev.architectury:architectury-forge:${architectury_version}")
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
