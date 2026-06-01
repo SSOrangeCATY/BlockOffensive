@@ -118,14 +118,17 @@ public class CSDeathMatchMap extends CSMap {
     }
 
     @Override
-    public void join(String teamName, ServerPlayer player){
-        super.join(teamName,player);
-        getMapTeams().getTeamByPlayer(player).ifPresent(team -> {
-            this.playerData.put(player.getUUID(), new DMPlayerData(player.getUUID()));
-            if(isStart){
-                respawnPlayer(player);
-            }
-        });
+    public MapTeams.JoinTeamResult join(String teamName, ServerPlayer player){
+        MapTeams.JoinTeamResult result = super.join(teamName,player);
+        if (result.isSuccess()) {
+            getMapTeams().getTeamByPlayer(player).ifPresent(team -> {
+                this.playerData.put(player.getUUID(), new DMPlayerData(player.getUUID()));
+                if(isStart){
+                    respawnPlayer(player);
+                }
+            });
+        }
+        return result;
     }
 
     @Override

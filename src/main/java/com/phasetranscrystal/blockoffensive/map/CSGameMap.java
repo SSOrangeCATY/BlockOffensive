@@ -295,11 +295,12 @@ public class CSGameMap extends CSMap{
     }
 
     @Override
-    public void join(String teamName, ServerPlayer player) {
-        super.join(teamName, player);
-        if(allowSpecAttach.get() && teamName.equals("spectator")){
+    public MapTeams.JoinTeamResult join(String teamName, ServerPlayer player) {
+        MapTeams.JoinTeamResult result = super.join(teamName, player);
+        if(result.isSuccess() && allowSpecAttach.get() && teamName.equals("spectator")){
             BOSpecManager.requestAttachTeammate(player);
         }
+        return result;
     }
 
     @Override

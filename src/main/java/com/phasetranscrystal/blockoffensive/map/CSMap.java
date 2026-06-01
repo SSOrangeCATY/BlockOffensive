@@ -566,13 +566,14 @@ public abstract class CSMap extends BaseMap  {
     }
 
     @Override
-    public void join(String teamName, ServerPlayer player) {
-        MapTeams mapTeams = this.getMapTeams();
-        mapTeams.joinTeam(teamName, player);
-        mapTeams.getTeamByPlayer(player).ifPresent(team -> {
-            // 同步游戏类型和地图信息
-            this.pullGameInfo(player);
+    public MapTeams.JoinTeamResult join(String teamName, ServerPlayer player) {
+        MapTeams.JoinTeamResult result = super.join(teamName, player);
+        if (!result.isSuccess()) {
+            return result;
+        }
 
+        MapTeams mapTeams = this.getMapTeams();
+        mapTeams.getTeamByPlayer(player).ifPresent(team -> {
             // 如果游戏已经开始，设置玩家为旁观者
             if(this.isStart){
                 player.setGameMode(GameType.SPECTATOR);
@@ -580,6 +581,7 @@ public abstract class CSMap extends BaseMap  {
                 setBystander(player);
             }
         });
+        return result;
     }
 
     public abstract boolean setTeamSpawnPoints();
