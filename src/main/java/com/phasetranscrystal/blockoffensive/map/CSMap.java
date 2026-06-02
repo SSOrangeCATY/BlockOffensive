@@ -87,6 +87,19 @@ public abstract class CSMap extends BaseMap  {
     protected final Setting<Boolean> allowFriendlyFire = this.addSetting("allowFriendlyFire",false);
     protected final Setting<Boolean> allowSpecAttach = this.addSetting("allowSpecAttach", true);
 
+    /**
+     * 弹夹模式：启用后枪械弹药以整弹夹为单位进行管理。
+     * <ul>
+     *   <li><b>武器获得时：</b>在 {@code fixGunItem} 之后，备弹量（dummy ammo）会被对齐为最大载弹量（maxAmmo）的整数倍（四舍五入），
+     *       以确保备弹始终可以被最大载弹量整除，从而正确计算弹夹数量。</li>
+     *   <li><b>换弹时：</b>通过 {@link com.tacz.guns.api.event.common.GunReloadEvent} 拦截换弹逻辑。
+     *       换弹后当前弹夹内剩余弹药全部丢弃，备弹中扣除一个满弹夹的弹药量填充至当前弹夹。
+     *       计算公式：弹夹数 = 备弹量 / 最大载弹量，新备弹量 = (弹夹数 - 1) * 最大载弹量。</li>
+     * </ul>
+     * 默认为 {@code false}，即保持 TACZ 原版弹药逻辑。
+     */
+    protected final Setting<Boolean> magazineMode = this.addSetting("magazineMode", false);
+
     protected final Setting<Integer> knifeKillEconomy = this.addSetting("knifeKillEconomy", 1500);
     protected final Setting<Integer> smgKillEconomy = this.addSetting("smgKillEconomy", 600);
     protected final Setting<Integer> sniperKillEconomy = this.addSetting("sniperKillEconomy", 100);
@@ -152,6 +165,10 @@ public abstract class CSMap extends BaseMap  {
     public abstract Team.Visibility nameTagVisibility();
     public boolean allowFriendlyFire(){
         return allowFriendlyFire.get();
+    }
+
+    public boolean isMagazineMode() {
+        return magazineMode.get();
     }
 
     public abstract boolean isError();
