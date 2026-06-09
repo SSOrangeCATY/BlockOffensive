@@ -1,29 +1,37 @@
-# User-specific stuff
+# IDEs and editors
 .idea/
+.idea_modules/
+.vscode/
+.settings/
+.classpath
+.project
+.factorypath
+.metadata/
 .mcopilot/
-
 *.iml
 *.ipr
 *.iws
-
-# IntelliJ
 out/
-# mpeltonen/sbt-idea plugin
-.idea_modules/
-
-# JIRA plugin
 atlassian-ide-plugin.xml
 
-# Compiled class file
+# Local environment
+.env
+.env.*
+!.env.example
+*.local
+
+# Compiled class files
 *.class
 
-# Log file
+# Logs
 *.log
+logs/
+crash-reports/
 
 # BlueJ files
 *.ctxt
 
-# Package Files #
+# Package files
 *.jar
 *.war
 *.nar
@@ -31,6 +39,23 @@ atlassian-ide-plugin.xml
 *.zip
 *.tar.gz
 *.rar
+
+# Minecraft and Forge local runtime data
+run/
+runs/
+run-data/
+config/
+saves/
+screenshots/
+mods/
+shaderpacks/
+resourcepacks/
+options.txt
+optionsof.txt
+usernamecache.json
+usercache.json
+server.properties
+eula.txt
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
@@ -101,20 +126,21 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-.gradle
+# Gradle
+.gradle/
 build/
+.build/
+bin/
 
 # Ignore Gradle GUI config
 gradle-app.setting
 
 # Cache of project
 .gradletasknamecache
+.gradle-build-scan-data/
 
 **/build/
 
-# Common working directory
-run/
-runs/
-
 # Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
 !gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.jar
