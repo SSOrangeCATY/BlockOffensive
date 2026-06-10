@@ -74,7 +74,22 @@ public class CSGameEvents {
 
         ServerPlayer killer = event.getPlayer();
         ServerPlayer dead = event.getDead();
-        if (cs.getMapTeams().isSameTeam(killer, dead) && !isC4Kill(event.getSource())) {
+        boolean teammateKill = cs.getMapTeams().isSameTeam(killer, dead) && !isC4Kill(event.getSource());
+        if (cs instanceof CSDeathMatchMap dm) {
+            if (dm.isTDM() && teammateKill) {
+                return;
+            }
+
+            cs.getMapTeams().getPlayerData(killer).ifPresent(data -> {
+                if (teammateKill) {
+                    data.addKill();
+                }
+                data.addScore(1);
+            });
+            return;
+        }
+
+        if (teammateKill) {
             cs.getMapTeams().getPlayerData(killer).ifPresent(PlayerData::removeKill);
         }
     }

@@ -102,7 +102,7 @@ public class CSDeathMatchMap extends CSMap {
     public void setup() {
         isTDM = this.addSetting("isTDM", false);
         matchTimeLimit = this.addSetting("matchTimeLimit", 18000);
-        spawnProtectionTime = this.addSetting("spawnProtectionTime", 100);
+        spawnProtectionTime = this.addSetting("spawnProtectionTime", 10);
     }
 
     @Override
@@ -178,7 +178,7 @@ public class CSDeathMatchMap extends CSMap {
     public void victory(){
         this.sendVictoryMessage(
                 Component.translatable("map.deathmatch.message.victory.head").withStyle(ChatFormatting.GOLD).withStyle(ChatFormatting.BOLD),
-                Comparator.comparingInt(PlayerData::getScores));
+                Comparator.comparingInt(PlayerData::getScores).reversed());
         super.victory();
         this.reset();
     }
@@ -253,6 +253,7 @@ public class CSDeathMatchMap extends CSMap {
             teleportToPoint(player, spawnPoint);
         }
 
+        this.getMapTeams().getPlayerData(player).ifPresent(data -> data.setLiving(true));
         givePlayerKits(player);
         
         // 给予重生保护
@@ -274,9 +275,7 @@ public class CSDeathMatchMap extends CSMap {
     }
     
     public double calculateSpawnPointWeight(SpawnPointData spawnPoint) {
-        double baseWeight = 1.0;
-        double playerDistanceFactor = 10.0;
-
+        double weight = 1.0;
         List<ServerPlayer> onlinePlayers = this.getMapTeams().getOnline();
         
         for (Player player : onlinePlayers) {
@@ -285,16 +284,15 @@ public class CSDeathMatchMap extends CSMap {
             }
             
             double distance = player.distanceToSqr(spawnPoint.getX(), spawnPoint.getY(), spawnPoint.getZ());
-
-            baseWeight += playerDistanceFactor / (distance + 1.0);
+            weight += Math.min(distance, 4096.0) / 4096.0;
         }
         
-        return baseWeight;
+        return weight;
     }
 
     public SpawnPointData selectWeightedRandomSpawnPoint(Map<SpawnPointData, Double> weightMap) {
         double totalWeight = weightMap.values().stream().mapToDouble(Double::doubleValue).sum();
-        double randomValue = new Random().nextDouble() * totalWeight;
+        double randomValue = this.getRandom().nextDouble() * totalWeight;
         
         double currentWeight = 0.0;
         for (Map.Entry<SpawnPointData, Double> entry : weightMap.entrySet()) {
@@ -403,7 +401,9 @@ public class CSDeathMatchMap extends CSMap {
      * 检查玩家是否处于重生保护状态
      */
     public boolean isInSpawnProtection(UUID uuid) {
-        return this.getDMPlayerData(uuid).map(d -> d.isSpawning() && (System.currentTimeMillis() - d.lastProtectionTime < (spawnProtectionTime.get() * 1000L))).orElse(false);
+        return this.getDMPlayerData(uuid)
+                .map(d -> d.isSpawning() && System.currentTimeMillis() - d.lastProtectionTime < spawnProtectionTime.get() * 1000L)
+                .orElse(false);
     }
     
     /**
@@ -448,15 +448,17 @@ public class CSDeathMatchMap extends CSMap {
         }
 
         public boolean isSpawning(){
-            return !isFired && !isMoved;
+            return needRespawnProtection && !isFired && !isMoved;
         }
 
         public void setFired(){
             isFired = true;
+            needRespawnProtection = false;
         }
 
         public void setMoved(){
             isMoved = true;
+            needRespawnProtection = false;
         }
 
         public void reset(){
