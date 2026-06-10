@@ -19,7 +19,9 @@ BlockOffensive is a Forge mod for Minecraft 1.20.1 that builds a Counter-Strike-
 
 ## Version Compatibility Matrix
 
-| BlockOffensive | Distribution | Minecraft | Forge | FPSMatch | Modern UI | TaCZ | LR Tactical | CounterStrikeGrenade | KubeJS | Physics Mod | Hit Indication | GD656 Kill Icon | TaCZ Tweaks |
+Columns marked with `*` are required dependencies. Unmarked mod columns are compatibility integrations.
+
+| BlockOffensive | Distribution | Minecraft* | Forge* | FPSMatch* | Modern UI* | TaCZ | LR Tactical | CounterStrikeGrenade | KubeJS | Physics Mod | Hit Indication | GD656 Kill Icon | TaCZ Tweaks |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1.3.0 | QQ group / GitHub | 1.20.1 | 47.4.6 | 1.3.0+ | 3.12.0.1 | 1.1.7-hotfix | 0.3.0 | 1.4.1 | 2001.6.5-build.14 | 3.0.14 | 1.20.1-1.4 | 1.0.8-1.20.1-forge | 2.11.2 |
 | 1.2.5.1 | Modrinth / CurseForge | 1.20.1 | 47.4.6 | 1.2.5 | 3.11.1.6 | 1.1.6-hotfix | 0.3.0 | 1.2.8 | - | 3.0.14 | 1.20.1-1.4 | 0.4.2-1.20.1 | - |
