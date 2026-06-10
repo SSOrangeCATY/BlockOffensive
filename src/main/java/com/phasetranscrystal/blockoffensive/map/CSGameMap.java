@@ -345,6 +345,7 @@ public class CSGameMap extends CSMap{
         handleKnifeSelectionPhase();
 
         mapTeams.startNewRound();
+        syncShopDataToClient();
         syncNormalRoundStartMessage();
 
         return true;
@@ -895,6 +896,7 @@ public class CSGameMap extends CSMap{
                 this.checkMatchPoint();
             }
             this.getMapTeams().startNewRound();
+            syncShopDataToClient();
             syncNormalRoundStartMessage();
         }
     }
@@ -922,6 +924,11 @@ public class CSGameMap extends CSMap{
         this.sendPacketToAllPlayer(new FPSMusicStopS2CPacket());
         this.sendPacketToAllPlayer(new BombDemolitionProgressS2CPacket(0));
         this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> this.getPlayerByUUID(uuid).ifPresent(this::syncInventory)));
+    }
+
+    private void syncShopDataToClient() {
+        CapabilityMap.getTeamCapability(this, ShopCapability.class)
+                .forEach((team, opt) -> opt.ifPresent(ShopCapability::sync));
     }
 
     @Override
