@@ -10,11 +10,7 @@
   "plugin": "com.phasetranscrystal.blockoffensive.BlockOffensiveMixinPlugin",
   "mixins": [
     "C4KitsItemEntityMixin",
-    "StepSoundMixin",
-    "accessor.BOClipContextAccessor",
-    "ammo.AmmoEntityMixin",
-    "ammo.DefaultAmmoMixin",
-    "ammo.TweakAmmoMixin"
+    "StepSoundMixin"
   ],
   "client": [
     "PlayerRendererMixin"

@@ -1,6 +1,5 @@
 package com.phasetranscrystal.blockoffensive;
 
-import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -25,14 +24,6 @@ public class BlockOffensiveMixinPlugin implements IMixinConfigPlugin {
 //        if (mixinClassName.startsWith("com.phasetranscrystal.blockoffensive.mixin.compat.PhysicsModBlockifyGuardMixin")) {
 //            return FPSMImpl.findPhysicsMod();
 //        }
-
-        if(targetClassName.startsWith("com.phasetranscrystal.blockoffensive.mixin.ammo.DefaultAmmoMixin")){
-            return !FPSMImpl.findTaczTweaks();
-        }
-
-        if(targetClassName.startsWith("com.phasetranscrystal.blockoffensive.mixin.ammo.TweakAmmoMixin")){
-            return FPSMImpl.findTaczTweaks();
-        }
 
         return true;
     }

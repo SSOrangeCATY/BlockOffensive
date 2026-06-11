@@ -4,7 +4,6 @@ import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.client.data.WeaponData;
 import com.phasetranscrystal.blockoffensive.compat.BOImpl;
 import com.phasetranscrystal.blockoffensive.compat.CSGrenadeCompat;
-import com.phasetranscrystal.blockoffensive.compat.IPassThroughEntity;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.item.CompositionC4;
@@ -895,12 +894,6 @@ public abstract class CSMap extends BaseMap  {
 
         boolean passWall = context.isPassWall();
         boolean passSmoke = context.isPassSmoke();
-        if (context.getGunBullet() instanceof IPassThroughEntity passed) {
-            passWall = passWall || passed.blockoffensive$isWall();
-            passSmoke = passSmoke || passed.blockoffensive$isSmoke();
-            context.setPassWall(passWall);
-            context.setPassSmoke(passSmoke);
-        }
 
         DeathMessageS2CPacket killPacket = BOUtil.buildDeathMessagePacket(
                 this,
