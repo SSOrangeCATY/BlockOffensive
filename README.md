@@ -1,7 +1,7 @@
 # BlockOffensive
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/SSOrangeCATY/BlockOffensive)
-[中文文档](README_ZH-CN.md)
+[中文文档](README_ZH-CN.md) · [GitHub Wiki](https://github.com/SSOrangeCATY/BlockOffensive/wiki)
 
 BlockOffensive is a Forge mod for Minecraft 1.20.1 that builds a Counter-Strike-inspired tactical game mode on top of the [FPSMatch](https://github.com/SSOrangeCATY/FPSMatch) competition framework. It focuses on round-based play, team economy, C4 objectives, kill feedback, and client-side match presentation for modded Minecraft servers.
 

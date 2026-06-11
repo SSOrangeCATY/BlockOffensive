@@ -1,7 +1,7 @@
 # 方块攻势
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/SSOrangeCATY/BlockOffensive)
-[English Documentation](README.md)
+[English Documentation](README.md) · [GitHub Wiki](https://github.com/SSOrangeCATY/BlockOffensive/wiki)
 
 方块攻势是面向 Minecraft 1.20.1 Forge 的战术竞技模组，基于 [FPSMatch](https://github.com/SSOrangeCATY/FPSMatch) 比赛框架构建，提供接近 Counter-Strike 的回合制对局、队伍经济、C4 目标、击杀反馈与客户端比赛展示能力，适合整合包与服务器玩法使用。
 
