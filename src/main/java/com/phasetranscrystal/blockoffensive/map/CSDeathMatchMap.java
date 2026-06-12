@@ -108,7 +108,7 @@ public class CSDeathMatchMap extends CSMap {
     @Override
     public ServerTeam addTeam(TeamData data){
         ServerTeam team = super.addTeam(data);
-        CapabilityMap.getTeamCapability(this,ShopCapability.class).forEach((t,opt)-> opt.ifPresent(cap -> cap.initialize("cs",16000)));
+        team.getCapabilityMap().get(ShopCapability.class).ifPresent(cap -> cap.initialize("cs", 16000));
         return team;
     }
 

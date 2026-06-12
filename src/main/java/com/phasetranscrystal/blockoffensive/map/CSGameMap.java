@@ -207,7 +207,7 @@ public class CSGameMap extends CSMap{
     @Override
     public ServerTeam addTeam(TeamData data){
         ServerTeam team = super.addTeam(data);
-        CapabilityMap.getTeamCapability(this,ShopCapability.class).forEach((t,opt)-> opt.ifPresent(cap -> cap.initialize("cs",startMoney.get())));
+        team.getCapabilityMap().get(ShopCapability.class).ifPresent(cap -> cap.initialize("cs", startMoney.get()));
         return team;
     }
 
