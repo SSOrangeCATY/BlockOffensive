@@ -722,6 +722,7 @@ public abstract class CSMap extends BaseMap  {
             this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> this.getPlayerByUUID(uuid).ifPresent(player->{
                 teleportToPoint(player, data);
                 player.setGameMode(FPSMConfig.common.autoAdventureMode.get() ? GameType.ADVENTURE : GameType.SURVIVAL);
+                player.setRespawnPosition(null, null, 0, false, false);
             })));
         });
     }
