@@ -12,13 +12,12 @@ import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegist
 import com.phasetranscrystal.fpsmatch.common.packet.shop.ShopActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopAction;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import com.tacz.guns.api.TimelessAPI;
-import com.tacz.guns.api.item.GunTabType;
-import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.client.resource.GunDisplayInstance;
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.animation.ValueAnimator;
@@ -39,6 +38,7 @@ import icyllis.modernui.widget.TextView;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.fml.ModList;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -444,7 +444,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback {
             // 初始化Minecraft表面视图
             minecraftSurfaceView = new MinecraftSurfaceView(getContext());
             ClientShopSlot currentSlot = getSlot();
-            Optional<GunDisplayInstance> display = TimelessAPI.getGunDisplay(currentSlot.itemStack());
+            Optional<GunDisplayInstance> display = ModList.get().isLoaded("tacz") ? TimelessAPI.getGunDisplay(currentSlot.itemStack()) : Optional.empty();
 
             RelativeLayout.LayoutParams msvParams;
             if (display.isPresent()) {
@@ -541,8 +541,8 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback {
                 if (enable){
                     NetworkPacketRegister.getChannelFromCache(ShopActionC2SPacket.class).sendToServer(new ShopActionC2SPacket(FPSMClient.getGlobalData().getCurrentMap(), this.type, this.index, ShopAction.BUY));
                     ItemStack itemStack = currentSlot.itemStack();
-                    if (itemStack.getItem() instanceof IGun iGun) {
-                        Optional<GunTabType> t = FPSMUtil.getGunTypeByGunId(iGun.getGunId(itemStack));
+                    if (GunCompatManager.isGun(itemStack)) {
+                        Optional<com.phasetranscrystal.fpsmatch.compat.gun.GunTabTypeEnum> t = FPSMUtil.getGunTypeByGunId(GunCompatManager.findProvider(itemStack).getGunId(itemStack));
                         t.ifPresent(t1 -> {
                             FPSClientMusicManager.playSound(FPSMSoundRegister.getGunDropSound(t1));
                         });
@@ -618,7 +618,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback {
 
         public void setScale(float scale) {
             ClientShopSlot currentSlot = getSlot();
-            Optional<GunDisplayInstance> display = TimelessAPI.getGunDisplay(currentSlot.itemStack());
+            Optional<GunDisplayInstance> display = ModList.get().isLoaded("tacz") ? TimelessAPI.getGunDisplay(currentSlot.itemStack()) : Optional.empty();
 
             // 更新Minecraft表面视图尺寸
             RelativeLayout.LayoutParams msvParams = (RelativeLayout.LayoutParams) minecraftSurfaceView.getLayoutParams();

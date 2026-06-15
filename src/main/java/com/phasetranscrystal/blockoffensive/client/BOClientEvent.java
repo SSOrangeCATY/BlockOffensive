@@ -20,11 +20,10 @@ import com.phasetranscrystal.fpsmatch.common.event.RequestSpectatorOutlinesEvent
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMSoundPlayC2SPacket;
 import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
 import com.phasetranscrystal.fpsmatch.core.team.ClientTeam;
-import com.tacz.guns.api.item.IGun;
-import com.tacz.guns.util.InputExtraCheck;
 import icyllis.modernui.mc.MuiScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
@@ -120,7 +119,7 @@ public class BOClientEvent {
 
     @SubscribeEvent
     public static void onInput(InputEvent.MouseButton.Pre event){
-        if(isLocked() && InputExtraCheck.isInGame()){
+        if(isLocked() && GunCompatManager.isInGame()){
             if(checkLocalPlayerHand()){
                 if(event.getAction() == 1){
                     event.setCanceled(true);
@@ -140,7 +139,7 @@ public class BOClientEvent {
     private static boolean itemCheck(Player player){
         Item main = player.getMainHandItem().getItem();
         Item off = player.getOffhandItem().getItem();
-        return (main instanceof IGun || main instanceof IThrowEntityAble) || (off instanceof IGun || off instanceof IThrowEntityAble);
+        return (GunCompatManager.isGun(new ItemStack(main)) || main instanceof IThrowEntityAble) || (GunCompatManager.isGun(new ItemStack(off)) || off instanceof IThrowEntityAble);
     }
 
 }

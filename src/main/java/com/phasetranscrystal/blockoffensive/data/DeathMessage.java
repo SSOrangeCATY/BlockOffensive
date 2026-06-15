@@ -2,10 +2,8 @@ package com.phasetranscrystal.blockoffensive.data;
 
 import com.phasetranscrystal.fpsmatch.common.effect.FPSMEffectRegister;
 import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
-import com.tacz.guns.api.TimelessAPI;
-import com.tacz.guns.api.item.IGun;
-import com.tacz.guns.client.resource.index.ClientGunIndex;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffects;
@@ -176,11 +174,8 @@ public class DeathMessage {
     }
 
     public ResourceLocation getWeaponIcon() {
-        Item item = weapon.getItem();
-        if (item instanceof IGun iGun) {
-            ResourceLocation gunId = iGun.getGunId(weapon);
-            ClientGunIndex gunIndex = TimelessAPI.getClientGunIndex(gunId).orElse(null);
-            return gunIndex != null ? gunIndex.getDefaultDisplay().getHUDTexture() : null;
+        if (GunCompatManager.isGun(weapon)) {
+            return GunCompatManager.findProvider(weapon).getGunHUDTexture(weapon);
         }
         return null;
     }

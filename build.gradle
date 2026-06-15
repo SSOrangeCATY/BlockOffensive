@@ -150,7 +150,7 @@ dependencies {
     implementation(jarJar("io.github.llamalad7:mixinextras-forge:0.5.3"))
 
     modImplementation("icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_forge_version}")
-    modImplementation("maven.modrinth:timeless-and-classics-zero:${tacz_version}")
+    modCompileOnly("maven.modrinth:timeless-and-classics-zero:${tacz_version}")
     modImplementation("maven.modrinth:lr-tactical:${lrtactical_version}")
     modImplementation("maven.modrinth:cloth-config:${cloth_config_version}")
     modImplementation("com.phasetranscrystal:fpsmatch") {
@@ -162,7 +162,7 @@ dependencies {
     modImplementation("maven.modrinth:hit-indication:${hit_indication_version}")
     modImplementation("maven.modrinth:physicsmod:${physicsmod_version}")
     modImplementation("maven.modrinth:gd656killicon:${gd656killicon_version}")
-    modImplementation("maven.modrinth:tacz-tweaks:${tacztweak_version}")
+    modCompileOnly("maven.modrinth:tacz-tweaks:${tacztweak_version}")
     modRuntimeOnly("maven.modrinth:yacl:${yacl_version}")
     modRuntimeOnly("maven.modrinth:jade:${jade_version}")
     modImplementation("dev.latvian.mods:kubejs-forge:${kubejs_version}")

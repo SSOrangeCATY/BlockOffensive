@@ -11,12 +11,11 @@ import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.screen.hud.IHudRenderer;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
-import com.tacz.guns.api.TimelessAPI;
 import com.tacz.guns.api.entity.IGunOperator;
 import com.tacz.guns.api.item.IAmmo;
 import com.tacz.guns.api.item.IAmmoBox;
-import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.api.item.gun.FireMode;
 import com.tacz.guns.client.resource.GunDisplayInstance;
 import com.tacz.guns.client.resource.index.ClientGunIndex;
@@ -24,6 +23,7 @@ import com.tacz.guns.client.resource.pojo.display.gun.AmmoCountStyle;
 import com.tacz.guns.resource.pojo.data.gun.Bolt;
 import com.tacz.guns.resource.pojo.data.gun.GunData;
 import com.tacz.guns.util.AttachmentDataUtils;
+import com.tacz.guns.api.TimelessAPI;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -39,6 +39,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
+import net.minecraftforge.fml.ModList;
 
 import static com.phasetranscrystal.blockoffensive.client.screen.hud.CSGameTabRenderer.GUI_ICONS_LOCATION;
 
@@ -161,8 +162,8 @@ public class CSGameHud implements IHudRenderer {
         if (mc.player != null) {
             Inventory inv = mc.player.getInventory();
             ItemStack selectItem = mc.player.getInventory().getItem(inv.selected);
-            if(selectItem.getItem() instanceof IGun iGun){
-                renderGunInfo(mc,gui, guiGraphics, screenWidth, screenHeight, selectItem, iGun, centerX,lineWidth,y);
+            if(GunCompatManager.isGun(selectItem)){
+                renderGunInfo(mc,gui, guiGraphics, screenWidth, screenHeight, selectItem, centerX,lineWidth,y);
             }
         }
 
@@ -213,7 +214,9 @@ public class CSGameHud implements IHudRenderer {
         guiGraphics.pose().popPose();
     }
 
-    private void renderGunInfo(Minecraft mc, ForgeGui gui, GuiGraphics guiGraphics, int screenWidth, int screenHeight, ItemStack stack, IGun iGun,int centerX, int lineWidth, int y) {
+    private void renderGunInfo(Minecraft mc, ForgeGui gui, GuiGraphics guiGraphics, int screenWidth, int screenHeight, ItemStack stack, int centerX, int lineWidth, int y) {
+        if (!ModList.get().isLoaded("tacz")) return;
+        com.tacz.guns.api.item.IGun iGun = (com.tacz.guns.api.item.IGun) stack.getItem();
         ResourceLocation var27 = iGun.getGunId(stack);
         GunData gunData = TimelessAPI.getClientGunIndex(var27).map(ClientGunIndex::getGunData).orElse(null);
         GunDisplayInstance display = TimelessAPI.getGunDisplay(stack).orElse(null);
@@ -230,7 +233,7 @@ public class CSGameHud implements IHudRenderer {
         }
 
         Inventory inventory = mc.player.getInventory();
-        FireMode fireMode = IGun.getMainhandFireMode(mc.player);
+        FireMode fireMode = com.tacz.guns.api.item.IGun.getMainhandFireMode(mc.player);
         ResourceLocation fireModeTexture = switch (fireMode) {
             case AUTO -> AUTO;
             case BURST -> BURST;

@@ -45,8 +45,8 @@ import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import com.phasetranscrystal.fpsmatch.core.team.TeamData;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
-import com.tacz.guns.api.item.GunTabType;
-import com.tacz.guns.api.item.IGun;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunTabTypeEnum;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
@@ -802,8 +802,8 @@ public abstract class CSMap extends BaseMap  {
                         if(dropType.itemMatch().test(itemStack)){
                             weaponData.computeIfAbsent(dropType.name(), k -> new ArrayList<>()).add(itemStack.getHoverName().getString());
                             ResourceLocation regId = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(itemStack.getItem());
-                            if (itemStack.getItem() instanceof IGun iGun) {
-                                itemIds.computeIfAbsent(dropType.name(), k -> new ArrayList<>()).add(iGun.getGunId(itemStack));
+                            if (GunCompatManager.isGun(itemStack)) {
+                                itemIds.computeIfAbsent(dropType.name(), k -> new ArrayList<>()).add(GunCompatManager.findProvider(itemStack).getGunId(itemStack));
                             } else {
                                 itemIds.computeIfAbsent(dropType.name(), k -> new ArrayList<>()).add(regId);
                             }
@@ -815,8 +815,8 @@ public abstract class CSMap extends BaseMap  {
             // carried
             weaponData.computeIfAbsent("CARRIED", k -> new ArrayList<>()).add(player.getMainHandItem().getHoverName().getString());
             ItemStack mainHand = player.getMainHandItem();
-            if (mainHand.getItem() instanceof IGun iGun) {
-                itemIds.computeIfAbsent("CARRIED", k -> new ArrayList<>()).add(iGun.getGunId(mainHand));
+            if (GunCompatManager.isGun(mainHand)) {
+                itemIds.computeIfAbsent("CARRIED", k -> new ArrayList<>()).add(GunCompatManager.findProvider(mainHand).getGunId(mainHand));
             } else {
                 ResourceLocation carriedId = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(mainHand.getItem());
                 itemIds.computeIfAbsent("CARRIED", k -> new ArrayList<>()).add(carriedId);
@@ -918,8 +918,8 @@ public abstract class CSMap extends BaseMap  {
         if(FPSMImpl.findLrtacticalMod() && LrtacticalCompat.isKnife(itemStack)){
             return knifeKillEconomy.get();
         }else{
-            if(itemStack.getItem() instanceof IGun iGun){
-                return gerRewardByGunId(iGun.getGunId(itemStack));
+            if(GunCompatManager.isGun(itemStack)){
+                return gerRewardByGunId(GunCompatManager.findProvider(itemStack).getGunId(itemStack));
             }else{
                 return defaultKillEconomy.get();
             }
@@ -927,7 +927,7 @@ public abstract class CSMap extends BaseMap  {
     }
 
     public int gerRewardByGunId(ResourceLocation gunId){
-        Optional<GunTabType> optional = FPSMUtil.getGunTypeByGunId(gunId);
+        Optional<GunTabTypeEnum> optional = FPSMUtil.getGunTypeByGunId(gunId);
         if(optional.isPresent()){
             switch(optional.get()){
                 case SHOTGUN -> {

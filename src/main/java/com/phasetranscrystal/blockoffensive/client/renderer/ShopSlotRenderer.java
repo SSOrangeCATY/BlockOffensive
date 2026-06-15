@@ -5,15 +5,15 @@ import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import com.phasetranscrystal.blockoffensive.map.shop.ItemType;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.shop.ClientShopSlot;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.tacz.guns.api.TimelessAPI;
-import com.tacz.guns.api.item.GunTabType;
-import com.tacz.guns.api.item.IGun;
 import com.tacz.guns.client.resource.GunDisplayInstance;
 import icyllis.modernui.mc.MinecraftSurfaceView;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.fml.ModList;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
@@ -39,13 +39,13 @@ public class ShopSlotRenderer implements MinecraftSurfaceView.Renderer {
         ItemStack itemStack = currentSlot.itemStack();
         boolean enable = CSClientData.getMoney() >= currentSlot.cost() && !itemStack.isEmpty() && !currentSlot.isLocked();
         gr.pose().pushPose();
-        Optional<GunDisplayInstance> display = TimelessAPI.getGunDisplay(itemStack);
+        Optional<GunDisplayInstance> display = ModList.get().isLoaded("tacz") ? TimelessAPI.getGunDisplay(itemStack) : Optional.empty();
         // gr.fill(0,0,1920,1080, RenderUtil.color(124,66,232));
         if(display.isPresent()){
             float offset = 0;
-            if (itemStack.getItem() instanceof IGun iGun){
-                Optional<GunTabType> type = FPSMUtil.getGunTypeByGunId(iGun.getGunId(itemStack));
-                if(type.isPresent() && type.get() == GunTabType.PISTOL){
+            if (GunCompatManager.isGun(itemStack)){
+                Optional<com.phasetranscrystal.fpsmatch.compat.gun.GunTabTypeEnum> type = FPSMUtil.getGunTypeByGunId(GunCompatManager.findProvider(itemStack).getGunId(itemStack));
+                if(type.isPresent() && type.get() == com.phasetranscrystal.fpsmatch.compat.gun.GunTabTypeEnum.PISTOL){
                     offset = 10f;
                 }
             }

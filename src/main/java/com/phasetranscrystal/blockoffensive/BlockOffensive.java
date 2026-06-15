@@ -24,8 +24,7 @@ import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
-import com.tacz.guns.api.item.GunTabType;
-import com.tacz.guns.client.gui.compat.ClothConfigScreen;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunTabTypeEnum;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraftforge.api.distmarker.Dist;
@@ -95,21 +94,21 @@ public class BlockOffensive {
         event.enqueueWork(() -> {
             ColoredPlayerCapability.register();
 
-            FPSMSoundRegister.registerGunPickupSound(GunTabType.PISTOL,BOSoundRegister.WEAPON_PISTOL_PICKUP.get());
-            FPSMSoundRegister.registerGunPickupSound(GunTabType.RIFLE,BOSoundRegister.WEAPON_RIFLE_PICKUP.get());
-            FPSMSoundRegister.registerGunPickupSound(GunTabType.SHOTGUN,BOSoundRegister.WEAPON_SHOTGUN_PICKUP.get());
-            FPSMSoundRegister.registerGunPickupSound(GunTabType.SMG,BOSoundRegister.WEAPON_SMG_PICKUP.get());
-            FPSMSoundRegister.registerGunPickupSound(GunTabType.SNIPER,BOSoundRegister.WEAPON_SNIPER_PICKUP.get());
-            FPSMSoundRegister.registerGunPickupSound(GunTabType.MG,BOSoundRegister.WEAPON_PICKUP.get());
-            FPSMSoundRegister.registerGunPickupSound(GunTabType.RPG,BOSoundRegister.WEAPON_PICKUP.get());
+            FPSMSoundRegister.registerGunPickupSound(GunTabTypeEnum.PISTOL,BOSoundRegister.WEAPON_PISTOL_PICKUP.get());
+            FPSMSoundRegister.registerGunPickupSound(GunTabTypeEnum.RIFLE,BOSoundRegister.WEAPON_RIFLE_PICKUP.get());
+            FPSMSoundRegister.registerGunPickupSound(GunTabTypeEnum.SHOTGUN,BOSoundRegister.WEAPON_SHOTGUN_PICKUP.get());
+            FPSMSoundRegister.registerGunPickupSound(GunTabTypeEnum.SMG,BOSoundRegister.WEAPON_SMG_PICKUP.get());
+            FPSMSoundRegister.registerGunPickupSound(GunTabTypeEnum.SNIPER,BOSoundRegister.WEAPON_SNIPER_PICKUP.get());
+            FPSMSoundRegister.registerGunPickupSound(GunTabTypeEnum.MG,BOSoundRegister.WEAPON_PICKUP.get());
+            FPSMSoundRegister.registerGunPickupSound(GunTabTypeEnum.RPG,BOSoundRegister.WEAPON_PICKUP.get());
 
-            FPSMSoundRegister.registerGunDropSound(GunTabType.PISTOL,BOSoundRegister.WEAPON_PISTOL_IMPACT.get());
-            FPSMSoundRegister.registerGunDropSound(GunTabType.SNIPER,BOSoundRegister.WEAPON_SNIPER_IMPACT.get());
-            FPSMSoundRegister.registerGunDropSound(GunTabType.RIFLE,BOSoundRegister.WEAPON_RIFLE_IMPACT.get());
-            FPSMSoundRegister.registerGunDropSound(GunTabType.SMG,BOSoundRegister.WEAPON_SMG_IMPACT.get());
-            FPSMSoundRegister.registerGunDropSound(GunTabType.SHOTGUN,BOSoundRegister.WEAPON_SHOTGUN_IMPACT.get());
-            FPSMSoundRegister.registerGunDropSound(GunTabType.MG,BOSoundRegister.WEAPON_HEAVY_IMPACT.get());
-            FPSMSoundRegister.registerGunDropSound(GunTabType.RPG,BOSoundRegister.WEAPON_HEAVY_IMPACT.get());
+            FPSMSoundRegister.registerGunDropSound(GunTabTypeEnum.PISTOL,BOSoundRegister.WEAPON_PISTOL_IMPACT.get());
+            FPSMSoundRegister.registerGunDropSound(GunTabTypeEnum.SNIPER,BOSoundRegister.WEAPON_SNIPER_IMPACT.get());
+            FPSMSoundRegister.registerGunDropSound(GunTabTypeEnum.RIFLE,BOSoundRegister.WEAPON_RIFLE_IMPACT.get());
+            FPSMSoundRegister.registerGunDropSound(GunTabTypeEnum.SMG,BOSoundRegister.WEAPON_SMG_IMPACT.get());
+            FPSMSoundRegister.registerGunDropSound(GunTabTypeEnum.SHOTGUN,BOSoundRegister.WEAPON_SHOTGUN_IMPACT.get());
+            FPSMSoundRegister.registerGunDropSound(GunTabTypeEnum.MG,BOSoundRegister.WEAPON_HEAVY_IMPACT.get());
+            FPSMSoundRegister.registerGunDropSound(GunTabTypeEnum.RPG,BOSoundRegister.WEAPON_HEAVY_IMPACT.get());
 
             FPSMSoundRegister.registerKnifeDropSound(BOSoundRegister.WEAPON_KNIFE_IMPACT.get());
             FPSMSoundRegister.registerItemPickupSound(BOItemRegister.C4.get(), SoundEvents.EXPERIENCE_ORB_PICKUP);
@@ -120,14 +119,25 @@ public class BlockOffensive {
             BOUtil.registerThrowable(ThrowableType.INCENDIARY_GRENADE, FPSMItemRegister.T_INCENDIARY_GRENADE.get());
             BOUtil.registerThrowable(ThrowableType.INCENDIARY_GRENADE, FPSMItemRegister.CT_INCENDIARY_GRENADE.get());
             BOUtil.registerThrowable(ThrowableType.FLASH_BANG, FPSMItemRegister.FLASH_BOMB.get());
-            if(BOImpl.isPhysicsModLoaded()){
-                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> PhysicsModCompat.init());
-            }
 
-            if(FPSMImpl.findCounterStrikeGrenadesMod()){
-                CSGrenadeCompat.init();
-            }
+            // 兼容层注册（各模组兼容层在此统一注册）
+            registerCompat();
         });
+    }
+
+    /**
+     * 统一注册所有模组兼容层。
+     * 由 {@code commonSetup} 在 enqueueWork 中调用，确保在主线程执行。
+     */
+    private static void registerCompat() {
+        // 物理模组兼容
+        if (BOImpl.isPhysicsModLoaded()) {
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> PhysicsModCompat.init());
+        }
+        // CS Grenade 兼容
+        if (FPSMImpl.findCounterStrikeGrenadesMod()) {
+            CSGrenadeCompat.init();
+        }
     }
 
     @SubscribeEvent
@@ -137,7 +147,12 @@ public class BlockOffensive {
                 DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> BOMenuIntegration::registerModsPage);
             }else{
                 if (FMLEnvironment.dist == Dist.CLIENT) {
-                    ClothConfigScreen.registerNoClothConfigPage();
+                    try {
+                        Class<?> clothScreenClass = Class.forName("com.tacz.guns.client.gui.compat.ClothConfigScreen");
+                        clothScreenClass.getMethod("registerNoClothConfigPage").invoke(null);
+                    } catch (Exception ignored) {
+                        // TACZ 未加载，无需注册
+                    }
                 }
             }
         });

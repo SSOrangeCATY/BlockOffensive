@@ -18,7 +18,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 
-import static com.tacz.guns.util.InputExtraCheck.isInGame;
+import static com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager.isInGame;
 
 @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(value = Dist.CLIENT)

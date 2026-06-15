@@ -12,9 +12,8 @@ import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.client.settings.KeyModifier;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import org.lwjgl.glfw.GLFW;
-
-import static com.tacz.guns.util.InputExtraCheck.isInGame;
 
 @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
@@ -28,8 +27,8 @@ public class DismantleBombKey {
 
     @SubscribeEvent
     public static void onInspectPress(InputEvent.Key event) {
-        boolean isInGame = isInGame();
-        if(isInGame && DISMANTLE_BOMB_KEY.isDown()){
+        boolean inGame = GunCompatManager.isInGame();
+        if(inGame && DISMANTLE_BOMB_KEY.isDown()){
             if (event.getAction() == GLFW.GLFW_PRESS) {
                 BlockOffensive.INSTANCE.sendToServer(new BombActionC2SPacket(true));
             } else if (event.getAction() == GLFW.GLFW_RELEASE) {

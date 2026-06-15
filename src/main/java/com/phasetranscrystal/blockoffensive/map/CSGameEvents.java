@@ -10,19 +10,17 @@ import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAtt
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.common.event.FPSMapEvent;
 import com.phasetranscrystal.fpsmatch.common.event.PlayerObtainItemEvent;
+import com.phasetranscrystal.fpsmatch.common.event.FPSMGunShootEvent;
+import com.phasetranscrystal.fpsmatch.common.event.FPSMGunReloadEvent;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
-import com.tacz.guns.api.TimelessAPI;
-import com.tacz.guns.api.event.common.GunReloadEvent;
-import com.tacz.guns.api.event.common.GunShootEvent;
-import com.tacz.guns.api.item.IGun;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.Optional;
@@ -99,8 +97,8 @@ public class CSGameEvents {
     }
 
     @SubscribeEvent
-    public static void onPlayerShoot(GunShootEvent event) {
-        if (event.getLogicalSide() == LogicalSide.CLIENT) return;
+    public static void onPlayerShoot(FPSMGunShootEvent event) {
+        if (event.getShooter().level().isClientSide()) return;
 
         if(event.getShooter() instanceof Player player) {
             FPSMCore.getInstance().getMapByPlayer(player)
@@ -173,8 +171,8 @@ public class CSGameEvents {
     }
 
     @SubscribeEvent
-    public static void onGunReload(GunReloadEvent event) {
-        if (event.getLogicalSide() == LogicalSide.CLIENT) return;
+    public static void onGunReload(FPSMGunReloadEvent event) {
+        if (event.getEntity().level().isClientSide()) return;
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
 
         FPSMCore.getInstance().getMapByPlayer(player)
@@ -183,8 +181,8 @@ public class CSGameEvents {
                 .filter(CSGameMap::isMagazineMode)
                 .ifPresent(cs -> {
                     ItemStack stack = event.getGunItemStack();
-                    if (stack != null && stack.getItem() instanceof IGun iGun) {
-                        applyMagazineReload(stack, iGun);
+                    if (stack != null && GunCompatManager.isGun(stack)) {
+                        applyMagazineReload(stack);
                     }
                 });
     }
@@ -193,33 +191,33 @@ public class CSGameEvents {
     public static void onPlayerObtainItem(PlayerObtainItemEvent event) {
         if (!(event.getMap() instanceof CSGameMap cs) || !cs.isMagazineMode()) return;
         ItemStack stack = event.getItemStack();
-        if (stack.getItem() instanceof IGun iGun) {
-            applyMagazineObtainAmmo(stack, iGun);
+        if (GunCompatManager.isGun(stack)) {
+            applyMagazineObtainAmmo(stack);
         }
     }
 
-    private static void applyMagazineReload(ItemStack stack, IGun iGun) {
-        int dummyAmmo = iGun.getDummyAmmoAmount(stack);
-        int maxAmmo = TimelessAPI.getCommonGunIndex(iGun.getGunId(stack))
-                .map(gunIndex -> gunIndex.getGunData().getAmmoAmount())
+    private static void applyMagazineReload(ItemStack stack) {
+        int dummyAmmo = GunCompatManager.findProvider(stack).getDummyAmmo(stack);
+        int maxAmmo = GunCompatManager.findProvider(stack).getGunData(stack)
+                .map(data -> data.getAmmoAmount())
                 .orElse(0);
         if (maxAmmo <= 0 || dummyAmmo < maxAmmo) return;
 
         int magazineCount = dummyAmmo / maxAmmo;
-        iGun.setDummyAmmoAmount(stack, (magazineCount - 1) * maxAmmo);
+        GunCompatManager.findProvider(stack).setDummyAmmo(stack, (magazineCount - 1) * maxAmmo);
     }
 
-    private static void applyMagazineObtainAmmo(ItemStack stack, IGun iGun) {
-        int dummyAmmo = iGun.getDummyAmmoAmount(stack);
+    private static void applyMagazineObtainAmmo(ItemStack stack) {
+        int dummyAmmo = GunCompatManager.findProvider(stack).getDummyAmmo(stack);
         if (dummyAmmo <= 0) return;
 
-        int maxAmmo = TimelessAPI.getCommonGunIndex(iGun.getGunId(stack))
-                .map(gunIndex -> gunIndex.getGunData().getAmmoAmount())
+        int maxAmmo = GunCompatManager.findProvider(stack).getGunData(stack)
+                .map(data -> data.getAmmoAmount())
                 .orElse(0);
         if (maxAmmo <= 0) return;
 
         int magazineCount = Math.round((float) dummyAmmo / maxAmmo);
-        iGun.setDummyAmmoAmount(stack, magazineCount * maxAmmo);
+        GunCompatManager.findProvider(stack).setDummyAmmo(stack, magazineCount * maxAmmo);
     }
 
 }
