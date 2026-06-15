@@ -144,3 +144,13 @@ gradle-app.setting
 # Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
 !gradle-wrapper.jar
 !gradle/wrapper/gradle-wrapper.jar
+
+# Codex / Agent working files
+.codex-loop/
+
+# Docs
+docs/
+
+# Misc
+.tmp-readme-wiki-link
+.wiki
