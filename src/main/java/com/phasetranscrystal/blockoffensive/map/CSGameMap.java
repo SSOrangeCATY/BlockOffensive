@@ -579,7 +579,7 @@ public class CSGameMap extends CSMap{
 
     @Override
     public Team.Visibility nameTagVisibility() {
-        return Team.Visibility.HIDE_FOR_OTHER_TEAMS;
+        return hideEnemyNameTag.get() ? Team.Visibility.HIDE_FOR_OTHER_TEAMS : Team.Visibility.ALWAYS;
     }
 
     @Override
@@ -1373,6 +1373,8 @@ public class CSGameMap extends CSMap{
      */
     @Override
     public void switchTeams() {
+        // 换边前关闭商店，防止换边后显示错误阵营的商店界面
+        syncShopInfo(false, 0);
         super.switchTeams();
         MinecraftForge.EVENT_BUS.post(new CSGameMapEvent.TeamSwitchEvent(this));
     }

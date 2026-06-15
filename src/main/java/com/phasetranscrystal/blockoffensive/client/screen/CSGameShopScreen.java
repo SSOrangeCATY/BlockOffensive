@@ -537,7 +537,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback {
 
             // 点击事件
             setOnClickListener((v) -> {
-                boolean enable = CSClientData.getMoney() >= currentSlot.cost() && !currentSlot.itemStack().isEmpty() && !currentSlot.isLocked();
+                boolean enable = CSClientData.canOpenShop && CSClientData.getMoney() >= currentSlot.cost() && !currentSlot.itemStack().isEmpty() && !currentSlot.isLocked();
                 if (enable){
                     NetworkPacketRegister.getChannelFromCache(ShopActionC2SPacket.class).sendToServer(new ShopActionC2SPacket(FPSMClient.getGlobalData().getCurrentMap(), this.type, this.index, ShopAction.BUY));
                     ItemStack itemStack = currentSlot.itemStack();
@@ -592,7 +592,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback {
 
         public void updateButtonState() {
             ClientShopSlot currentSlot = this.getSlot();
-            boolean enable = CSClientData.getMoney() >= currentSlot.cost() && !currentSlot.itemStack().isEmpty() && !currentSlot.isLocked();
+            boolean enable = CSClientData.canOpenShop && CSClientData.getMoney() >= currentSlot.cost() && !currentSlot.itemStack().isEmpty() && !currentSlot.isLocked();
             this.setElements(enable);
 
             if (!this.isHovered()) {
