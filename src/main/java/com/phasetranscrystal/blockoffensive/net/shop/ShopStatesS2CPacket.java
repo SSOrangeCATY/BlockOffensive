@@ -33,7 +33,8 @@ public class ShopStatesS2CPacket {
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            if (!this.canOpenShop && Minecraft.getInstance().player != null && Minecraft.getInstance().screen instanceof MuiScreen) {
+            if (!this.canOpenShop && Minecraft.getInstance().player != null && Minecraft.getInstance().screen != null) {
+                // 购买阶段结束后强制关闭购买界面
                 Minecraft.getInstance().setScreen(null);
             }
             CSClientData.canOpenShop = this.canOpenShop;
