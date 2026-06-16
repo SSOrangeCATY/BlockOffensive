@@ -13,13 +13,13 @@ import com.phasetranscrystal.fpsmatch.common.drop.ThrowableRegistry;
 import com.phasetranscrystal.fpsmatch.common.drop.ThrowableSubType;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMSoundPlayC2SPacket;
 import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
+import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
-import me.xjqsh.lrtactical.entity.ThrowableItemEntity;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -177,12 +177,11 @@ public class BOUtil {
      * @return 致死物品栈（非空，默认返回主手物品）
      */
     public static ItemStack getDeathItemStack(ServerPlayer attacker, DamageSource source) {
-        if (source.getDirectEntity() instanceof ThrowableItemEntity projectile) {
-            return projectile.getItem();
-        }
-
-        if (source.getEntity() instanceof ThrowableItemEntity projectile) {
-            return projectile.getItem();
+        if (FPSMImpl.findLrtacticalMod()) {
+            ItemStack projectileItem = LrtacticalCompat.getProjectileItem(source);
+            if (!projectileItem.isEmpty()) {
+                return projectileItem;
+            }
         }
 
         if (FPSMImpl.findCounterStrikeGrenadesMod()) {

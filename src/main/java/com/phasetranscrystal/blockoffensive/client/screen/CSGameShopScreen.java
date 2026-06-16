@@ -68,6 +68,17 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback {
         return INSTANCE;
     }
 
+    @Override
+    public boolean shouldCloseOnEsc() {
+        return true;
+    }
+
+    @Override
+    public void onClosed() {
+        super.onClosed();
+        INSTANCE = null;
+    }
+
     public View onCreateView(@NotNull LayoutInflater inflater, ViewGroup container, DataSet savedInstanceState) {
         return new WindowLayout(getContext());
     }
