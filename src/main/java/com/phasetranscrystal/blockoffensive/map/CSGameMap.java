@@ -1468,6 +1468,12 @@ public class CSGameMap extends CSMap{
         if(this.isStart){
             MapTeams teams = this.getMapTeams();
             teams.getTeamByPlayer(dead).ifPresent(deadPlayerTeam -> {
+                // 优先切换到旁观者模式，防止后续操作异常导致旁观者切换失败
+                dead.heal(dead.getMaxHealth());
+                dead.setGameMode(GameType.SPECTATOR);
+                dead.setRespawnPosition(dead.level().dimension(), dead.getOnPos().above(), 0, true, false);
+                this.setBystander(dead);
+
                 CapabilityMap.getTeamCapability(deadPlayerTeam, ShopCapability.class)
                         .flatMap(ShopCapability::getShopSafe).ifPresent(shop -> shop.getDefaultAndPutData(dead.getUUID()));
 
@@ -1483,10 +1489,6 @@ public class CSGameMap extends CSMap{
                 }
                 FPSMUtil.playerDeadDropWeapon(dead, true);
                 dead.getInventory().clearContent();
-                dead.heal(dead.getMaxHealth());
-                dead.setGameMode(GameType.SPECTATOR);
-                dead.setRespawnPosition(dead.level().dimension(), dead.getOnPos().above(), 0, true, false);
-                this.setBystander(dead);
                 this.syncInventory(dead);
             });
         }

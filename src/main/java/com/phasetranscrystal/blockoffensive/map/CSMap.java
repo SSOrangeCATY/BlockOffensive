@@ -116,6 +116,10 @@ public abstract class CSMap extends BaseMap  {
     private int autoStartTimer = 0;
     private boolean autoStartFirstMessageFlag = false;
 
+    private final Map<UUID, ShopStateSnapshot> lastShopStates = new HashMap<>();
+
+    private record ShopStateSnapshot(boolean canOpenShop, int nextRoundMoney, int closeTime) {}
+
     public CSMap(ServerLevel serverLevel,
                  String mapName,
                  AreaData areaData,

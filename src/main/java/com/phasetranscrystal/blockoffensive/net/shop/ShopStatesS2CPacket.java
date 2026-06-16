@@ -34,15 +34,17 @@ public class ShopStatesS2CPacket {
 
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            if (!this.canOpenShop && Minecraft.getInstance().player != null) {
+            boolean wasOpen = CSClientData.canOpenShop;
+            CSClientData.canOpenShop = this.canOpenShop;
+            CSClientData.nextRoundMoney = this.nextRoundMoney;
+            CSClientData.shopCloseTime = this.closeTime;
+
+            if (wasOpen && !this.canOpenShop && Minecraft.getInstance().player != null) {
                 Minecraft mc = Minecraft.getInstance();
                 if (mc.screen instanceof MuiScreen muiScreen && muiScreen.getFragment() instanceof CSGameShopScreen) {
                     mc.setScreen(null);
                 }
             }
-            CSClientData.canOpenShop = this.canOpenShop;
-            CSClientData.nextRoundMoney = this.nextRoundMoney;
-            CSClientData.shopCloseTime = this.closeTime;
         });
         ctx.get().setPacketHandled(true);
     }
