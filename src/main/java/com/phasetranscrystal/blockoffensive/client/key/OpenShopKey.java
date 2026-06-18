@@ -62,7 +62,7 @@ public class OpenShopKey {
                     return;
                 }
 
-                if(CSClientData.isStart){
+                if(CSClientData.isStart || CSClientData.canOpenShop){
                     openShop();
                 }else{
                     Minecraft.getInstance().player.sendSystemMessage(Component.translatable("key.blockoffensive.open.shop.failed.game.not_started"));

@@ -119,6 +119,8 @@ public class BOClientEvent {
 
     @SubscribeEvent
     public static void onInput(InputEvent.MouseButton.Pre event){
+        Minecraft minecraft = Minecraft.getInstance();
+        if(minecraft.screen != null) return;
         if(isLocked() && GunCompatManager.isInGame()){
             if(checkLocalPlayerHand()){
                 if(event.getAction() == 1){
