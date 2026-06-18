@@ -81,8 +81,6 @@ public abstract class CSMap extends BaseMap  {
     private static final Vector3f CT_COLOR = new Vector3f(0.25f, 0.55f, 1);
 
     private final Map<String, CSCommand> commands = new ConcurrentHashMap<>();
-    protected final Setting<Boolean> autoStart = this.addSetting("autoStart", true);
-    protected final Setting<Integer> autoStartTime = this.addSetting("autoStartTime", 6000);
     protected final Setting<Boolean> allowFriendlyFire = this.addSetting("allowFriendlyFire",false);
     protected final Setting<Boolean> allowSpecAttach = this.addSetting("allowSpecAttach", true);
 
@@ -113,9 +111,6 @@ public abstract class CSMap extends BaseMap  {
 
     protected VoteObj voteObj;
 
-    private int autoStartTimer = 0;
-    private boolean autoStartFirstMessageFlag = false;
-
     private final Map<UUID, ShopStateSnapshot> lastShopStates = new HashMap<>();
 
     private record ShopStateSnapshot(boolean canOpenShop, int nextRoundMoney, int closeTime) {}
@@ -138,6 +133,8 @@ public abstract class CSMap extends BaseMap  {
     ) {
         super(serverLevel, mapName, areaData, capabilities);
         this.setup();
+        this.autoStart.set(true);
+        this.autoStartTime.set(6000);
         this.loadConfig();
         this.ctTeam = this.addTeam(TeamData.of("ct",getCTLimit(), ctCapabilities));
         this.ctTeam.setColor(CT_COLOR);
@@ -184,7 +181,6 @@ public abstract class CSMap extends BaseMap  {
     @Override
     public void tick() {
         this.voteLogic();
-        this.autoStartLogic();
     }
 
     @Override
@@ -194,35 +190,22 @@ public abstract class CSMap extends BaseMap  {
         return true;
     }
 
-    protected void autoStartLogic() {
-        if (!autoStart.get()) return;
-        if (isStart) {
-            resetAutoStartState();
-            return;
-        }
-
-        boolean bothTeamsHavePlayers = !getCT().getOnlinePlayers().isEmpty() && !getT().getOnlinePlayers().isEmpty();
-        if (bothTeamsHavePlayers) {
-            handleActiveCountdown();
-        } else {
-            resetAutoStartState();
-        }
+    @Override
+    protected boolean canAutoStart() {
+        return !getCT().getOnlinePlayers().isEmpty() && !getT().getOnlinePlayers().isEmpty();
     }
 
-    protected void resetAutoStartState() {
-        if (autoStartTimer != 0 || autoStartFirstMessageFlag) {
-            autoStartTimer = 0;
-            autoStartFirstMessageFlag = false;
-            clearOfflinePlayers();
-        }
+    @Override
+    protected boolean canReadyStart() {
+        return allNormalOnlinePlayersReady();
     }
 
-    protected void clearOfflinePlayers() {
-        for (ServerTeam team : this.getMapTeams().getNormalTeams()) {
-            for (UUID offline : team.getOfflinePlayers()) {
-                this.getMapTeams().leaveTeam(offline);
-            }
-        }
+    @Override
+    protected void startGameWithAnnouncement() {
+        Component title = Component.translatable("blockoffensive.map.cs.auto.started")
+                .withStyle(ChatFormatting.YELLOW);
+        sendTitleToAllPlayers(title);
+        start();
     }
 
     /**
@@ -388,67 +371,6 @@ public abstract class CSMap extends BaseMap  {
         messages.forEach(message -> this.sendAllPlayerMessage(message, false));
     }
 
-
-    protected void handleActiveCountdown() {
-        autoStartTimer++;
-        int totalTicks = autoStartTime.get();
-        int secondsLeft = (totalTicks - autoStartTimer) / 20;
-
-        if (!autoStartFirstMessageFlag) {
-            sendAutoStartMessage(secondsLeft);
-            autoStartFirstMessageFlag = true;
-        }
-
-        if (autoStartTimer >= totalTicks) {
-            startGameWithAnnouncement();
-            return;
-        }
-
-        if (shouldSendTitleNotification(totalTicks)) {
-            sendTitleNotification(secondsLeft);
-        } else if (shouldSendActionbar()) {
-            sendActionbarMessage(secondsLeft);
-        }
-    }
-
-    protected boolean shouldSendTitleNotification(int totalTicks) {
-        if (autoStartTimer >= (totalTicks - 600) && autoStartTimer % 200 == 0) {
-            return true;
-        }
-        return autoStartTimer >= (totalTicks - 200) && autoStartTimer % 20 == 0;
-    }
-
-    protected boolean shouldSendActionbar() {
-        return autoStartTimer % 20 == 0 && this.getVote() == null;
-    }
-
-    protected void sendAutoStartMessage(int seconds) {
-        Component message = Component.translatable("blockoffensive.map.cs.auto.start.message", seconds)
-                .withStyle(ChatFormatting.YELLOW);
-        this.sendAllPlayerMessage(message, false);
-    }
-
-    protected void sendTitleNotification(int seconds) {
-        Component title = Component.translatable("blockoffensive.map.cs.auto.start.title", seconds)
-                .withStyle(ChatFormatting.YELLOW);
-        Component subtitle = Component.translatable("blockoffensive.map.cs.auto.start.subtitle")
-                .withStyle(ChatFormatting.YELLOW);
-        sendTitleToAllPlayers(title, subtitle);
-    }
-
-    protected void sendActionbarMessage(int seconds) {
-        Component message = Component.translatable("blockoffensive.map.cs.auto.start.actionbar", seconds)
-                .withStyle(ChatFormatting.YELLOW);
-        this.sendAllPlayerMessage(message, true);
-    }
-
-    protected void startGameWithAnnouncement() {
-        Component title = Component.translatable("blockoffensive.map.cs.auto.started")
-                .withStyle(ChatFormatting.YELLOW);
-        sendTitleToAllPlayers(title);
-        resetAutoStartState();
-        this.start();
-    }
 
     // 通用标题发送工具（从CSGameMap迁移）
     protected void sendTitleToAllPlayers(Component title) {
