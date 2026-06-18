@@ -42,6 +42,7 @@ public class OpenShopKey {
 
     @SubscribeEvent
     public static void onInspectPress(InputEvent.Key event) {
+        if (Minecraft.getInstance().screen != null) return;
         if (isInGame() && event.getAction() == GLFW.GLFW_PRESS && OPEN_SHOP_KEY.matches(event.getKey(), event.getScanCode())) {
             LocalPlayer player = Minecraft.getInstance().player;
             if (player == null || player.isSpectator()) {
