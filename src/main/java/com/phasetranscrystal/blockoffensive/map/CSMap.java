@@ -608,7 +608,10 @@ public abstract class CSMap extends BaseMap  {
     public static void dropC4(ServerPlayer player) {
         int im = player.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof CompositionC4, -1, player.inventoryMenu.getCraftSlots());
         if (im > 0) {
-            player.drop(new ItemStack(BOItemRegister.C4.get(), 1), false, false).setGlowingTag(true);
+            ItemEntity dropped = player.drop(new ItemStack(BOItemRegister.C4.get(), 1), false, false);
+            if (dropped != null) {
+                dropped.setGlowingTag(true);
+            }
             player.getInventory().setChanged();
         }
     }
