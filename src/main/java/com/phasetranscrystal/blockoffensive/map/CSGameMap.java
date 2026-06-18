@@ -236,12 +236,15 @@ public class CSGameMap extends CSMap{
 
     @Override
     public boolean getPlayerCanOpenShop(ShopCapability cap, ServerPlayer player) {
+        if (isWaiting && !roundStarted) {
+            return !isShopLocked;
+        }
         return !isShopLocked && cap.getShopSafe().map(shop->shop.isInArea(player)).orElse(false);
     }
 
     @Override
     protected boolean shouldSyncShopInfoWithMapInfo() {
-        return !isWaiting || roundStarted;
+        return true;
     }
 
     public int getNextRoundMinMoney(ServerTeam team){
