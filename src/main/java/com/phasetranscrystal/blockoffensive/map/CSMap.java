@@ -679,12 +679,18 @@ public abstract class CSMap extends BaseMap  {
         this.sendPacketToAllPlayer(packet);
 
         if(isStart){
-            syncShopInfo();
+            if (shouldSyncShopInfoWithMapInfo()) {
+                syncShopInfo();
+            }
 
             if(syncWeapon){
                 syncWeaponData();
             }
         }
+    }
+
+    protected boolean shouldSyncShopInfoWithMapInfo() {
+        return true;
     }
 
     public void syncShopInfo(){

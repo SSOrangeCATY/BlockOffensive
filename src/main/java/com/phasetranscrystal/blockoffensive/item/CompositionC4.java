@@ -257,9 +257,9 @@ public class CompositionC4 extends Item implements BlastBombItem {
 
 		// 通知所有玩家
 		Component message = Component.translatable("blockoffensive.item.c4.planted").withStyle(ChatFormatting.RED);
-		baseMap.getMapTeams().getJoinedPlayers().forEach(data ->
-				data.getPlayer().ifPresent(p -> p.displayClientMessage(message, true))
-		);
+        baseMap.getMapTeams().getJoinedPlayers().forEach(data ->
+                data.getPlayer().ifPresent(p -> p.displayClientMessage(message, false))
+        );
 
 		map.getMapTeams().getTeamByPlayer(player).ifPresent(team -> {
 			MinecraftForge.EVENT_BUS.post(new CSGameMapEvent.PlayerEvent.PlacedC4Event(map,team,player));

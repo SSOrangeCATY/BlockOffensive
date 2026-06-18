@@ -14,6 +14,7 @@ import com.phasetranscrystal.fpsmatch.core.entity.BlastBombEntity;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.map.BlastBombState;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -60,6 +61,10 @@ public class CompositionC4Entity extends BlastBombEntity {
     private int fuse = DEFAULT_FUSE_TIME;
     private BlastBombState state = BlastBombState.TICKING;
     private CSGameMap map;
+    private int forcedChunkX;
+    private int forcedChunkZ;
+    private boolean chunkForced;
+    private boolean chunkForceOwned;
 
     public CompositionC4Entity(EntityType<?> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -135,15 +140,35 @@ public class CompositionC4Entity extends BlastBombEntity {
     @Override
     public void onAddedToWorld() {
         super.onAddedToWorld();
+        forceC4Chunk(true);
     }
 
     @Override
     public void onRemovedFromWorld() {
         super.onRemovedFromWorld();
+        forceC4Chunk(false);
         if (!this.level().isClientSide) {
             if(map != null){
                 map.setBombEntity(null);
             }
+        }
+    }
+
+    private void forceC4Chunk(boolean force) {
+        if (!(this.level() instanceof ServerLevel serverLevel)) return;
+
+        if (force && !chunkForced) {
+            forcedChunkX = this.blockPosition().getX() >> 4;
+            forcedChunkZ = this.blockPosition().getZ() >> 4;
+            chunkForceOwned = !serverLevel.getForcedChunks().contains(ChunkPos.asLong(forcedChunkX, forcedChunkZ));
+            serverLevel.setChunkForced(forcedChunkX, forcedChunkZ, true);
+            chunkForced = true;
+        } else if (!force && chunkForced) {
+            if (chunkForceOwned) {
+                serverLevel.setChunkForced(forcedChunkX, forcedChunkZ, false);
+            }
+            chunkForced = false;
+            chunkForceOwned = false;
         }
     }
     @Override
@@ -232,15 +257,15 @@ public class CompositionC4Entity extends BlastBombEntity {
 
 
     public void playBeepSound(){
-        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), BOSoundRegister.BEEP.get(), SoundSource.VOICE, 3.0F, 1);
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), BOSoundRegister.BEEP.get(), SoundSource.VOICE, 6.0F, 1);
     }
 
     public void playNvgOnSound(){
-        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), BOSoundRegister.WEAPON_C4_PRE_EXPLODE.get(), SoundSource.VOICE, 3.0F, 1);
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), BOSoundRegister.WEAPON_C4_PRE_EXPLODE.get(), SoundSource.VOICE, 6.0F, 1);
     }
 
     public void playDefusingSound(){
-        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.VOICE, 3.0F, 1);
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.VOICE, 6.0F, 1);
     }
     public void playDefusedSound(){
         this.level().playSound(null, this.getX(), this.getY(), this.getZ(), BOSoundRegister.DEFUSED.get(), SoundSource.VOICE, 3.0F, 1);

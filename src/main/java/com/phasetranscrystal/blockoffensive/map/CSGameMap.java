@@ -239,6 +239,11 @@ public class CSGameMap extends CSMap{
         return !isShopLocked && cap.getShopSafe().map(shop->shop.isInArea(player)).orElse(false);
     }
 
+    @Override
+    protected boolean shouldSyncShopInfoWithMapInfo() {
+        return !isWaiting || roundStarted;
+    }
+
     public int getNextRoundMinMoney(ServerTeam team){
         int defaultEconomy = 1400;
         int compensation = 500;
@@ -1468,21 +1473,12 @@ public class CSGameMap extends CSMap{
         if(this.isStart){
             MapTeams teams = this.getMapTeams();
             teams.getTeamByPlayer(dead).ifPresent(deadPlayerTeam -> {
-                // 优先切换到旁观者模式，防止后续操作异常导致旁观者切换失败
-                dead.heal(dead.getMaxHealth());
-                dead.setGameMode(GameType.SPECTATOR);
-                dead.setRespawnPosition(dead.level().dimension(), dead.getOnPos().above(), 0, true, false);
-                this.setBystander(dead);
-
                 CapabilityMap.getTeamCapability(deadPlayerTeam, ShopCapability.class)
                         .flatMap(ShopCapability::getShopSafe).ifPresent(shop -> shop.getDefaultAndPutData(dead.getUUID()));
 
                 this.sendPacketToJoinedPlayer(dead, new ShopStatesS2CPacket(false, 0, 0), true);
-                // 清除c4,并掉落c4
                 dropC4(dead);
-                // 清除玩家所属子弹
                 discardAmmo(dead.getUUID());
-                // 清除拆弹工具,并掉落拆弹工具
                 int ik = dead.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof BombDisposalKit, -1, dead.inventoryMenu.getCraftSlots());
                 if (ik > 0) {
                     dead.drop(new ItemStack(BOItemRegister.BOMB_DISPOSAL_KIT.get(), 1), false, false).setGlowingTag(true);
@@ -1490,6 +1486,11 @@ public class CSGameMap extends CSMap{
                 FPSMUtil.playerDeadDropWeapon(dead, true);
                 dead.getInventory().clearContent();
                 this.syncInventory(dead);
+
+                dead.heal(dead.getMaxHealth());
+                dead.setGameMode(GameType.SPECTATOR);
+                dead.setRespawnPosition(dead.level().dimension(), dead.getOnPos().above(), 0, true, false);
+                this.setBystander(dead);
             });
         }
 
