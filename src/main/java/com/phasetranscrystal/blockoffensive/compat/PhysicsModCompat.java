@@ -40,18 +40,35 @@ import java.util.concurrent.ConcurrentHashMap;
 @OnlyIn(Dist.CLIENT)
 public class PhysicsModCompat {
 
+    private static final Map<Integer, Integer> PENDING_DEATHS = new ConcurrentHashMap<>();
+
     public static void init() {
         RagdollMapper.addHook(BORagdollHook.INSTANCE);
         MinecraftForge.EVENT_BUS.register(BORagdollHook.class);
     }
 
+    public static void requestHandleDead(int entityId) {
+        PENDING_DEATHS.put(entityId, 5);
+        tryHandleDead(entityId);
+    }
+
+    private static boolean tryHandleDead(int entityId) {
+        try {
+            PhysicsDeathProxyGuard.setActive(true);
+            return handleDead(entityId);
+        } finally {
+            PhysicsDeathProxyGuard.setActive(false);
+        }
+    }
+
     /**
      * Copy from {@link PhysicsMod#blockifyEntity}
      * */
-    public static void handleDead(int EntityId) {
+    public static boolean handleDead(int EntityId) {
         ClientLevel level = Minecraft.getInstance().level;
-        if (level == null) return;
+        if (level == null) return false;
         Entity entity = level.getEntity(EntityId);
+        if (entity == null) return false;
 
         if (entity instanceof LivingEntity living && RenderSystem.isOnRenderThread() && ConfigMobs.getMobSetting(entity).getType() != MobPhysicsType.OFF) {
             PhysicsMod mod = PhysicsMod.getInstance(level);
@@ -141,9 +158,12 @@ public class PhysicsModCompat {
                         RenderSystem.enableBlend();
                         RenderSystem.defaultBlendFunc();
                     }
+                    PENDING_DEATHS.remove(EntityId);
+                    return true;
                 }
             }
         }
+        return false;
     }
 
     public static void frozenAll() {
@@ -182,6 +202,17 @@ public class PhysicsModCompat {
         public static void onClientTick(TickEvent.ClientTickEvent event) {
             if (event.phase == TickEvent.Phase.END) {
                 INSTANCE.tick();
+                for (Map.Entry<Integer, Integer> entry : PENDING_DEATHS.entrySet()) {
+                    int entityId = entry.getKey();
+                    int retries = entry.getValue();
+                    if (tryHandleDead(entityId)) {
+                        PENDING_DEATHS.remove(entityId);
+                    } else if (retries <= 1) {
+                        PENDING_DEATHS.remove(entityId);
+                    } else {
+                        PENDING_DEATHS.put(entityId, retries - 1);
+                    }
+                }
             }
         }
 

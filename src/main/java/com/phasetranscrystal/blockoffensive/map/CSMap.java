@@ -158,6 +158,12 @@ public abstract class CSMap extends BaseMap  {
 
     //Shop
     public abstract boolean getPlayerCanOpenShop(ShopCapability cap, ServerPlayer player);
+
+    @Override
+    public boolean canUseShop(ShopCapability cap, ServerPlayer player) {
+        return super.canUseShop(cap, player) && getPlayerCanOpenShop(cap, player);
+    }
+
     public abstract int getNextRoundMinMoney(ServerTeam team);
     public abstract int getShopCloseTime();
 

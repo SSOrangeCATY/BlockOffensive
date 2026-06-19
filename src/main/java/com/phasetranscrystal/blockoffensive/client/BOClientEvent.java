@@ -122,12 +122,16 @@ public class BOClientEvent {
         Minecraft minecraft = Minecraft.getInstance();
         if(minecraft.screen != null) return;
         if(isLocked() && GunCompatManager.isInGame()){
-            if(checkLocalPlayerHand()){
+            if(checkLocalPlayerHand() && shouldCancelLockedCombatInput(minecraft, event.getButton())){
                 if(event.getAction() == 1){
                     event.setCanceled(true);
                 }
             }
         }
+    }
+
+    private static boolean shouldCancelLockedCombatInput(Minecraft minecraft, int button) {
+        return minecraft.options.keyAttack.matchesMouse(button) || minecraft.options.keyUse.matchesMouse(button);
     }
 
     public static boolean checkLocalPlayerHand(){

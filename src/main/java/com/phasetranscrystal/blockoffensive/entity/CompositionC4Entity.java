@@ -231,20 +231,15 @@ public class CompositionC4Entity extends BlastBombEntity {
                     this.explode();
                 }
             }
+            if (i > 0 && i % getBeepInterval(i) == 0){
+                this.playBeepSound();
+            }
             if(i % 20 == 0){
-                if (i > 200) this.playBeepSound();
                 ((ServerLevel)this.level()).sendParticles(new DustParticleOptions(new Vector3f(1,0.1f,0.1f),1),this.getX(),this.getY() + 0.25,this.getZ(),1,0,0,0,1);
             }
 
-            if(i < 200){
-                if(i < 100){
-                    if(i == 20) this.playNvgOnSound();
-                    if(i % 5 == 0){
-                        this.playBeepSound();
-                    }
-                }else if( i % 10 == 0){
-                    this.playBeepSound();
-                }
+            if(i == 20){
+                this.playNvgOnSound();
             }
         }
 
@@ -256,8 +251,21 @@ public class CompositionC4Entity extends BlastBombEntity {
     }
 
 
+    private int getBeepInterval(int fuse) {
+        if (fuse <= 20) return 2;
+        if (fuse <= 60) return 3;
+        if (fuse <= 100) return 5;
+        if (fuse <= 200) return 10;
+        return 20;
+    }
+
+    private float getBeepPitch() {
+        float progress = 1.0F - Math.max(0, Math.min(getFuse(), DEFAULT_FUSE_TIME)) / (float) DEFAULT_FUSE_TIME;
+        return 0.8F + progress * 0.7F;
+    }
+
     public void playBeepSound(){
-        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), BOSoundRegister.BEEP.get(), SoundSource.VOICE, 6.0F, 1);
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), BOSoundRegister.BEEP.get(), SoundSource.VOICE, 3.0F, getBeepPitch());
     }
 
     public void playNvgOnSound(){

@@ -46,6 +46,10 @@ legacyForge {
 
         client {
             client()
+            def mcAgentJar = project.file('.agent/libs/mcagent-agent.jar')
+            def mcAgentJarPath = mcAgentJar.absolutePath.replace('\\', '/')
+            def mcAgentGameDirPath = project.file('run').absolutePath.replace('\\', '/')
+            jvmArgument "-javaagent:${mcAgentJarPath}=gameDir=${mcAgentGameDirPath};minecraftVersion=${minecraft_version};target=forge"
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             systemProperty 'forge.enabledGameTestNamespaces', mod_id
         }
