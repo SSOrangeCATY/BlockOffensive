@@ -666,10 +666,11 @@ public class CSGameMap extends CSMap{
         MapTeams mapTeams = getMapTeams();
         isWaitingWinner = true;
 
-        MvpReason mvpReason = processMvpLogic(winnerTeam, mapTeams);
+        MvpReason mvpReason = processMvpLogic(winnerTeam, reason, mapTeams);
 
         sendPacketToAllPlayer(new MvpMessageS2CPacket(mvpReason));
         MinecraftForge.EVENT_BUS.post(new CSGameRoundEndEvent(this, winnerTeam, reason));
+
 
         processRoundScoreAndOvertimeVote(winnerTeam);
 
@@ -724,41 +725,83 @@ public class CSGameMap extends CSMap{
      * 处理MVP相关逻辑（提取MVP数据、发布事件、播放MVP音乐）
      * @return 处理后的MVP原因（为空时返回默认实例）
      */
-    private MvpReason processMvpLogic(@NotNull ServerTeam winnerTeam, @NotNull MapTeams mapTeams) {
-        MapTeams.RawMVPData mvpData = mapTeams.getRoundMvpPlayer(winnerTeam);
-        if (mvpData == null) {
-            return new MvpReason.Builder(UUID.nameUUIDFromBytes(winnerTeam.name.getBytes()))
-                    .setTeamName(Component.literal(winnerTeam.name.toUpperCase(Locale.ROOT)))
-                    .build();
-        }
-
-        Optional<ServerPlayer> mvpPlayer = getPlayerByUUID(mvpData.uuid());
-        if (mvpPlayer.isEmpty()) {
-            return new MvpReason.Builder(UUID.randomUUID())
-                    .setTeamName(Component.literal(winnerTeam.name.toUpperCase(Locale.ROOT)))
-                    .build();
-        }
-
-        // 构建MVP事件并发布
-        MvpReason originalMvpReason = new MvpReason.Builder(mvpData.uuid())
-                .setMvpReason(Component.literal(mvpData.reason()))
-                .setPlayerName(mapTeams.playerName.get(mvpData.uuid()).copy())
-                .setTeamName(Component.literal(winnerTeam.name.toUpperCase(Locale.ROOT)))
-                .build();
-
-        CSGamePlayerGetMvpEvent mvpEvent = new CSGamePlayerGetMvpEvent(mvpPlayer.get(), this, originalMvpReason);
-        MinecraftForge.EVENT_BUS.post(mvpEvent);
-
-        // 播放MVP专属音乐
-        String mvpPlayerUuid = mvpData.uuid().toString();
-        if (MVPMusicManager.getInstance().playerHasMvpMusic(mvpPlayerUuid)) {
-            sendPacketToAllPlayer(new FPSMusicPlayS2CPacket(
-                    MVPMusicManager.getInstance().getMvpMusic(mvpPlayerUuid)
-            ));
-        }
-
-        return mvpEvent.getReason();
+    @Override
+    protected MapTeams.RawMVPData getRoundMvpPlayer(@NotNull ServerTeam winnerTeam, @NotNull MapTeams mapTeams) {
+        return getCombatMvp(winnerTeam, mapTeams);
     }
+
+    protected MapTeams.RawMVPData getRoundMvpPlayer(@NotNull ServerTeam winnerTeam, @NotNull MapTeams mapTeams, @NotNull WinnerReason reason) {
+        if (mapTeams.isFirstRound()) {
+            return getGameMvp(winnerTeam, mapTeams, reason);
+        }
+
+        MapTeams.RawMVPData objectiveMvp = getObjectiveMvp(winnerTeam, reason);
+        if (objectiveMvp != null) {
+            return objectiveMvp;
+        }
+        return getCombatMvp(winnerTeam, mapTeams);
+    }
+
+    @Override
+    protected MapTeams.RawMVPData getGameMvp(@NotNull BaseTeam winnerTeam, @NotNull MapTeams mapTeams) {
+        return getCombatMvp((ServerTeam) winnerTeam, mapTeams);
+    }
+
+    protected MapTeams.RawMVPData getGameMvp(@NotNull BaseTeam winnerTeam, @NotNull MapTeams mapTeams, @NotNull WinnerReason reason) {
+        return getCombatMvp((ServerTeam) winnerTeam, mapTeams);
+    }
+
+    private MapTeams.RawMVPData getCombatMvp(@NotNull ServerTeam winnerTeam, @NotNull MapTeams mapTeams) {
+        MapTeams.RawMVPData mvpId = null;
+        int highestScore = 0;
+        UUID damageMvpId = mapTeams.getDamageMvp();
+
+        for (PlayerData data : winnerTeam.getPlayersData()) {
+            int score = data.getKills() * 3 + data.getAssists();
+            if (data.getOwner().equals(damageMvpId) && data.getDamage() > 0) {
+                score += 2;
+            }
+
+            if (score > highestScore) {
+                mvpId = new MapTeams.RawMVPData(data.getOwner(), "MVP");
+                highestScore = score;
+            }
+        }
+
+        if (mvpId != null) {
+            winnerTeam.getPlayerData(mvpId.uuid()).ifPresent(data -> data.addMvpCount(1));
+        }
+        return mvpId;
+    }
+
+    private MapTeams.RawMVPData getObjectiveMvp(@NotNull ServerTeam winnerTeam, @NotNull WinnerReason reason) {
+        UUID winnerUuid = null;
+        if (reason == WinnerReason.DEFUSE_BOMB || reason == WinnerReason.DETONATE_BOMB) {
+            winnerUuid = winnerTeam.getPlayersData().stream()
+                    .filter(PlayerData::isLivingOnServer)
+                    .max(Comparator.comparingInt(PlayerData::getKills)
+                            .thenComparingInt(PlayerData::getAssists)
+                            .thenComparingDouble(PlayerData::getDamage))
+                    .map(PlayerData::getOwner)
+                    .orElse(null);
+        } else if (reason == WinnerReason.TIME_OUT || reason == WinnerReason.ACED) {
+            winnerUuid = winnerTeam.getPlayersData().stream()
+                    .filter(PlayerData::isLivingOnServer)
+                    .max(Comparator.comparingInt(PlayerData::getKills)
+                            .thenComparingInt(PlayerData::getAssists)
+                            .thenComparingDouble(PlayerData::getDamage))
+                    .map(PlayerData::getOwner)
+                    .orElse(null);
+        }
+
+        if (winnerUuid == null) {
+            return null;
+        }
+        winnerTeam.getPlayerData(winnerUuid).ifPresent(data -> data.addMvpCount(1));
+        return new MapTeams.RawMVPData(winnerUuid, "MVP");
+    }
+
+
 
     /**
      * 处理比分更新和加时投票逻辑
@@ -865,11 +908,49 @@ public class CSGameMap extends CSMap{
         }
 
         ctTeam.getPlayerList().forEach(uuid -> {
-            ShopCapability.getShop(ctTeam).ifPresent(shop -> shop.addMoney(uuid,extraReward));
+            ShopCapability.getShop(ctTeam).ifPresent(shop -> shop.addMoney(uuid, extraReward));
         });
 
         ctTeam.sendMessage(Component.translatable("blockoffensive.map.cs.reward.team", extraReward, deadTCount));
     }
+
+    private MvpReason processMvpLogic(@NotNull ServerTeam winnerTeam, @NotNull WinnerReason reason, @NotNull MapTeams mapTeams) {
+        MapTeams.RawMVPData rawMvpData = getRoundMvpPlayer(winnerTeam, mapTeams, reason);
+        if (rawMvpData == null) {
+            return new MvpReason.Builder(null)
+                    .setTeamName(Component.literal(winnerTeam.getFixedName()))
+                    .setMvpReason(Component.translatable("blockoffensive.mvp.combat"))
+                    .build();
+        }
+
+        String playerName = getPlayerByUUID(rawMvpData.uuid())
+                .map(player -> player.getDisplayName().getString())
+                .orElse(rawMvpData.uuid().toString());
+        if (playerName.isBlank()) {
+            playerName = rawMvpData.uuid().toString();
+        }
+
+        String reasonKey = switch (reason) {
+            case DEFUSE_BOMB -> "blockoffensive.mvp.defuse";
+            case DETONATE_BOMB -> "blockoffensive.mvp.detonate";
+            case TIME_OUT, ACED -> "blockoffensive.mvp.survive_under_fire";
+            default -> "blockoffensive.mvp.combat";
+        };
+
+        String musicName = MVPMusicManager.getInstance().getMvpMusicName(rawMvpData.uuid().toString());
+        if (musicName == null || musicName.isBlank()) {
+            musicName = Component.translatable("fpsmatch.empty").getString();
+        }
+
+        return new MvpReason.Builder(rawMvpData.uuid())
+                .setTeamName(Component.literal(winnerTeam.getFixedName()))
+                .setPlayerName(Component.literal(playerName))
+                .setMvpReason(Component.translatable(reasonKey))
+                .setExtraInfo1(Component.translatable("blockoffensive.mvp.info", Component.literal(playerName), Component.translatable(reasonKey)))
+                .setExtraInfo2(Component.literal(musicName))
+                .build();
+    }
+
 
     private void checkLoseStreaks(ServerTeam winTeam, @NotNull List<ServerTeam> loseTeams) {
         winTeam.getCapabilityMap().get(CompensationCapability.class).ifPresentOrElse(cap-> cap.reduce(2),()->FPSMatch.LOGGER.error("Failed to reduce Compensation capability"));

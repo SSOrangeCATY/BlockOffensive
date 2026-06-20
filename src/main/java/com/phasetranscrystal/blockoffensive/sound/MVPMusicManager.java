@@ -2,6 +2,7 @@ package com.phasetranscrystal.blockoffensive.sound;
 
 import com.google.common.collect.Maps;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.fpsmatch.common.event.register.RegisterFPSMSaveDataEvent;
 import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
@@ -16,9 +17,9 @@ import java.util.Map;
 @SuppressWarnings("all")
 @Mod.EventBusSubscriber(modid = BlockOffensive.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class MVPMusicManager {
-    public static final Codec<MVPMusicManager> CODEC = Codec.unboundedMap(Codec.STRING, ResourceLocation.CODEC).xmap(MVPMusicManager::new,
+    public static final Codec<MVPMusicManager> CODEC = Codec.unboundedMap(Codec.STRING, Entry.CODEC).xmap(MVPMusicManager::new,
             (manager)-> manager.mvpMusicMap);
-    private final Map<String, ResourceLocation> mvpMusicMap;
+    private final Map<String, Entry> mvpMusicMap;
     private static MVPMusicManager INSTANCE = new MVPMusicManager();
 
     public static MVPMusicManager getInstance(){
@@ -29,17 +30,25 @@ public class MVPMusicManager {
         mvpMusicMap = Maps.newHashMap();
     }
 
-    public MVPMusicManager(Map<String, ResourceLocation> mvpMusicMap){
+    public MVPMusicManager(Map<String, Entry> mvpMusicMap){
         this.mvpMusicMap = Maps.newHashMap();
         this.mvpMusicMap.putAll(mvpMusicMap);
     }
 
     public void addMvpMusic(String uuid, ResourceLocation music){
-        mvpMusicMap.put(uuid, music);
+        addMvpMusic(uuid, music, music.toString());
+    }
+
+    public void addMvpMusic(String uuid, ResourceLocation music, String musicName){
+        mvpMusicMap.put(uuid, new Entry(music, musicName));
     }
 
     public ResourceLocation getMvpMusic(String uuid){
-        return this.mvpMusicMap.getOrDefault(uuid, ResourceLocation.tryBuild("fpsmatch", "empty"));
+        return this.mvpMusicMap.getOrDefault(uuid, Entry.EMPTY).music();
+    }
+
+    public String getMvpMusicName(String uuid){
+        return this.mvpMusicMap.getOrDefault(uuid, Entry.EMPTY).name();
     }
 
     public boolean playerHasMvpMusic(String uuid){
@@ -78,5 +87,13 @@ public class MVPMusicManager {
             old.read(newer);
             return old;
         }
+    }
+
+    public record Entry(ResourceLocation music, String name) {
+        private static final Entry EMPTY = new Entry(ResourceLocation.tryBuild("fpsmatch", "empty"), "fpsmatch:empty");
+        private static final Codec<Entry> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                ResourceLocation.CODEC.fieldOf("music").forGetter(Entry::music),
+                Codec.STRING.fieldOf("name").forGetter(Entry::name)
+        ).apply(instance, Entry::new));
     }
 }
