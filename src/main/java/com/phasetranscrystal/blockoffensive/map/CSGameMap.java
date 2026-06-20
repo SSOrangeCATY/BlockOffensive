@@ -14,6 +14,9 @@ import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.item.BombDisposalKit;
 import com.phasetranscrystal.blockoffensive.item.CompositionC4;
 import com.phasetranscrystal.blockoffensive.map.team.capability.ColoredPlayerCapability;
+import com.phasetranscrystal.blockoffensive.mvp.CSMvpContribution;
+import com.phasetranscrystal.blockoffensive.mvp.CSMvpResult;
+import com.phasetranscrystal.blockoffensive.mvp.CSMvpScorer;
 import com.phasetranscrystal.blockoffensive.net.*;
 import com.phasetranscrystal.blockoffensive.net.bomb.BombDemolitionProgressS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.mvp.MvpHUDCloseS2CPacket;
@@ -37,6 +40,8 @@ import com.phasetranscrystal.fpsmatch.core.capability.team.TeamCapability;
 import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
+import com.phasetranscrystal.fpsmatch.core.damage.DamageSourceCategory;
+import com.phasetranscrystal.fpsmatch.core.damage.MinecraftDamageSourceClassifier;
 import com.phasetranscrystal.fpsmatch.core.entity.BlastBombEntity;
 import com.phasetranscrystal.fpsmatch.core.map.*;
 import com.phasetranscrystal.fpsmatch.core.map.DeathContext;
@@ -143,8 +148,12 @@ public class CSGameMap extends CSMap{
     private int overCount = 0;
     private boolean isWaitingOverTimeVote = false;
     private boolean roundStarted = false;
+    private UUID lastBombPlanter;
+    private UUID lastBombDefuser;
 
     private final Map<UUID,Integer> knifeCache = new HashMap<>();
+    private final Map<UUID, Float> roundIncendiaryDamage = new HashMap<>();
+    private final Map<UUID, Float> roundExplosiveDamage = new HashMap<>();
 
     /**
      * 构造函数：创建CS地图实例
@@ -721,6 +730,14 @@ public class CSGameMap extends CSMap{
         return this.getVote() != null && this.getVote().getVoteTitle().equals("knife");
     }
 
+    public void recordBombPlanted(@NotNull ServerPlayer player) {
+        this.lastBombPlanter = player.getUUID();
+    }
+
+    public void recordBombDefused(@NotNull ServerPlayer player) {
+        this.lastBombDefuser = player.getUUID();
+    }
+
     /**
      * 处理MVP相关逻辑（提取MVP数据、发布事件、播放MVP音乐）
      * @return 处理后的MVP原因（为空时返回默认实例）
@@ -731,15 +748,12 @@ public class CSGameMap extends CSMap{
     }
 
     protected MapTeams.RawMVPData getRoundMvpPlayer(@NotNull ServerTeam winnerTeam, @NotNull MapTeams mapTeams, @NotNull WinnerReason reason) {
-        if (mapTeams.isFirstRound()) {
-            return getGameMvp(winnerTeam, mapTeams, reason);
+        CSMvpResult result = selectCsMvp(winnerTeam, reason);
+        if (result == null) {
+            return null;
         }
-
-        MapTeams.RawMVPData objectiveMvp = getObjectiveMvp(winnerTeam, reason);
-        if (objectiveMvp != null) {
-            return objectiveMvp;
-        }
-        return getCombatMvp(winnerTeam, mapTeams);
+        winnerTeam.getPlayerData(result.uuid()).ifPresent(data -> data.addMvpCount(1));
+        return new MapTeams.RawMVPData(result.uuid(), result.reasonKey());
     }
 
     @Override
@@ -748,57 +762,39 @@ public class CSGameMap extends CSMap{
     }
 
     protected MapTeams.RawMVPData getGameMvp(@NotNull BaseTeam winnerTeam, @NotNull MapTeams mapTeams, @NotNull WinnerReason reason) {
-        return getCombatMvp((ServerTeam) winnerTeam, mapTeams);
+        return getRoundMvpPlayer((ServerTeam) winnerTeam, mapTeams, reason);
     }
 
     private MapTeams.RawMVPData getCombatMvp(@NotNull ServerTeam winnerTeam, @NotNull MapTeams mapTeams) {
-        MapTeams.RawMVPData mvpId = null;
-        int highestScore = 0;
-        UUID damageMvpId = mapTeams.getDamageMvp();
-
-        for (PlayerData data : winnerTeam.getPlayersData()) {
-            int score = data.getKills() * 3 + data.getAssists();
-            if (data.getOwner().equals(damageMvpId) && data.getDamage() > 0) {
-                score += 2;
-            }
-
-            if (score > highestScore) {
-                mvpId = new MapTeams.RawMVPData(data.getOwner(), "MVP");
-                highestScore = score;
-            }
+        CSMvpResult result = selectCsMvp(winnerTeam, WinnerReason.ACED);
+        if (result == null) {
+            return null;
         }
+        winnerTeam.getPlayerData(result.uuid()).ifPresent(data -> data.addMvpCount(1));
+        return new MapTeams.RawMVPData(result.uuid(), result.reasonKey());
+    }
 
-        if (mvpId != null) {
-            winnerTeam.getPlayerData(mvpId.uuid()).ifPresent(data -> data.addMvpCount(1));
-        }
-        return mvpId;
+    private CSMvpResult selectCsMvp(@NotNull ServerTeam winnerTeam, @NotNull WinnerReason reason) {
+        List<CSMvpContribution> contributions = winnerTeam.getPlayersData().stream()
+                .map(data -> new CSMvpContribution(
+                        data.getOwner(),
+                        data.getTempKills(),
+                        data.getTempAssists(),
+                        data.getTempDamage(),
+                        data.getHeadshotKills(),
+                        0,
+                        0,
+                        roundIncendiaryDamage.getOrDefault(data.getOwner(), 0.0F),
+                        roundExplosiveDamage.getOrDefault(data.getOwner(), 0.0F),
+                        reason == WinnerReason.DEFUSE_BOMB && data.getOwner().equals(lastBombDefuser),
+                        reason == WinnerReason.DETONATE_BOMB && data.getOwner().equals(lastBombPlanter)
+                ))
+                .toList();
+        return CSMvpScorer.selectRoundMvp(contributions);
     }
 
     private MapTeams.RawMVPData getObjectiveMvp(@NotNull ServerTeam winnerTeam, @NotNull WinnerReason reason) {
-        UUID winnerUuid = null;
-        if (reason == WinnerReason.DEFUSE_BOMB || reason == WinnerReason.DETONATE_BOMB) {
-            winnerUuid = winnerTeam.getPlayersData().stream()
-                    .filter(PlayerData::isLivingOnServer)
-                    .max(Comparator.comparingInt(PlayerData::getKills)
-                            .thenComparingInt(PlayerData::getAssists)
-                            .thenComparingDouble(PlayerData::getDamage))
-                    .map(PlayerData::getOwner)
-                    .orElse(null);
-        } else if (reason == WinnerReason.TIME_OUT || reason == WinnerReason.ACED) {
-            winnerUuid = winnerTeam.getPlayersData().stream()
-                    .filter(PlayerData::isLivingOnServer)
-                    .max(Comparator.comparingInt(PlayerData::getKills)
-                            .thenComparingInt(PlayerData::getAssists)
-                            .thenComparingDouble(PlayerData::getDamage))
-                    .map(PlayerData::getOwner)
-                    .orElse(null);
-        }
-
-        if (winnerUuid == null) {
-            return null;
-        }
-        winnerTeam.getPlayerData(winnerUuid).ifPresent(data -> data.addMvpCount(1));
-        return new MapTeams.RawMVPData(winnerUuid, "MVP");
+        return getRoundMvpPlayer(winnerTeam, getMapTeams(), reason);
     }
 
 
@@ -917,38 +913,65 @@ public class CSGameMap extends CSMap{
     private MvpReason processMvpLogic(@NotNull ServerTeam winnerTeam, @NotNull WinnerReason reason, @NotNull MapTeams mapTeams) {
         MapTeams.RawMVPData rawMvpData = getRoundMvpPlayer(winnerTeam, mapTeams, reason);
         if (rawMvpData == null) {
-            return new MvpReason.Builder(null)
-                    .setTeamName(Component.literal(winnerTeam.getFixedName()))
-                    .setMvpReason(Component.translatable("blockoffensive.mvp.combat"))
-                    .build();
+            return buildEmptyMvpReason(winnerTeam);
         }
 
-        String playerName = getPlayerByUUID(rawMvpData.uuid())
-                .map(player -> player.getDisplayName().getString())
-                .orElse(rawMvpData.uuid().toString());
-        if (playerName.isBlank()) {
-            playerName = rawMvpData.uuid().toString();
-        }
+        String playerName = getPlayerName(rawMvpData.uuid());
+        String reasonKey = normalizeReasonKey(rawMvpData.reason());
+        String infoKey = resolveInfoKey(reasonKey);
+        String musicName = getMvpMusicName(rawMvpData.uuid());
 
-        String reasonKey = switch (reason) {
-            case DEFUSE_BOMB -> "blockoffensive.mvp.defuse";
-            case DETONATE_BOMB -> "blockoffensive.mvp.detonate";
-            case TIME_OUT, ACED -> "blockoffensive.mvp.survive_under_fire";
-            default -> "blockoffensive.mvp.combat";
-        };
+        return buildMvpReason(rawMvpData.uuid(), winnerTeam, playerName, reasonKey, infoKey, musicName);
+    }
 
-        String musicName = MVPMusicManager.getInstance().getMvpMusicName(rawMvpData.uuid().toString());
-        if (musicName == null || musicName.isBlank()) {
-            musicName = Component.translatable("fpsmatch.empty").getString();
-        }
+    private MvpReason buildEmptyMvpReason(@NotNull ServerTeam winnerTeam) {
+        return new MvpReason.Builder(null)
+                .setTeamName(Component.literal(winnerTeam.getFixedName()))
+                .setMvpReason(Component.translatable("blockoffensive.mvp.combat"))
+                .build();
+    }
 
-        return new MvpReason.Builder(rawMvpData.uuid())
+    private MvpReason buildMvpReason(UUID uuid, @NotNull ServerTeam winnerTeam, String playerName, String reasonKey, String infoKey, String musicName) {
+        return new MvpReason.Builder(uuid)
                 .setTeamName(Component.literal(winnerTeam.getFixedName()))
                 .setPlayerName(Component.literal(playerName))
                 .setMvpReason(Component.translatable(reasonKey))
-                .setExtraInfo1(Component.translatable("blockoffensive.mvp.info", Component.literal(playerName), Component.translatable(reasonKey)))
+                .setExtraInfo1(Component.translatable(infoKey, Component.literal(playerName)))
                 .setExtraInfo2(Component.literal(musicName))
                 .build();
+    }
+
+    private String getPlayerName(UUID uuid) {
+        return getPlayerByUUID(uuid)
+                .map(player -> player.getDisplayName().getString())
+                .filter(name -> !name.isBlank())
+                .orElse(uuid.toString());
+    }
+
+    private String normalizeReasonKey(String reasonKey) {
+        if (reasonKey == null || reasonKey.isBlank()) {
+            return "blockoffensive.mvp.combat";
+        }
+        return reasonKey;
+    }
+
+    private String resolveInfoKey(String reasonKey) {
+        return switch (reasonKey) {
+            case "blockoffensive.mvp.defuse" -> "blockoffensive.mvp.info.defuse";
+            case "blockoffensive.mvp.detonate" -> "blockoffensive.mvp.info.detonate";
+            case "blockoffensive.mvp.incendiary_damage" -> "blockoffensive.mvp.info.incendiary_damage";
+            case "blockoffensive.mvp.explosive_damage" -> "blockoffensive.mvp.info.explosive_damage";
+            case "blockoffensive.mvp.high_damage" -> "blockoffensive.mvp.info.high_damage";
+            default -> "blockoffensive.mvp.info.combat";
+        };
+    }
+
+    private String getMvpMusicName(UUID uuid) {
+        String musicName = MVPMusicManager.getInstance().getMvpMusicName(uuid.toString());
+        if (musicName == null || musicName.isBlank()) {
+            return Component.translatable("fpsmatch.empty").getString();
+        }
+        return musicName;
     }
 
 
@@ -967,6 +990,10 @@ public class CSGameMap extends CSMap{
             this.isWaiting = true;
             this.isWaitingWinner = false;
             this.roundStarted = false;
+            this.lastBombPlanter = null;
+            this.lastBombDefuser = null;
+            this.roundIncendiaryDamage.clear();
+            this.roundExplosiveDamage.clear();
             this.cleanupMap();
             this.sendRoundDamageMessage();
             this.getMapTeams().getJoinedPlayers().forEach((data -> data.getPlayer().ifPresentOrElse(player->{
@@ -1586,7 +1613,22 @@ public class CSGameMap extends CSMap{
         if (isC4Damage(source)) {
             return;
         }
+        recordTypedRoundDamage(hurt, source, amount);
         super.recordHurtData(hurt, source, amount);
+    }
+
+    private void recordTypedRoundDamage(ServerPlayer hurt, DamageSource source, float amount) {
+        getAttackerFromDamageSource(source).ifPresent(attacker -> {
+            if (!isValidAttack(attacker, hurt) || getMapTeams().isSameTeam(attacker, hurt)) {
+                return;
+            }
+            DamageSourceCategory category = MinecraftDamageSourceClassifier.classify(source);
+            if (category == DamageSourceCategory.INCENDIARY || category == DamageSourceCategory.FIRE) {
+                roundIncendiaryDamage.merge(attacker.getUUID(), amount, Float::sum);
+            } else if (category == DamageSourceCategory.EXPLOSIVE) {
+                roundExplosiveDamage.merge(attacker.getUUID(), amount, Float::sum);
+            }
+        });
     }
 
     private boolean isC4Damage(DamageSource source) {
