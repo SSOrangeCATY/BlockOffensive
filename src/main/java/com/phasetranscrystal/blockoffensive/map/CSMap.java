@@ -191,7 +191,9 @@ public abstract class CSMap extends BaseMap  {
 
     @Override
     public boolean start(){
-        super.start();
+        if (!super.start()) {
+            return false;
+        }
         this.configureGameRules(this.getServerLevel());
         return true;
     }

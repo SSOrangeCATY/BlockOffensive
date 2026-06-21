@@ -15,18 +15,18 @@ import net.minecraftforge.registries.ForgeRegistries;
 import java.util.Map;
 
 public class CSGrenadeCompat {
-    private static final ResourceLocation HE_GRENADE = ResourceLocation.fromNamespaceAndPath("csgrenades", "hegrenade");
-    private static final ResourceLocation HE_GRENADE_T = ResourceLocation.fromNamespaceAndPath("csgrenades", "hegrenade_t");
-    private static final ResourceLocation INCENDIARY = ResourceLocation.fromNamespaceAndPath("csgrenades", "incendiary");
-    private static final ResourceLocation INCENDIARY_T = ResourceLocation.fromNamespaceAndPath("csgrenades", "incendiary_t");
-    private static final ResourceLocation MOLOTOV = ResourceLocation.fromNamespaceAndPath("csgrenades", "molotov");
-    private static final ResourceLocation MOLOTOV_T = ResourceLocation.fromNamespaceAndPath("csgrenades", "molotov_t");
-    private static final ResourceLocation SMOKE_GRENADE = ResourceLocation.fromNamespaceAndPath("csgrenades", "smokegrenade");
-    private static final ResourceLocation SMOKE_GRENADE_T = ResourceLocation.fromNamespaceAndPath("csgrenades", "smokegrenade_t");
-    private static final ResourceLocation FLASH_BANG = ResourceLocation.fromNamespaceAndPath("csgrenades", "flashbang");
-    private static final ResourceLocation FLASH_BANG_T = ResourceLocation.fromNamespaceAndPath("csgrenades", "flashbang_t");
-    private static final ResourceLocation DECOY = ResourceLocation.fromNamespaceAndPath("csgrenades", "decoy");
-    private static final ResourceLocation DECOY_T = ResourceLocation.fromNamespaceAndPath("csgrenades", "decoy_t");
+    private static final ResourceLocation HE_GRENADE = id("hegrenade");
+    private static final ResourceLocation HE_GRENADE_T = id("hegrenade_t");
+    private static final ResourceLocation INCENDIARY = id("incendiary");
+    private static final ResourceLocation INCENDIARY_T = id("incendiary_t");
+    private static final ResourceLocation MOLOTOV = id("molotov");
+    private static final ResourceLocation MOLOTOV_T = id("molotov_t");
+    private static final ResourceLocation SMOKE_GRENADE = id("smokegrenade");
+    private static final ResourceLocation SMOKE_GRENADE_T = id("smokegrenade_t");
+    private static final ResourceLocation FLASH_BANG = id("flashbang");
+    private static final ResourceLocation FLASH_BANG_T = id("flashbang_t");
+    private static final ResourceLocation DECOY = id("decoy");
+    private static final ResourceLocation DECOY_T = id("decoy_t");
 
     public static void registerKillIcon(Map<ResourceLocation, String> registry){
         registerKillIcon(registry, HE_GRENADE, "grenade");
@@ -82,5 +82,9 @@ public class CSGrenadeCompat {
         if (item != null) {
             BOUtil.registerThrowable(type, item);
         }
+    }
+
+    private static ResourceLocation id(String path) {
+        return new ResourceLocation("csgrenades", path);
     }
 }

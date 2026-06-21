@@ -114,6 +114,10 @@ repositories {
         url = "https://api.modrinth.com/maven"
     }
     maven {
+        name = "ParchmentMC"
+        url = "https://maven.parchmentmc.org"
+    }
+    maven {
         url "https://maven.latvian.dev/releases"
         content {
             includeGroup "dev.latvian.mods"
