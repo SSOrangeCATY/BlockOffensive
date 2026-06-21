@@ -172,6 +172,7 @@ dependencies {
     modImplementation("dev.latvian.mods:kubejs-forge:${kubejs_version}")
     modRuntimeOnly("dev.latvian.mods:rhino-forge:${rhino_version}")
     modRuntimeOnly("dev.architectury:architectury-forge:${architectury_version}")
+    testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
@@ -235,4 +236,8 @@ tasks.named('createMinecraftArtifacts').configure {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
 }

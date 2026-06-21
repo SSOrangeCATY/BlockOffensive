@@ -243,6 +243,7 @@ public class CompositionC4 extends Item implements BlastBombItem {
 				level, player.getX(), player.getY() + 0.25, player.getZ(), player, map
 		);
 		level.addFreshEntity(c4);
+		map.recordBombPlanted(player);
 
 		// 播放放置音效
 		level.playSound(null, player.getX(), player.getY(), player.getZ(),

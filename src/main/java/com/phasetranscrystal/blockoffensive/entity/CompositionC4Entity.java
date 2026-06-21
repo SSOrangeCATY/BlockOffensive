@@ -218,6 +218,9 @@ public class CompositionC4Entity extends BlastBombEntity {
 
             this.syncDemolitionProgress();
             if(demolitionProgress >= getTotalDemolitionProgress()){
+                if (demolisher instanceof ServerPlayer serverPlayer) {
+                    map.recordBombDefused(serverPlayer);
+                }
                 this.state = BlastBombState.DEFUSED;
                 this.deleting = true;
                 this.demolitionProgress = 0;

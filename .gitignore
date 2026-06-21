@@ -147,6 +147,8 @@ gradle-app.setting
 
 # Codex / Agent working files
 .codex-loop/
+AGENTS.md
+.local-artifacts/
 
 # Docs
 docs/
