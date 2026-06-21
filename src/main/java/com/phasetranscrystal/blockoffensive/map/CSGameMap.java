@@ -45,6 +45,10 @@ import com.phasetranscrystal.fpsmatch.core.damage.MinecraftDamageSourceClassifie
 import com.phasetranscrystal.fpsmatch.core.entity.BlastBombEntity;
 import com.phasetranscrystal.fpsmatch.core.map.*;
 import com.phasetranscrystal.fpsmatch.core.map.DeathContext;
+import com.phasetranscrystal.fpsmatch.core.match.RoundContext;
+import com.phasetranscrystal.fpsmatch.core.match.RoundLifecycle;
+import com.phasetranscrystal.fpsmatch.core.match.RoundPhase;
+import com.phasetranscrystal.fpsmatch.core.match.RoundResult;
 import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
@@ -278,36 +282,15 @@ public class CSGameMap extends CSMap{
     @Override
     public void tick() {
         super.tick();
-        if(isStart && !checkPauseTime()){
-            // 暂停 / 热身 / 回合开始前的等待时间
-            if (!checkWarmUpTime() & !checkWaitingTime()) {
-                if(!isRoundTimeEnd()){
-                    if(!this.isDebug()){
-                        boolean flag = this.getMapTeams().getJoinedPlayers().size() != 1;
-                        switch (this.blastState()){
-                            case TICKING : this.checkBlastingVictory(); break;
-                            case EXPLODED : this.roundVictory(this.getT(),WinnerReason.DETONATE_BOMB); break;
-                            case DEFUSED : this.roundVictory(this.getCT(),WinnerReason.DEFUSE_BOMB); break;
-                            case NONE : if(flag) this.checkRoundVictory(); break;
-                        }
+        if (isStart && roundLifecycle != null) {
+            syncPauseTimeWithLifecycle();
+        }
+    }
 
-                        // 回合结束等待时间
-                        if(this.isWaitingWinner){
-                            checkWinnerTime();
-
-                            if(this.currentPauseTime >= winnerWaitingTime.get()){
-                                this.startNewRound();
-                            }
-                        }
-                    }
-                }else{
-                    if(!checkWinnerTime()){
-                        this.roundVictory(this.getCT(),WinnerReason.TIME_OUT);
-                    }else if(this.currentPauseTime >= winnerWaitingTime.get()){
-                        this.startNewRound();
-                    }
-                }
-            }
+    private void syncPauseTimeWithLifecycle() {
+        RoundPhase phase = roundLifecycle.phase();
+        if (phase == RoundPhase.WAITING || phase == RoundPhase.ROUND_END_WAITING) {
+            this.currentPauseTime = roundLifecycle.phaseElapsedTicks();
         }
     }
 
@@ -485,57 +468,124 @@ public class CSGameMap extends CSMap{
         return this.isWarmTime;
     }
 
-    public boolean checkWaitingTime(){
-        if(this.isWaiting && currentPauseTime < waitingTime.get()){
-            // 最后三秒 向全体玩家发送无来源声音
-            if(waitingTime.get() - currentPauseTime <= 60 && currentPauseTime % 20 == 0){
-                this.sendPacketToAllPlayer(new FPSMusicPlayS2CPacket(SoundEvents.NOTE_BLOCK_BELL.value().getLocation()));
-            }
-
-            this.currentPauseTime++;
-            boolean b = false;
-            Iterator<ServerTeam> teams = new ArrayList<>(this.getMapTeams().getNormalTeams()).iterator();
-            while (teams.hasNext()){
-                ServerTeam team = teams.next();
-                PauseCapability cap = team.getCapabilityMap().get(PauseCapability.class).orElse(null);
-                if(cap != null){
-                    if(!b){
-                        b = cap.needPause();
-                        if(b){
-                            cap.setNeedPause(false);
-                        }
-                    }else{
-                        cap.resetPauseIfNeed();
+    boolean checkPauseVote() {
+        boolean b = false;
+        Iterator<ServerTeam> teams = new ArrayList<>(this.getMapTeams().getNormalTeams()).iterator();
+        while (teams.hasNext()) {
+            ServerTeam team = teams.next();
+            PauseCapability cap = team.getCapabilityMap().get(PauseCapability.class).orElse(null);
+            if (cap != null) {
+                if (!b) {
+                    b = cap.needPause();
+                    if (b) {
+                        cap.setNeedPause(false);
                     }
+                } else {
+                    cap.resetPauseIfNeed();
                 }
-                teams.remove();
             }
-
-            if(b){
-                this.sendAllPlayerMessage(Component.translatable("blockoffensive.map.cs.pause.now").withStyle(ChatFormatting.GOLD),false);
-                this.isPause = true;
-                this.currentPauseTime = 0;
-                this.isWaiting = true;
-            }
-        }else {
-            if(this.canRestTime()) currentPauseTime = 0;
-
-            if(!roundStarted){
-                roundStarted = true;
-                this.onRoundStarted();
-            }
-            isWaiting = false;
+            teams.remove();
         }
-        return this.isWaiting;
+
+        if (b) {
+            this.sendAllPlayerMessage(Component.translatable("blockoffensive.map.cs.pause.now").withStyle(ChatFormatting.GOLD), false);
+            this.isPause = true;
+            this.currentPauseTime = 0;
+            this.isWaiting = true;
+        }
+        return b;
     }
 
-    public boolean checkWinnerTime(){
-        if(this.isWaitingWinner && currentPauseTime < winnerWaitingTime.get()){
-            if(!isKnifeSelectingVote()) this.currentPauseTime++;
-        }else{
-            if(this.canRestTime()) currentPauseTime = 0;
+    int getWaitingTimeTicks() {
+        return waitingTime.get();
+    }
+
+    int getRoundTimeLimitTicks() {
+        return roundTimeLimit.get();
+    }
+
+    int getWinnerWaitingTicks() {
+        return winnerWaitingTime.get();
+    }
+
+    // ===== BaseRoundMap 生命周期回调 =====
+
+    @Override
+    protected RoundLifecycle<String, CSRoundResultReason> buildRoundLifecycle() {
+        return lifecycleBuilder()
+                .waitingTicks(getWaitingTimeTicks())
+                .roundTicks(getRoundTimeLimitTicks())
+                .roundEndTicks(getWinnerWaitingTicks())
+                .addRule(new CSBombExplodedRule())
+                .addRule(new CSBombDefusedRule())
+                .addRule(new CSEliminationRule())
+                .addRule(new CSRoundTimeoutRule())
+                .timeoutResult(() -> new RoundResult<>(this.getCT().getFixedName(), CSRoundResultReason.TIME_OUT))
+                .build();
+    }
+
+    @Override
+    protected RoundContext createRoundContext() {
+        return new CSMapRoundContext(this);
+    }
+
+    @Override
+    protected boolean shouldAdvanceRoundLifecycle() {
+        return !checkPauseTime() && !checkWarmUpTime() && !isKnifeSelectingVote();
+    }
+
+    @Override
+    protected void onRoundStart() {
+        this.roundStarted = true;
+        this.isWaiting = false;
+        this.onRoundStarted();
+    }
+
+    @Override
+    protected void onRoundEnd(RoundResult<String, CSRoundResultReason> result) {
+        ServerTeam winner = this.getMapTeams().getNormalTeams().stream()
+                .filter(team -> team.getFixedName().equals(result.winner()))
+                .findFirst()
+                .orElse(null);
+        if (winner != null) {
+            this.roundVictory(winner, toLegacyReason(result.reason()));
         }
-        return this.isWaitingWinner;
+    }
+
+    @Override
+    protected void onNextRoundRequested() {
+        this.startNewRound();
+    }
+
+    @Override
+    protected void onWaitingTick(RoundContext ctx) {
+        int elapsed = this.roundLifecycle.phaseElapsedTicks();
+        if (waitingTime.get() - elapsed <= 60 && elapsed % 20 == 0) {
+            this.sendPacketToAllPlayer(new FPSMusicPlayS2CPacket(SoundEvents.NOTE_BLOCK_BELL.value().getLocation()));
+        }
+        this.checkPauseVote();
+    }
+
+    @Override
+    protected void onRoundTick(RoundContext ctx) {
+        if (this.blastState() != BlastBombState.NONE) {
+            this.currentRoundTime = -1;
+            return;
+        }
+        this.currentRoundTime = this.roundLifecycle.roundElapsedTicks() + 1;
+        if (this.isClosedShop()) {
+            this.isShopLocked = true;
+            this.syncShopInfo(false, 0);
+        }
+    }
+
+    private CSGameMap.WinnerReason toLegacyReason(CSRoundResultReason reason) {
+        return switch (reason) {
+            case TIME_OUT -> CSGameMap.WinnerReason.TIME_OUT;
+            case ACED -> CSGameMap.WinnerReason.ACED;
+            case DEFUSE_BOMB -> CSGameMap.WinnerReason.DEFUSE_BOMB;
+            case DETONATE_BOMB -> CSGameMap.WinnerReason.DETONATE_BOMB;
+        };
     }
 
     public void checkRoundVictory(){
@@ -563,21 +613,6 @@ public class CSGameMap extends CSMap{
         }else if(teamsLiving.isEmpty()){
             this.roundVictory(this.getT(),WinnerReason.ACED);
         }
-    }
-
-    public boolean isRoundTimeEnd(){
-        if(this.blastState() != BlastBombState.NONE){
-            this.currentRoundTime = -1;
-            return false;
-        }
-        if(this.currentRoundTime < this.roundTimeLimit.get()){
-            this.currentRoundTime++;
-        }
-        if(this.isClosedShop()){
-            this.isShopLocked = true;
-            this.syncShopInfo(false,0);
-        }
-        return this.currentRoundTime >= this.roundTimeLimit.get();
     }
 
     public boolean isClosedShop(){
@@ -663,7 +698,7 @@ public class CSGameMap extends CSMap{
      * @see #checkMatchPoint() 检查赛点状态
      * @see MVPMusicManager MVP音乐播放逻辑
      */
-    private void roundVictory(@NotNull ServerTeam winnerTeam, @NotNull WinnerReason reason) {
+    void roundVictory(@NotNull ServerTeam winnerTeam, @NotNull WinnerReason reason) {
         if (handleKnifeRoundSpecialCase(winnerTeam)) {
             return;
         }
@@ -1014,6 +1049,7 @@ public class CSGameMap extends CSMap{
             this.getMapTeams().startNewRound();
             syncShopDataToClient();
             syncNormalRoundStartMessage();
+            this.rebuildRoundLifecycle();
         }
     }
 

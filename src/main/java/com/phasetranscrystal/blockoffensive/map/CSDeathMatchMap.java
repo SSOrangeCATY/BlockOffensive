@@ -18,6 +18,8 @@ import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
 import com.phasetranscrystal.fpsmatch.core.map.DeathContext;
+import com.phasetranscrystal.fpsmatch.core.match.RoundLifecycle;
+import com.phasetranscrystal.fpsmatch.core.match.RoundResult;
 import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
@@ -289,20 +291,29 @@ public class CSDeathMatchMap extends CSMap {
     @Override
     public void tick() {
         super.tick();
-        
-        if (isStart) {
-            updateMatchTime();
-        }
         applyDeathmatchFriendlyFireRule();
     }
-    
-    private void updateMatchTime() {
-        this.currentMatchTime--;
-    }
-    
+
     @Override
     public boolean victoryGoal() {
-        return this.isStart && currentMatchTime <= 0;
+        return false;
+    }
+
+    @Override
+    protected RoundLifecycle<String, CSRoundResultReason> buildRoundLifecycle() {
+        int limit = matchTimeLimit.get();
+        return lifecycleBuilder()
+                .waitingTicks(0)
+                .roundTicks(limit)
+                .roundEndTicks(0)
+                .timeoutResult(() -> new RoundResult<>("match_end", CSRoundResultReason.TIME_OUT))
+                .onRoundTick(ctx -> this.currentMatchTime = Math.max(0, limit - this.roundLifecycle.roundElapsedTicks()))
+                .build();
+    }
+
+    @Override
+    protected void onRoundEnd(RoundResult<String, CSRoundResultReason> result) {
+        this.victory();
     }
     
     @Override

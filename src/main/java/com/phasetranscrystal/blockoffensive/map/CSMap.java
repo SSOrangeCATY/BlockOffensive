@@ -37,7 +37,7 @@ import com.phasetranscrystal.fpsmatch.core.data.AreaData;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.data.Setting;
 import com.phasetranscrystal.fpsmatch.core.data.SpawnPointData;
-import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
+import com.phasetranscrystal.fpsmatch.core.map.BaseRoundMap;
 import com.phasetranscrystal.fpsmatch.core.map.DeathContext;
 import com.phasetranscrystal.fpsmatch.core.map.VoteObj;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
@@ -75,7 +75,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public abstract class CSMap extends BaseMap  {
+public abstract class CSMap extends BaseRoundMap<String, CSRoundResultReason> {
 
     private static final Vector3f T_COLOR = new Vector3f(1, 0.75f, 0.25f);
     private static final Vector3f CT_COLOR = new Vector3f(0.25f, 0.55f, 1);
@@ -186,6 +186,7 @@ public abstract class CSMap extends BaseMap  {
 
     @Override
     public void tick() {
+        super.tick();
         this.voteLogic();
     }
 
