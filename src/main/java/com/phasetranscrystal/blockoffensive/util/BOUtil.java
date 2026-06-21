@@ -244,8 +244,10 @@ public class BOUtil {
 
         DeathMessage.Builder builder = new DeathMessage.Builder(attacker, deadPlayer, deathItem);
 
+        // 爆头标记始终设置，避免 attacker 回退为 deadPlayer 时丢失爆头信息
+        builder.setHeadShot(isHeadShot);
+
         if(!attacker.is(deadPlayer)) {
-            builder.setHeadShot(isHeadShot);
             builder.setFlying(!attacker.equals(deadPlayer) && !attacker.onGround());
             builder.setThroughWall(isPassWall);
             builder.setThroughSmoke(isPassSmoke);

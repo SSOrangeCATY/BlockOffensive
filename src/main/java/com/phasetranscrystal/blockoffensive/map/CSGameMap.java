@@ -713,6 +713,7 @@ public class CSGameMap extends CSMap{
         MvpReason mvpReason = processMvpLogic(winnerTeam, reason, mapTeams);
 
         sendPacketToAllPlayer(new MvpMessageS2CPacket(mvpReason));
+        sendMvpMusicPacket(mvpReason);
         MinecraftForge.EVENT_BUS.post(new CSGameRoundEndEvent(this, winnerTeam, reason));
 
 
@@ -1002,11 +1003,25 @@ public class CSGameMap extends CSMap{
     }
 
     private String getMvpMusicName(UUID uuid) {
-        String musicName = MVPMusicManager.getInstance().getMvpMusicName(uuid.toString());
-        if (musicName == null || musicName.isBlank()) {
-            return Component.translatable("fpsmatch.empty").getString();
+        if (!MVPMusicManager.getInstance().playerHasMvpMusic(uuid.toString())) {
+            return com.phasetranscrystal.fpsmatch.core.music.MvpMusicManager.getDefaultMvpMusicName();
         }
-        return musicName;
+        return MVPMusicManager.getInstance().getMvpMusicName(uuid.toString());
+    }
+
+    private void sendMvpMusicPacket(MvpReason mvpReason) {
+        if (mvpReason.uuid == null) {
+            return;
+        }
+        ResourceLocation music;
+        if (MVPMusicManager.getInstance().playerHasMvpMusic(mvpReason.uuid.toString())) {
+            music = MVPMusicManager.getInstance().getMvpMusic(mvpReason.uuid.toString());
+        } else {
+            music = com.phasetranscrystal.fpsmatch.core.music.MvpMusicManager.getDefaultMvpMusic();
+        }
+        if (music != null) {
+            sendPacketToAllPlayer(new FPSMusicPlayS2CPacket(music));
+        }
     }
 
 

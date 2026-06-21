@@ -209,7 +209,10 @@ public class CSDeathMessageHud{
     }
 
     private int renderConditionalIcon(GuiGraphics guiGraphics, String iconKey, int currentX, int y) {
-        renderIcon(guiGraphics, specialKillIcons.get(iconKey), currentX, y + 2, 12, 12);
+        ResourceLocation icon = specialKillIcons.get(iconKey);
+        if (icon != null) {
+            renderIcon(guiGraphics, icon, currentX, y + 2, 12, 12);
+        }
         return currentX + 14;
     }
 
