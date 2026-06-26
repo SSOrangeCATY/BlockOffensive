@@ -44,8 +44,8 @@ class CSMvpScorerTest {
         UUID explosive = UUID.fromString("00000000-0000-0000-0000-000000000006");
 
         CSMvpResult result = CSMvpScorer.selectRoundMvp(List.of(
-                new CSMvpContribution(incendiary, 0, 0, 0.0F, 0, 0, 0, 80.0F, 0.0F, false, false),
-                new CSMvpContribution(explosive, 0, 0, 0.0F, 0, 0, 0, 0.0F, 120.0F, false, false)
+                new CSMvpContribution(incendiary, 0, 0, 80.0F, 0, 0, 0, 80.0F, 0.0F, false, false),
+                new CSMvpContribution(explosive, 0, 0, 120.0F, 0, 0, 0, 0.0F, 120.0F, false, false)
         ));
 
         assertEquals(incendiary, result.uuid());
@@ -53,4 +53,3 @@ class CSMvpScorerTest {
         assertEquals("blockoffensive.mvp.info.incendiary_damage", result.infoKey());
     }
 }
-

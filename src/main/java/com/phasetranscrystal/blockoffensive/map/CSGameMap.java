@@ -26,6 +26,7 @@ import com.phasetranscrystal.blockoffensive.net.spec.BombFuseS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
 import com.phasetranscrystal.blockoffensive.sound.MVPMusicManager;
 import com.phasetranscrystal.blockoffensive.spectator.BOSpecManager;
+import com.phasetranscrystal.blockoffensive.util.BOUtil;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
 import com.phasetranscrystal.fpsmatch.common.capability.map.DemolitionModeCapability;
@@ -154,6 +155,7 @@ public class CSGameMap extends CSMap{
     private boolean roundStarted = false;
     private UUID lastBombPlanter;
     private UUID lastBombDefuser;
+    private UUID pendingFinalKillAssist;
 
     private final Map<UUID,Integer> knifeCache = new HashMap<>();
     private final Map<UUID, Float> roundIncendiaryDamage = new HashMap<>();
@@ -536,6 +538,7 @@ public class CSGameMap extends CSMap{
 
     @Override
     protected void onRoundStart() {
+        this.pendingFinalKillAssist = null;
         this.roundStarted = true;
         this.isWaiting = false;
         this.onRoundStarted();
@@ -788,7 +791,7 @@ public class CSGameMap extends CSMap{
         if (result == null) {
             return null;
         }
-        winnerTeam.getPlayerData(result.uuid()).ifPresent(data -> data.addMvpCount(1));
+        awardRoundMvp(winnerTeam, result.uuid());
         return new MapTeams.RawMVPData(result.uuid(), result.reasonKey());
     }
 
@@ -806,8 +809,15 @@ public class CSGameMap extends CSMap{
         if (result == null) {
             return null;
         }
-        winnerTeam.getPlayerData(result.uuid()).ifPresent(data -> data.addMvpCount(1));
+        awardRoundMvp(winnerTeam, result.uuid());
         return new MapTeams.RawMVPData(result.uuid(), result.reasonKey());
+    }
+
+    private void awardRoundMvp(@NotNull ServerTeam winnerTeam, @NotNull UUID uuid) {
+        PlayerData data = winnerTeam.getPlayers().get(uuid);
+        if (data != null) {
+            data.addMvpCount(1);
+        }
     }
 
     private CSMvpResult selectCsMvp(@NotNull ServerTeam winnerTeam, @NotNull WinnerReason reason) {
@@ -815,7 +825,7 @@ public class CSGameMap extends CSMap{
                 .map(data -> new CSMvpContribution(
                         data.getOwner(),
                         data.getTempKills(),
-                        data.getTempAssists(),
+                        data.getTempAssists() + pendingFinalKillAssistBonus(data.getOwner()),
                         data.getTempDamage(),
                         data.getHeadshotKills(),
                         0,
@@ -826,7 +836,13 @@ public class CSGameMap extends CSMap{
                         reason == WinnerReason.DETONATE_BOMB && data.getOwner().equals(lastBombPlanter)
                 ))
                 .toList();
-        return CSMvpScorer.selectRoundMvp(contributions);
+        CSMvpResult result = CSMvpScorer.selectRoundMvp(contributions);
+        pendingFinalKillAssist = null;
+        return result;
+    }
+
+    private int pendingFinalKillAssistBonus(@NotNull UUID uuid) {
+        return uuid.equals(pendingFinalKillAssist) ? 1 : 0;
     }
 
     private MapTeams.RawMVPData getObjectiveMvp(@NotNull ServerTeam winnerTeam, @NotNull WinnerReason reason) {
@@ -1632,6 +1648,7 @@ public class CSGameMap extends CSMap{
     @Override
     public void handleDeath(DeathContext context){
         ServerPlayer dead = context.getDeadPlayer();
+        pendingFinalKillAssist = calculatePendingFinalKillAssist(context);
         if(this.isStart){
             MapTeams teams = this.getMapTeams();
             teams.getTeamByPlayer(dead).ifPresent(deadPlayerTeam -> {
@@ -1657,6 +1674,17 @@ public class CSGameMap extends CSMap{
         }
 
         super.handleDeath(context);
+    }
+
+    private UUID calculatePendingFinalKillAssist(@NotNull DeathContext context) {
+        ServerPlayer attacker = context.getAttacker();
+        if (attacker == null || attacker.getUUID().equals(context.getDeadPlayer().getUUID())) {
+            return null;
+        }
+        return BOUtil.calculateAssistPlayer(this, context.getDeadPlayer(), this.getMinAssistDamageRatio())
+                .map(PlayerData::getOwner)
+                .filter(uuid -> !uuid.equals(attacker.getUUID()))
+                .orElse(null);
     }
 
     @Override
