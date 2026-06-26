@@ -50,9 +50,9 @@ public class CSDMTabRenderer extends CSGameTabRenderer {
 
         // 按得分排序
         Comparator<PlayerInfo> scoreComparator = (p1, p2) -> {
-            PlayerData t1 = FPSMClient.getGlobalData().getPlayerData(p1.getProfile().getId()).get();
-            PlayerData t2 = FPSMClient.getGlobalData().getPlayerData(p2.getProfile().getId()).get();
-            return Float.compare(t2.getScores(), t1.getScores());
+            int t1 = FPSMClient.getGlobalData().getPlayerData(p1.getProfile().getId()).map(PlayerData::getScores).orElse(0);
+            int t2 = FPSMClient.getGlobalData().getPlayerData(p2.getProfile().getId()).map(PlayerData::getScores).orElse(0);
+            return Integer.compare(t2, t1);
         };
 
         allPlayers.sort(scoreComparator);
@@ -147,7 +147,8 @@ public class CSDMTabRenderer extends CSGameTabRenderer {
     }
 
     private void renderDeathmatchPlayerRow(GuiGraphics guiGraphics, PlayerInfo player, int x, int y, int width, int height) {
-        PlayerData tabData = FPSMClient.getGlobalData().getPlayerData(player.getProfile().getId()).get();
+        PlayerData tabData = FPSMClient.getGlobalData().getPlayerData(player.getProfile().getId()).orElse(null);
+        if (tabData == null) return;
         boolean isLocalPlayer = player.getProfile().getId().equals(minecraft.player.getUUID());
 
         // 背景 - 如果是本地玩家，使用高亮背景

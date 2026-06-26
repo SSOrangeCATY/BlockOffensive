@@ -59,12 +59,14 @@ public class CSGameTabRenderer implements TabRenderer {
             return Float.compare(t1.map(PlayerData::getDamage).orElse(0F), t2.map(PlayerData::getDamage).orElse(0F));
         };
 
-        teamPlayers.get("ct").sort(damageComparator.reversed());
-        teamPlayers.get("t").sort(damageComparator.reversed());
+        List<PlayerInfo> ctPlayers = new ArrayList<>(teamPlayers.getOrDefault("ct", Collections.emptyList()));
+        List<PlayerInfo> tPlayers = new ArrayList<>(teamPlayers.getOrDefault("t", Collections.emptyList()));
+        ctPlayers.sort(damageComparator.reversed());
+        tPlayers.sort(damageComparator.reversed());
 
         // 计算实际玩家数量
-        int ctPlayerCount = teamPlayers.get("ct").size();
-        int tPlayerCount = teamPlayers.get("t").size();
+        int ctPlayerCount = ctPlayers.size();
+        int tPlayerCount = tPlayers.size();
 
         // 计算每个队伍的内容高度
         int ctContentHeight = ctPlayerCount > 0 ? (playerRowHeight + playerGap) * ctPlayerCount - playerGap : 0;
@@ -146,7 +148,6 @@ public class CSGameTabRenderer implements TabRenderer {
 
         // 渲染CT玩家（从顶部开始）
         int currentY = ctStartY;
-        List<PlayerInfo> ctPlayers = teamPlayers.get("ct");
         for (PlayerInfo ctPlayer : ctPlayers) {
             renderPlayerRow(guiGraphics, ctPlayer, bgX + bgPadding, currentY, playerAreaWidth, playerRowHeight, BOUtil.CT_COLOR);
             currentY += playerRowHeight + playerGap;
@@ -154,7 +155,6 @@ public class CSGameTabRenderer implements TabRenderer {
 
         // 渲染T玩家（从中间往下）
         currentY = tStartY;
-        List<PlayerInfo> tPlayers = teamPlayers.get("t");
         for (PlayerInfo tPlayer : tPlayers) {
             renderPlayerRow(guiGraphics, tPlayer, bgX + bgPadding, currentY, playerAreaWidth, playerRowHeight, BOUtil.T_COLOR);
             currentY += playerRowHeight + playerGap;
@@ -163,7 +163,8 @@ public class CSGameTabRenderer implements TabRenderer {
 
     private void renderPlayerRow(GuiGraphics guiGraphics, PlayerInfo player, int x, int y, int width, int height, int textColor) {
         UUID uuid = player.getProfile().getId();
-        PlayerData tabData = FPSMClient.getGlobalData().getPlayerData(uuid).get();
+        PlayerData tabData = FPSMClient.getGlobalData().getPlayerData(uuid).orElse(null);
+        if (tabData == null) return;
         String playerTeam = FPSMClient.getGlobalData().getTeamByUUID(uuid).map(BaseTeam::getName).orElse("");
         String localTeam = FPSMClient.getGlobalData().getCurrentTeam();
         boolean isSameTeam = Objects.equals(playerTeam, localTeam);
@@ -253,4 +254,4 @@ public class CSGameTabRenderer implements TabRenderer {
     protected Component getNameForDisplay(PlayerInfo info) {
         return info.getTabListDisplayName() != null ? info.getTabListDisplayName() : Component.literal(info.getProfile().getName());
     }
-} 
+}
