@@ -41,6 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PhysicsModCompat {
 
     private static final Map<Integer, Integer> PENDING_DEATHS = new ConcurrentHashMap<>();
+    private static final ProxiedRagdollRegistry PROXIED_RAGDOLLS = new ProxiedRagdollRegistry();
 
     public static void init() {
         RagdollMapper.addHook(BORagdollHook.INSTANCE);
@@ -48,8 +49,19 @@ public class PhysicsModCompat {
     }
 
     public static void requestHandleDead(int entityId) {
+        if (!beginProxiedRagdoll(entityId)) {
+            return;
+        }
         PENDING_DEATHS.put(entityId, 5);
         tryHandleDead(entityId);
+    }
+
+    static boolean beginProxiedRagdoll(int entityId) {
+        return PROXIED_RAGDOLLS.begin(entityId);
+    }
+
+    static void clearProxiedRagdoll(int entityId) {
+        PROXIED_RAGDOLLS.clear(entityId);
     }
 
     private static boolean tryHandleDead(int entityId) {
@@ -73,7 +85,12 @@ public class PhysicsModCompat {
         if (entity instanceof LivingEntity living && RenderSystem.isOnRenderThread() && ConfigMobs.getMobSetting(entity).getType() != MobPhysicsType.OFF) {
             PhysicsMod mod = PhysicsMod.getInstance(level);
             if (ConfigMobs.getMobSetting(entity).getType() != MobPhysicsType.OFF) {
-                if (!mod.alreadyBlockified.contains(entity.getId()) || entity instanceof Player) {
+                if (mod.alreadyBlockified.contains(entity.getId())) {
+                    PENDING_DEATHS.remove(EntityId);
+                    return true;
+                }
+
+                if (!mod.alreadyBlockified.contains(entity.getId())) {
                     if (!entity.isInvisible()) {
                         mod.alreadyBlockified.add(entity.getId());
                         EntityRenderer entityRenderer = Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(entity);
@@ -157,6 +174,8 @@ public class PhysicsModCompat {
                         mod.blockifiedEntity.clear();
                         RenderSystem.enableBlend();
                         RenderSystem.defaultBlendFunc();
+                    } else {
+                        clearProxiedRagdoll(EntityId);
                     }
                     PENDING_DEATHS.remove(EntityId);
                     return true;
@@ -183,6 +202,7 @@ public class PhysicsModCompat {
             }
         }
         BORagdollHook.RAGDOLL_MAP.clear();
+        PROXIED_RAGDOLLS.clearAll();
     }
 
     public static void remove(Ragdoll ragdoll) {
@@ -209,6 +229,7 @@ public class PhysicsModCompat {
                         PENDING_DEATHS.remove(entityId);
                     } else if (retries <= 1) {
                         PENDING_DEATHS.remove(entityId);
+                        clearProxiedRagdoll(entityId);
                     } else {
                         PENDING_DEATHS.put(entityId, retries - 1);
                     }
@@ -219,13 +240,20 @@ public class PhysicsModCompat {
         @Override
         public void map(Ragdoll ragdoll, Entity entity, EntityModel entityModel) {
             if (entity instanceof Player player) {
-                RAGDOLL_MAP.put(player.getUUID(), new HookData(ragdoll));
+                HookData old = RAGDOLL_MAP.remove(player.getUUID());
+                if (old != null) {
+                    PhysicsModCompat.remove(old.getRagdoll());
+                }
+
+                RAGDOLL_MAP.put(player.getUUID(), new HookData(ragdoll, entity.getId()));
             }
         }
 
         public void remove(UUID uuid) {
-            if (RAGDOLL_MAP.containsKey(uuid)) {
-                PhysicsModCompat.remove(RAGDOLL_MAP.get(uuid).getRagdoll());
+            HookData data = RAGDOLL_MAP.get(uuid);
+            if (data != null) {
+                PhysicsModCompat.remove(data.getRagdoll());
+                clearProxiedRagdoll(data.getEntityId());
             }
             del(uuid);
         }
@@ -300,10 +328,12 @@ public class PhysicsModCompat {
         public static class HookData {
             public int livingTicks = 0;
             public final Ragdoll ragdoll;
+            public final int entityId;
 
 
-            public HookData(Ragdoll ragdoll) {
+            public HookData(Ragdoll ragdoll, int entityId) {
                 this.ragdoll = ragdoll;
+                this.entityId = entityId;
             }
 
             public void tick() {
@@ -316,6 +346,10 @@ public class PhysicsModCompat {
 
             public Ragdoll getRagdoll() {
                 return ragdoll;
+            }
+
+            public int getEntityId() {
+                return entityId;
             }
         }
     }
