@@ -848,6 +848,7 @@ public abstract class CSMap extends BaseRoundMap<String, CSRoundResultReason> {
                 context.isHeadShot(),
                 passWall,
                 passSmoke,
+                context.isScopedKill(),
                 minAssistDamageRatio.get()
         );
         sendPacketToAllPlayer(killPacket);

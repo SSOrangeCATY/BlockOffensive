@@ -1,6 +1,7 @@
 package com.phasetranscrystal.blockoffensive.util;
 
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
+import com.phasetranscrystal.blockoffensive.data.DeathMessageRules;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.map.team.capability.ColoredPlayerCapability;
@@ -228,6 +229,10 @@ public class BOUtil {
                         .flatMap(team -> team.getPlayerData(entry.getKey())));
     }
 
+    public static boolean resolveNoScopeFlag(boolean isScopedKill, boolean attackerIsDeadPlayer) {
+        return DeathMessageRules.resolveNoScopeFlag(isScopedKill, attackerIsDeadPlayer);
+    }
+
 
     /**
      * 构建死亡消息（包含击杀、助攻、爆头信息）
@@ -240,17 +245,17 @@ public class BOUtil {
      * @return 死亡消息数据包
      */
     public static DeathMessageS2CPacket buildDeathMessagePacket(BaseMap map, ServerPlayer attacker, ServerPlayer deadPlayer,
-                                                                ItemStack deathItem, boolean isHeadShot,boolean isPassWall, boolean isPassSmoke, float minAssistDamageRatio) {
+                                                                ItemStack deathItem, boolean isHeadShot, boolean isPassWall,
+                                                                boolean isPassSmoke, boolean isScopedKill, float minAssistDamageRatio) {
 
         DeathMessage.Builder builder = new DeathMessage.Builder(attacker, deadPlayer, deathItem);
-
-        // 爆头标记始终设置，避免 attacker 回退为 deadPlayer 时丢失爆头信息
         builder.setHeadShot(isHeadShot);
 
         if(!attacker.is(deadPlayer)) {
             builder.setFlying(!attacker.equals(deadPlayer) && !attacker.onGround());
             builder.setThroughWall(isPassWall);
             builder.setThroughSmoke(isPassSmoke);
+            builder.setNoScope(resolveNoScopeFlag(isScopedKill, attacker.is(deadPlayer)));
 
             calculateAssistPlayer(map, deadPlayer, minAssistDamageRatio).ifPresent(assistData -> {
                 if (!attacker.getUUID().equals(assistData.getOwner())) {

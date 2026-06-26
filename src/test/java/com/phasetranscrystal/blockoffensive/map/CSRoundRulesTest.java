@@ -184,4 +184,17 @@ class CSRoundRulesTest {
 
         assertTrue(result.isEmpty());
     }
+
+    @Test
+    void nextRoundLossMinimumMoneyIncreasesWithLossStreak() {
+        assertEquals(1400, CSEconomyRules.calculateNextRoundMinMoney(1));
+        assertEquals(1900, CSEconomyRules.calculateNextRoundMinMoney(2));
+        assertEquals(2400, CSEconomyRules.calculateNextRoundMinMoney(3));
+        assertEquals(2900, CSEconomyRules.calculateNextRoundMinMoney(4));
+    }
+
+    @Test
+    void nextRoundLossMinimumMoneyTreatsMissingCompensationAsBase() {
+        assertEquals(1400, CSEconomyRules.calculateNextRoundMinMoney(null));
+    }
 }

@@ -152,7 +152,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback {
             int nextRoundMoney = CSClientData.getNextRoundMinMoney();
             if(nextRoundMoney != -1){
                 nextRoundMinMoneyText = new TextView(getContext());
-                nextRoundMinMoneyText.setText(I18n.get("blockoffensive.shop.title.min.money", nextRoundMoney + CSClientData.getMoney()));
+                nextRoundMinMoneyText.setText(I18n.get("blockoffensive.shop.title.min.money", nextRoundMoney));
                 nextRoundMinMoneyText.setTextSize(15);
                 RelativeLayout.LayoutParams minMoneyParams = new RelativeLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
                 minMoneyParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);

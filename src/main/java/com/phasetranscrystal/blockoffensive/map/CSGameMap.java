@@ -152,6 +152,7 @@ public class CSGameMap extends CSMap{
     private int overCount = 0;
     private boolean isWaitingOverTimeVote = false;
     private boolean roundStarted = false;
+    private WinnerReason lastWinnerReason = WinnerReason.ACED;
     private UUID lastBombPlanter;
     private UUID lastBombDefuser;
 
@@ -261,11 +262,12 @@ public class CSGameMap extends CSMap{
     }
 
     public int getNextRoundMinMoney(ServerTeam team){
-        int defaultEconomy = 1400;
-        int compensation = 500;
-        int compensationFactor = Math.min(0, getCompensation(team).getFactor() - 2);
-        // 计算失败补偿
-        return defaultEconomy + compensation * compensationFactor;
+        CompensationCapability compensation = getCompensation(team);
+        return calculateNextRoundMinMoney(compensation == null ? null : compensation.getFactor());
+    }
+
+    public static int calculateNextRoundMinMoney(Integer compensationFactor) {
+        return CSEconomyRules.calculateNextRoundMinMoney(compensationFactor);
     }
 
     public CompensationCapability getCompensation(ServerTeam team){
@@ -709,6 +711,7 @@ public class CSGameMap extends CSMap{
 
         MapTeams mapTeams = getMapTeams();
         isWaitingWinner = true;
+        lastWinnerReason = reason;
 
         MvpReason mvpReason = processMvpLogic(winnerTeam, reason, mapTeams);
 
@@ -802,7 +805,7 @@ public class CSGameMap extends CSMap{
     }
 
     private MapTeams.RawMVPData getCombatMvp(@NotNull ServerTeam winnerTeam, @NotNull MapTeams mapTeams) {
-        CSMvpResult result = selectCsMvp(winnerTeam, WinnerReason.ACED);
+        CSMvpResult result = selectCsMvp(winnerTeam, lastWinnerReason);
         if (result == null) {
             return null;
         }
@@ -957,7 +960,10 @@ public class CSGameMap extends CSMap{
         String infoKey = resolveInfoKey(reasonKey);
         String musicName = getMvpMusicName(rawMvpData.uuid());
 
-        return buildMvpReason(rawMvpData.uuid(), winnerTeam, playerName, reasonKey, infoKey, musicName);
+        MvpReason mvpReason = buildMvpReason(rawMvpData.uuid(), winnerTeam, playerName, reasonKey, infoKey, musicName);
+        getPlayerByUUID(rawMvpData.uuid())
+                .ifPresent(player -> MinecraftForge.EVENT_BUS.post(new CSGamePlayerGetMvpEvent(player, this, mvpReason)));
+        return mvpReason;
     }
 
     private MvpReason buildEmptyMvpReason(@NotNull ServerTeam winnerTeam) {
