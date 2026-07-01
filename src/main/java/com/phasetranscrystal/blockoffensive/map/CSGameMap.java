@@ -278,7 +278,7 @@ public class CSGameMap extends CSMap{
 
     /**
      * 游戏主循环逻辑（每tick执行）
-     * 管理暂停状态、回合时间、胜利条件检查等核心流程
+     * 管理暂停状态、回合时间、RoundLifecycle 胜利规则等核心流程
      * @see #startNewRound() 启动新回合
      */
     @Override
@@ -522,7 +522,6 @@ public class CSGameMap extends CSMap{
                 .addRule(new CSBombDefusedRule())
                 .addRule(new CSEliminationRule())
                 .addRule(new CSRoundTimeoutRule(getRoundTimeLimitTicks()))
-                .timeoutResult(() -> new RoundResult<>(this.getCT().getFixedName(), CSRoundResultReason.TIME_OUT))
                 .build();
     }
 

@@ -623,6 +623,17 @@ public abstract class CSMap extends BaseRoundMap<String, CSRoundResultReason> {
 
     public abstract void givePlayerKits(ServerPlayer player);
 
+    @Override
+    public void handleRespawn(ServerPlayer player) {
+        if (this instanceof CSDeathMatchMap deathMatchMap) {
+            deathMatchMap.respawnPlayer(player);
+            return;
+        }
+        this.getMapTeams().getPlayerData(player).ifPresent(data -> data.setLiving(false));
+        player.setGameMode(GameType.SPECTATOR);
+        this.setBystander(player);
+    }
+
     public static void dropC4(ServerPlayer player) {
         int im = player.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof CompositionC4, -1, player.inventoryMenu.getCraftSlots());
         if (im > 0) {

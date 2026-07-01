@@ -44,8 +44,8 @@ class CSIssueSourceGuardTest {
     void pauseCommandHasTopLevelBrigadierAliases() throws IOException {
         String source = read("src/main/java/com/phasetranscrystal/blockoffensive/command/CSCommand.java");
 
-        assertTrue(source.contains("Commands.literal(\"pause\")"));
-        assertTrue(source.contains("Commands.literal(\"p\")"));
+        assertTrue(source.contains("\"pause\", \"p\", \"unpause\", \"up\", \"agree\", \"a\", \"disagree\", \"da\", \"drop\", \"d\""));
+        assertTrue(source.contains("dispatcher.register(Commands.literal(command).executes"));
     }
 
     @Test

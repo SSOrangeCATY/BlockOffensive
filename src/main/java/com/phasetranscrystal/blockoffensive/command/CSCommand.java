@@ -15,6 +15,8 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 import java.util.Optional;
 
 public class CSCommand {
+    private static final String[] MAP_COMMANDS = {"pause", "p", "unpause", "up", "agree", "a", "disagree", "da", "drop", "d"};
+
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
         LiteralArgumentBuilder<CommandSourceStack> literal = Commands.literal("cs2").then(Commands.argument("action",StringArgumentType.string()).executes(context -> {
@@ -23,8 +25,9 @@ public class CSCommand {
         }));
 
         dispatcher.register(literal);
-        dispatcher.register(Commands.literal("pause").executes(context -> handleAction(context.getSource(), "pause")));
-        dispatcher.register(Commands.literal("p").executes(context -> handleAction(context.getSource(), "p")));
+        for (String command : MAP_COMMANDS) {
+            dispatcher.register(Commands.literal(command).executes(context -> handleAction(context.getSource(), command)));
+        }
     }
 
     private static int handleAction(CommandSourceStack source, String action) {

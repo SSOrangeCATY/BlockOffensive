@@ -2,6 +2,7 @@ package com.phasetranscrystal.blockoffensive.map;
 
 import com.phasetranscrystal.fpsmatch.core.map.BlastBombState;
 import com.phasetranscrystal.fpsmatch.core.match.RoundLifecycle;
+import com.phasetranscrystal.fpsmatch.core.match.RoundPhase;
 import com.phasetranscrystal.fpsmatch.core.match.RoundResult;
 import org.junit.jupiter.api.Test;
 
@@ -188,6 +189,53 @@ class CSRoundRulesTest {
         Optional<RoundResult<String, CSRoundResultReason>> result = new CSRoundTimeoutRule().evaluate(lifecycle, ctx);
 
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void lifecycleTimeout_tickingStateKeepsRoundActive() {
+        FakeContext ctx = new FakeContext();
+        ctx.state = BlastBombState.TICKING;
+        List<RoundResult<String, CSRoundResultReason>> results = new ArrayList<>();
+        RoundLifecycle<String, CSRoundResultReason> lifecycle = RoundLifecycle.<String, CSRoundResultReason>builder()
+                .waitingTicks(0)
+                .roundTicks(1)
+                .roundEndTicks(1)
+                .addRule(new CSRoundTimeoutRule())
+                .timeoutResult(() -> ctx.blastState() == BlastBombState.NONE
+                        ? new RoundResult<>(ctx.ctTeamName(), CSRoundResultReason.TIME_OUT)
+                        : null)
+                .onRoundEnd(results::add)
+                .build();
+
+        lifecycle.tick(ctx);
+        lifecycle.tick(ctx);
+        lifecycle.tick(ctx);
+
+        assertEquals(RoundPhase.ACTIVE_ROUND, lifecycle.phase());
+        assertTrue(results.isEmpty());
+        assertEquals(3, lifecycle.roundElapsedTicks());
+    }
+
+    @Test
+    void lifecycleTimeout_noneStateEndsRoundForCT() {
+        FakeContext ctx = new FakeContext();
+        List<RoundResult<String, CSRoundResultReason>> results = new ArrayList<>();
+        RoundLifecycle<String, CSRoundResultReason> lifecycle = RoundLifecycle.<String, CSRoundResultReason>builder()
+                .waitingTicks(0)
+                .roundTicks(1)
+                .roundEndTicks(1)
+                .addRule(new CSRoundTimeoutRule())
+                .timeoutResult(() -> ctx.blastState() == BlastBombState.NONE
+                        ? new RoundResult<>(ctx.ctTeamName(), CSRoundResultReason.TIME_OUT)
+                        : null)
+                .onRoundEnd(results::add)
+                .build();
+
+        lifecycle.tick(ctx);
+        lifecycle.tick(ctx);
+
+        assertEquals(RoundPhase.ROUND_END_WAITING, lifecycle.phase());
+        assertEquals(List.of(new RoundResult<>(CT, CSRoundResultReason.TIME_OUT)), results);
     }
 
     @Test

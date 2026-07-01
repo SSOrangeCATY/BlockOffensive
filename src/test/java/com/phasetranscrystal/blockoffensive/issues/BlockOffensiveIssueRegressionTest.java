@@ -10,6 +10,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BlockOffensiveIssueRegressionTest {
+    private static final Path CS_GAME_MAP = Path.of("src/main/java/com/phasetranscrystal/blockoffensive/map/CSGameMap.java");
+    private static final Path CS_MAP = Path.of("src/main/java/com/phasetranscrystal/blockoffensive/map/CSMap.java");
+    private static final Path CS_GAME_EVENTS = Path.of("src/main/java/com/phasetranscrystal/blockoffensive/map/CSGameEvents.java");
+    private static final Path CS_COMMAND = Path.of("src/main/java/com/phasetranscrystal/blockoffensive/command/CSCommand.java");
 
     @Test
     void csTabRendererHandlesMissingTeamsAndPlayerData() throws IOException {
@@ -28,7 +32,7 @@ class BlockOffensiveIssueRegressionTest {
 
     @Test
     void csMvpAwardsDisconnectedPlayersAndPreAwardsFinalKillAssist() throws IOException {
-        String csGameMap = Files.readString(Path.of("src/main/java/com/phasetranscrystal/blockoffensive/map/CSGameMap.java"));
+        String csGameMap = Files.readString(CS_GAME_MAP);
 
         assertTrue(csGameMap.contains("awardRoundMvp(winnerTeam, result.uuid())"));
         assertTrue(csGameMap.contains("winnerTeam.getPlayers().get(uuid)"));
@@ -46,5 +50,63 @@ class BlockOffensiveIssueRegressionTest {
         assertFalse(scorerTest.contains("new CSMvpContribution(explosive, 0, 0, 0.0F"));
         assertTrue(scorerTest.contains("80.0F, 0, 0, 0, 80.0F"));
         assertTrue(scorerTest.contains("120.0F, 0, 0, 0, 0.0F, 120.0F"));
+    }
+
+    @Test
+    void droppedObjectiveItemsDoNotUseVanillaGlowing() throws IOException {
+        assertFalse(Files.readString(CS_MAP).contains("setGlowingTag(true)"));
+        assertFalse(Files.readString(CS_GAME_MAP).contains("setGlowingTag(true)"));
+        assertFalse(Files.readString(CS_GAME_EVENTS).contains("setGlowingTag(true)"));
+    }
+
+    @Test
+    void topLevelPauseAndVoteCommandsRouteToMapCommands() throws IOException {
+        String command = Files.readString(CS_COMMAND);
+
+        assertTrue(command.contains("MAP_COMMANDS"));
+        assertTrue(command.contains("\"pause\", \"p\", \"unpause\", \"up\", \"agree\", \"a\", \"disagree\", \"da\", \"drop\", \"d\""));
+        assertTrue(command.contains("dispatcher.register(Commands.literal(command).executes"));
+        assertTrue(command.contains("csGameMap.handleChatCommand(action,player)"));
+    }
+
+    @Test
+    void roundResetOnlyRefillsCurrentLivingPlayerAmmo() throws IOException {
+        String csGameMap = Files.readString(CS_GAME_MAP);
+        String processJoinedPlayer = csGameMap.substring(csGameMap.indexOf("private void processJoinedPlayer"), csGameMap.indexOf("@Override\n    public void givePlayerKits"));
+
+        assertFalse(processJoinedPlayer.contains("resetGunAmmo();"));
+        assertTrue(processJoinedPlayer.contains("FPSMUtil.resetAllGunAmmo(player);"));
+    }
+
+    @Test
+    void roundTimeoutDoesNotEndRoundWhileBombIsPlanted() throws IOException {
+        String csGameMap = Files.readString(CS_GAME_MAP);
+        String lifecycle = csGameMap.substring(csGameMap.indexOf("protected RoundLifecycle"), csGameMap.indexOf("@Override\n    protected RoundContext createRoundContext"));
+
+        assertTrue(lifecycle.contains(".roundTicks(Integer.MAX_VALUE)"));
+        assertTrue(lifecycle.contains(".addRule(new CSRoundTimeoutRule(getRoundTimeLimitTicks()))"));
+        assertFalse(lifecycle.contains("timeoutResult(() -> new RoundResult"));
+    }
+
+    @Test
+    void obsoleteVictoryChecksAreRemoved() throws IOException {
+        String csGameMap = Files.readString(CS_GAME_MAP);
+
+        assertFalse(csGameMap.contains("public void checkRoundVictory()"));
+        assertFalse(csGameMap.contains("public void checkBlastingVictory()"));
+        assertFalse(csGameMap.contains("@see #checkRoundVictory()"));
+        assertFalse(csGameMap.contains("@see #checkBlastingVictory()"));
+    }
+
+    @Test
+    void csRespawnKeepsClassicModeDeadButLetsDeathmatchRespawn() throws IOException {
+        String csMap = Files.readString(CS_MAP);
+        String handleRespawn = csMap.substring(csMap.indexOf("public void handleRespawn"), csMap.indexOf("public static void dropC4"));
+
+        assertTrue(csMap.contains("extends BaseRoundMap<String, CSRoundResultReason>"));
+        assertTrue(handleRespawn.contains("CSDeathMatchMap deathMatchMap"));
+        assertTrue(handleRespawn.contains("deathMatchMap.respawnPlayer(player);"));
+        assertTrue(handleRespawn.contains("data.setLiving(false)"));
+        assertTrue(handleRespawn.contains("player.setGameMode(GameType.SPECTATOR)"));
     }
 }
