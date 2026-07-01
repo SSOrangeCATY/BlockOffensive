@@ -152,6 +152,33 @@ class CSRoundRulesTest {
     }
 
     @Test
+    void timeout_usesConfiguredLimitWhenLifecycleTimeoutIsDisabled() {
+        FakeContext ctx = new FakeContext();
+        RoundLifecycle<String, CSRoundResultReason> lifecycle = lifecycleWithRoundTicks(Integer.MAX_VALUE);
+        lifecycle.tick();
+        lifecycle.tick();
+        lifecycle.tick();
+
+        Optional<RoundResult<String, CSRoundResultReason>> result = new CSRoundTimeoutRule(2).evaluate(lifecycle, ctx);
+
+        assertTrue(result.isPresent());
+        assertEquals(CT, result.get().winner());
+        assertEquals(CSRoundResultReason.TIME_OUT, result.get().reason());
+    }
+
+    @Test
+    void timeout_configuredLimitStillWaitsForTickingBomb() {
+        FakeContext ctx = new FakeContext();
+        ctx.state = BlastBombState.TICKING;
+        RoundLifecycle<String, CSRoundResultReason> lifecycle = lifecycleWithRoundTicks(Integer.MAX_VALUE);
+        lifecycle.tick();
+
+        Optional<RoundResult<String, CSRoundResultReason>> result = new CSRoundTimeoutRule(0).evaluate(lifecycle, ctx);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
     void timeout_tickingState_noResult() {
         FakeContext ctx = new FakeContext();
         ctx.state = BlastBombState.TICKING;

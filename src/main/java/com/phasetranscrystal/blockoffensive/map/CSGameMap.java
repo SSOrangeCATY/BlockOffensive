@@ -277,8 +277,6 @@ public class CSGameMap extends CSMap{
     /**
      * 游戏主循环逻辑（每tick执行）
      * 管理暂停状态、回合时间、胜利条件检查等核心流程
-     * @see #checkRoundVictory() 检查回合胜利条件
-     * @see #checkBlastingVictory() 检查炸弹爆炸胜利
      * @see #startNewRound() 启动新回合
      */
     @Override
@@ -516,12 +514,12 @@ public class CSGameMap extends CSMap{
     protected RoundLifecycle<String, CSRoundResultReason> buildRoundLifecycle() {
         return lifecycleBuilder()
                 .waitingTicks(getWaitingTimeTicks())
-                .roundTicks(getRoundTimeLimitTicks())
+                .roundTicks(Integer.MAX_VALUE)
                 .roundEndTicks(getWinnerWaitingTicks())
                 .addRule(new CSBombExplodedRule())
                 .addRule(new CSBombDefusedRule())
                 .addRule(new CSEliminationRule())
-                .addRule(new CSRoundTimeoutRule())
+                .addRule(new CSRoundTimeoutRule(getRoundTimeLimitTicks()))
                 .timeoutResult(() -> new RoundResult<>(this.getCT().getFixedName(), CSRoundResultReason.TIME_OUT))
                 .build();
     }
@@ -588,33 +586,6 @@ public class CSGameMap extends CSMap{
             case DEFUSE_BOMB -> CSGameMap.WinnerReason.DEFUSE_BOMB;
             case DETONATE_BOMB -> CSGameMap.WinnerReason.DETONATE_BOMB;
         };
-    }
-
-    public void checkRoundVictory(){
-        if(isWaitingWinner) return;
-        Map<ServerTeam, List<UUID>> teamsLiving = this.getMapTeams().getTeamsLiving();
-        if(teamsLiving.size() == 1){
-            ServerTeam winnerTeam = teamsLiving.keySet().stream().findFirst().get();
-            this.roundVictory(winnerTeam, WinnerReason.ACED);
-        }
-
-        if(teamsLiving.isEmpty()){
-            this.roundVictory(this.getCT(),WinnerReason.ACED);
-        }
-    }
-
-    public void checkBlastingVictory(){
-        if(isWaitingWinner) return;
-        Map<ServerTeam, List<UUID>> teamsLiving = this.getMapTeams().getTeamsLiving();
-        if(teamsLiving.size() == 1){
-            ServerTeam winnerTeam = teamsLiving.keySet().stream().findFirst().get();
-            boolean flag = this.checkCanPlacingBombs(winnerTeam.getFixedName());
-            if(flag){
-                this.roundVictory(winnerTeam,WinnerReason.ACED);
-            }
-        }else if(teamsLiving.isEmpty()){
-            this.roundVictory(this.getT(),WinnerReason.ACED);
-        }
     }
 
     public boolean isClosedShop(){
@@ -1425,7 +1396,7 @@ public class CSGameMap extends CSMap{
             clearInventory(player);
             givePlayerKits(player);
         } else {
-            resetGunAmmo();
+            FPSMUtil.resetAllGunAmmo(player);
         }
 
         ShopCapability.getPlayerShopData(this, player.getUUID())
@@ -1649,7 +1620,7 @@ public class CSGameMap extends CSMap{
                 discardAmmo(dead.getUUID());
                 int ik = dead.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof BombDisposalKit, -1, dead.inventoryMenu.getCraftSlots());
                 if (ik > 0) {
-                    dead.drop(new ItemStack(BOItemRegister.BOMB_DISPOSAL_KIT.get(), 1), false, false).setGlowingTag(true);
+                    dead.drop(new ItemStack(BOItemRegister.BOMB_DISPOSAL_KIT.get(), 1), false, false);
                 }
                 FPSMUtil.playerDeadDropWeapon(dead, true);
                 dead.getInventory().clearContent();

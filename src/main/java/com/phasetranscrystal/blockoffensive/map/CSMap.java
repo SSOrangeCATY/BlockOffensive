@@ -617,10 +617,7 @@ public abstract class CSMap extends BaseRoundMap<String, CSRoundResultReason> {
     public static void dropC4(ServerPlayer player) {
         int im = player.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof CompositionC4, -1, player.inventoryMenu.getCraftSlots());
         if (im > 0) {
-            ItemEntity dropped = player.drop(new ItemStack(BOItemRegister.C4.get(), 1), false, false);
-            if (dropped != null) {
-                dropped.setGlowingTag(true);
-            }
+            player.drop(new ItemStack(BOItemRegister.C4.get(), 1), false, false);
             player.getInventory().setChanged();
         }
     }
@@ -643,10 +640,6 @@ public abstract class CSMap extends BaseRoundMap<String, CSRoundResultReason> {
     public void resetPlayerClientData(ServerPlayer serverPlayer){
         FPSMatchStatsResetS2CPacket packet = new FPSMatchStatsResetS2CPacket();
         FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> serverPlayer), packet);
-    }
-
-    public void resetGunAmmo(){
-        this.getMapTeams().getJoinedPlayers().forEach((data)-> data.getPlayer().ifPresent(FPSMUtil::resetAllGunAmmo));
     }
 
     public void sendAllPlayerMessage(Component message, boolean actionBar){
