@@ -14,3 +14,11 @@ includeBuild("FPSMatch"){
         substitute module('com.phasetranscrystal:fpsmatch') using project(':')
     }
 }
+
+if (file('FPSMatch/NeoTACZ/settings.gradle').isFile()) {
+    includeBuild('FPSMatch/NeoTACZ') {
+        dependencySubstitution {
+            substitute module('com.tacz:tacz-mc26.2') using project(':')
+        }
+    }
+}

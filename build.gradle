@@ -113,7 +113,7 @@ repositories {
 }
 
 dependencies {
-    additionalRuntimeClasspath(implementation("icyllis.modernui:ModernUI-Core:${modernui_core_version}")) {
+    implementation("icyllis.modernui:ModernUI-Core:${modernui_core_version}") {
         exclude group: "org.apache.logging.log4j", module: "log4j-core"
         exclude group: "org.apache.logging.log4j", module: "log4j-api"
         exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j2-impl'
@@ -122,7 +122,7 @@ dependencies {
         exclude group: "com.ibm.icu", module: "icu4j"
         exclude group: "it.unimi.dsi", module: "fastutil"
     }
-    additionalRuntimeClasspath(implementation("icyllis.modernui:ModernUI-Markflow:${modernui_core_version}")) {
+    implementation("icyllis.modernui:ModernUI-Markflow:${modernui_core_version}") {
         exclude group: "org.apache.logging.log4j", module: "log4j-core"
         exclude group: "org.apache.logging.log4j", module: "log4j-api"
         exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j2-impl'
@@ -132,28 +132,30 @@ dependencies {
         exclude group: "it.unimi.dsi", module: "fastutil"
     }
 
-    modCompileOnly('org.apache.commons:commons-math3:3.6.1');
+    compileOnly('org.apache.commons:commons-math3:3.6.1')
 
-    modImplementation("icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_forge_version}")
-    modCompileOnly("maven.modrinth:timeless-and-classics-zero:${tacz_version}")
-    modImplementation("maven.modrinth:lr-tactical:${lrtactical_version}")
-    modImplementation("maven.modrinth:cloth-config:${cloth_config_version}")
-    modImplementation("com.phasetranscrystal:fpsmatch") {
+    implementation("icyllis.modernui:ModernUI-NeoForge:26.1.2-3.13.0.5")
+    compileOnly("maven.modrinth:timeless-and-classics-zero:${tacz_version}")
+    implementation("maven.modrinth:lr-tactical:${lrtactical_version}")
+    implementation("maven.modrinth:cloth-config:${cloth_config_version}")
+    implementation("com.phasetranscrystal:fpsmatch") {
         transitive = false
     }
 
-    modImplementation("maven.modrinth:counterstrikegrenade:${cs_grenade_version}")
-    modRuntimeOnly("maven.modrinth:kotlin-for-forge:${kotlin_forge_version}")
-    modImplementation("maven.modrinth:hit-indication:${hit_indication_version}")
-    modImplementation("maven.modrinth:physicsmod:${physicsmod_version}")
-    modImplementation("maven.modrinth:gd656killicon:${gd656killicon_version}")
-    modCompileOnly("maven.modrinth:tacz-tweaks:${tacztweak_version}")
-    modRuntimeOnly("maven.modrinth:yacl:${yacl_version}")
-    modRuntimeOnly("maven.modrinth:jade:${jade_version}")
-    modImplementation("dev.latvian.mods:kubejs-forge:${kubejs_version}")
-    modRuntimeOnly("dev.latvian.mods:rhino-forge:${rhino_version}")
-    modRuntimeOnly("dev.architectury:architectury-forge:${architectury_version}")
+    implementation("maven.modrinth:counterstrikegrenade:${cs_grenade_version}")
+    localRuntime("maven.modrinth:kotlin-for-forge:${kotlin_forge_version}")
+    implementation("maven.modrinth:hit-indication:${hit_indication_version}")
+    implementation("maven.modrinth:physicsmod:${physicsmod_version}")
+    implementation("maven.modrinth:gd656killicon:${gd656killicon_version}")
+    compileOnly("maven.modrinth:tacz-tweaks:${tacztweak_version}")
+    localRuntime("maven.modrinth:yacl:${yacl_version}")
+    localRuntime("maven.modrinth:jade:${jade_version}")
+    implementation("dev.latvian.mods:kubejs-forge:${kubejs_version}")
+    localRuntime("dev.latvian.mods:rhino-forge:${rhino_version}")
+    localRuntime("dev.architectury:architectury-forge:${architectury_version}")
 
+    testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 
@@ -162,6 +164,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
             minecraft_version      : minecraft_version,
             minecraft_version_range: minecraft_version_range,
             neo_version            : neo_version,
+            fpsm_version_range     : fpsm_version_range,
             mod_id                 : mod_id,
             mod_name               : mod_name,
             mod_license            : mod_license,
@@ -204,6 +207,10 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
 }
 
 idea {

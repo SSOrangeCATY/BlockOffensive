@@ -683,10 +683,21 @@ public abstract class CSMap extends BaseMap  {
 
     public abstract void givePlayerKits(ServerPlayer player);
 
+    @Override
+    public void handleRespawn(ServerPlayer player) {
+        if (this instanceof CSDeathMatchMap deathMatchMap) {
+            deathMatchMap.respawnPlayer(player);
+            return;
+        }
+        this.getMapTeams().getPlayerData(player).ifPresent(data -> data.setLiving(false));
+        player.setGameMode(GameType.SPECTATOR);
+        this.setBystander(player);
+    }
+
     public static void dropC4(ServerPlayer player) {
         int im = player.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof CompositionC4, -1, player.inventoryMenu.getCraftSlots());
         if (im > 0) {
-            player.drop(new ItemStack(BOItemRegister.C4.get(), 1), false, false).setGlowingTag(true);
+            player.drop(new ItemStack(BOItemRegister.C4.get(), 1), false, false);
             player.getInventory().setChanged();
         }
     }
@@ -709,10 +720,6 @@ public abstract class CSMap extends BaseMap  {
     public void resetPlayerClientData(ServerPlayer serverPlayer){
         FPSMatchStatsResetS2CPacket packet = new FPSMatchStatsResetS2CPacket();
         FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> serverPlayer), packet);
-    }
-
-    public void resetGunAmmo(){
-        this.getMapTeams().getJoinedPlayers().forEach((data)-> data.getPlayer().ifPresent(FPSMUtil::resetAllGunAmmo));
     }
 
     public void sendAllPlayerMessage(Component message, boolean actionBar){

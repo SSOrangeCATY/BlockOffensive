@@ -150,10 +150,6 @@ public class CSGameEvents {
                 event.getPlayer().getInventory().add(new ItemStack(BOItemRegister.BOMB_DISPOSAL_KIT.get(),1));
             }
 
-            if(itemStack.getItem() instanceof CompositionC4){
-                event.getItemEntity().setGlowingTag(true);
-            }
-
             if(!event.isCanceled()){
                 FPSMUtil.sortPlayerInventory(player);
             }

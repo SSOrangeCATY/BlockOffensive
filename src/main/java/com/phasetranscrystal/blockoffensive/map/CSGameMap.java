@@ -254,8 +254,6 @@ public class CSGameMap extends CSMap{
     /**
      * 游戏主循环逻辑（每tick执行）
      * 管理暂停状态、回合时间、胜利条件检查等核心流程
-     * @see #checkRoundVictory() 检查回合胜利条件
-     * @see #checkBlastingVictory() 检查炸弹爆炸胜利
      * @see #startNewRound() 启动新回合
      */
     @Override
@@ -1252,7 +1250,7 @@ public class CSGameMap extends CSMap{
             clearInventory(player);
             givePlayerKits(player);
         } else {
-            resetGunAmmo();
+            FPSMUtil.resetAllGunAmmo(player);
         }
 
         ShopCapability.getPlayerShopData(this, player.getUUID())
@@ -1485,7 +1483,7 @@ public class CSGameMap extends CSMap{
                 // 清除拆弹工具,并掉落拆弹工具
                 int ik = dead.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof BombDisposalKit, -1, dead.inventoryMenu.getCraftSlots());
                 if (ik > 0) {
-                    dead.drop(new ItemStack(BOItemRegister.BOMB_DISPOSAL_KIT.get(), 1), false, false).setGlowingTag(true);
+                    dead.drop(new ItemStack(BOItemRegister.BOMB_DISPOSAL_KIT.get(), 1), false, false);
                 }
                 FPSMUtil.playerDeadDropWeapon(dead, true);
                 dead.getInventory().clearContent();
