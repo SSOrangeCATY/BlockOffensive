@@ -535,6 +535,15 @@ public abstract class CSMap extends BaseRoundMap<String, CSRoundResultReason> {
         return result;
     }
 
+    @Override
+    public void leave(ServerPlayer player) {
+        boolean wasInMap = checkGameHasPlayer(player) || checkSpecHasPlayer(player);
+        super.leave(player);
+        if (wasInMap && !checkGameHasPlayer(player) && !checkSpecHasPlayer(player)) {
+            teleportPlayerToMatchEndPoint(player);
+        }
+    }
+
     public abstract boolean setTeamSpawnPoints();
 
     public Map<ServerTeam,List<SpawnPointData>> getAllSpawnPoints(){
@@ -647,14 +656,17 @@ public abstract class CSMap extends BaseRoundMap<String, CSRoundResultReason> {
     }
 
     public void teleportPlayerToMatchEndPoint(){
-        getCapabilityMap().get(GameEndTeleportCapability.class).ifPresent(cap->{
+        this.getMapTeams().getJoinedPlayersWithSpec().forEach(uuid ->
+                this.getPlayerByUUID(uuid).ifPresent(this::teleportPlayerToMatchEndPoint));
+    }
+
+    public void teleportPlayerToMatchEndPoint(ServerPlayer player){
+        getCapabilityMap().get(GameEndTeleportCapability.class).ifPresent(cap -> {
             SpawnPointData data = cap.getPoint();
             if(data == null) return;
-            this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> this.getPlayerByUUID(uuid).ifPresent(player->{
-                teleportToPoint(player, data);
-                player.setGameMode(FPSMConfig.common.autoAdventureMode.get() ? GameType.ADVENTURE : GameType.SURVIVAL);
-                player.setRespawnPosition(null, null, 0, false, false);
-            })));
+            teleportToPoint(player, data);
+            player.setGameMode(FPSMConfig.common.autoAdventureMode.get() ? GameType.ADVENTURE : GameType.SURVIVAL);
+            player.setRespawnPosition(null, null, 0, false, false);
         });
     }
 

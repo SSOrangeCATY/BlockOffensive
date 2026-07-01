@@ -58,4 +58,15 @@ class CSIssueSourceGuardTest {
         assertFalse(gameMap.contains("setGlowingTag(true)"));
         assertFalse(gameEvents.contains("setGlowingTag(true)"));
     }
+
+    @Test
+    void leavingCsMapUsesConfiguredMatchEndTeleportPoint() throws IOException {
+        String csMap = read("src/main/java/com/phasetranscrystal/blockoffensive/map/CSMap.java");
+
+        assertTrue(csMap.contains("public void leave(ServerPlayer player)"));
+        assertTrue(csMap.contains("boolean wasInMap = checkGameHasPlayer(player) || checkSpecHasPlayer(player);"));
+        assertTrue(csMap.contains("super.leave(player);"));
+        assertTrue(csMap.contains("if (wasInMap && !checkGameHasPlayer(player) && !checkSpecHasPlayer(player))"));
+        assertTrue(csMap.contains("teleportPlayerToMatchEndPoint(player);"));
+    }
 }
