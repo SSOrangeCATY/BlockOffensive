@@ -152,6 +152,33 @@ class CSRoundRulesTest {
     }
 
     @Test
+    void timeout_usesConfiguredLimitWhenLifecycleTimeoutIsDisabled() {
+        FakeContext ctx = new FakeContext();
+        RoundLifecycle<String, CSRoundResultReason> lifecycle = lifecycleWithRoundTicks(Integer.MAX_VALUE);
+        lifecycle.tick();
+        lifecycle.tick();
+        lifecycle.tick();
+
+        Optional<RoundResult<String, CSRoundResultReason>> result = new CSRoundTimeoutRule(2).evaluate(lifecycle, ctx);
+
+        assertTrue(result.isPresent());
+        assertEquals(CT, result.get().winner());
+        assertEquals(CSRoundResultReason.TIME_OUT, result.get().reason());
+    }
+
+    @Test
+    void timeout_configuredLimitStillWaitsForTickingBomb() {
+        FakeContext ctx = new FakeContext();
+        ctx.state = BlastBombState.TICKING;
+        RoundLifecycle<String, CSRoundResultReason> lifecycle = lifecycleWithRoundTicks(Integer.MAX_VALUE);
+        lifecycle.tick();
+
+        Optional<RoundResult<String, CSRoundResultReason>> result = new CSRoundTimeoutRule(0).evaluate(lifecycle, ctx);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
     void timeout_tickingState_noResult() {
         FakeContext ctx = new FakeContext();
         ctx.state = BlastBombState.TICKING;
@@ -183,5 +210,18 @@ class CSRoundRulesTest {
         Optional<RoundResult<String, CSRoundResultReason>> result = new CSEliminationRule().evaluate(emptyLifecycle(), ctx);
 
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void nextRoundLossMinimumMoneyIncreasesWithLossStreak() {
+        assertEquals(1400, CSEconomyRules.calculateNextRoundMinMoney(1));
+        assertEquals(1900, CSEconomyRules.calculateNextRoundMinMoney(2));
+        assertEquals(2400, CSEconomyRules.calculateNextRoundMinMoney(3));
+        assertEquals(2900, CSEconomyRules.calculateNextRoundMinMoney(4));
+    }
+
+    @Test
+    void nextRoundLossMinimumMoneyTreatsMissingCompensationAsBase() {
+        assertEquals(1400, CSEconomyRules.calculateNextRoundMinMoney(null));
     }
 }

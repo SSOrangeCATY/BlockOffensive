@@ -52,4 +52,30 @@ class CSMvpScorerTest {
         assertEquals("blockoffensive.mvp.incendiary_damage", result.reasonKey());
         assertEquals("blockoffensive.mvp.info.incendiary_damage", result.infoKey());
     }
+
+    @Test
+    void doesNotDoubleCountIncendiaryDamageAlreadyIncludedInTotalDamage() {
+        UUID bullet = UUID.fromString("00000000-0000-0000-0000-000000000007");
+        UUID incendiary = UUID.fromString("00000000-0000-0000-0000-000000000008");
+
+        CSMvpResult result = CSMvpScorer.selectRoundMvp(List.of(
+                new CSMvpContribution(bullet, 0, 0, 250.0F, 0, 0, 0, 0.0F, 0.0F, false, false),
+                new CSMvpContribution(incendiary, 0, 0, 100.0F, 0, 0, 0, 100.0F, 0.0F, false, false)
+        ));
+
+        assertEquals(bullet, result.uuid());
+    }
+
+    @Test
+    void headshotsBreakCombatScoreTie() {
+        UUID headshot = UUID.fromString("00000000-0000-0000-0000-000000000009");
+        UUID bodyShot = UUID.fromString("00000000-0000-0000-0000-000000000010");
+
+        CSMvpResult result = CSMvpScorer.selectRoundMvp(List.of(
+                new CSMvpContribution(headshot, 1, 0, 50.0F, 1, 0, 0, 0.0F, 0.0F, false, false),
+                new CSMvpContribution(bodyShot, 1, 0, 50.0F, 0, 0, 0, 0.0F, 0.0F, false, false)
+        ));
+
+        assertEquals(headshot, result.uuid());
+    }
 }

@@ -4,7 +4,6 @@ import com.phasetranscrystal.blockoffensive.event.CSGameMapEvent;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.item.BombDisposalKit;
-import com.phasetranscrystal.blockoffensive.item.CompositionC4;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
@@ -148,10 +147,6 @@ public class CSGameEvents {
             if(itemStack.getItem() instanceof BombDisposalKit){
                 event.setCanceled(true);
                 event.getPlayer().getInventory().add(new ItemStack(BOItemRegister.BOMB_DISPOSAL_KIT.get(),1));
-            }
-
-            if(itemStack.getItem() instanceof CompositionC4){
-                event.getItemEntity().setGlowingTag(true);
             }
 
             if(!event.isCanceled()){

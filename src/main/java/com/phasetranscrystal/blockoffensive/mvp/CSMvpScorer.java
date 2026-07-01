@@ -27,8 +27,11 @@ public final class CSMvpScorer {
         if (contribution.defusedBomb() || contribution.plantedBomb()) {
             objectiveScore = 300;
         }
+        float utilityDamage = contribution.incendiaryDamage() + contribution.explosiveDamage();
+        float directDamage = Math.max(0.0F, contribution.damage() - utilityDamage);
         return objectiveScore + contribution.kills() * 3 + contribution.assists()
-                + Math.round(contribution.damage() / 50.0F)
+                + contribution.headshotKills()
+                + Math.round(directDamage / 50.0F)
                 + Math.round(contribution.incendiaryDamage() / 25.0F)
                 + Math.round(contribution.explosiveDamage() / 45.0F);
     }

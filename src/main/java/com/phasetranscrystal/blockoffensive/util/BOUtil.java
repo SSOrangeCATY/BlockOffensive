@@ -1,6 +1,7 @@
 package com.phasetranscrystal.blockoffensive.util;
 
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
+import com.phasetranscrystal.blockoffensive.data.DeathMessageRules;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.map.team.capability.ColoredPlayerCapability;
@@ -228,6 +229,10 @@ public class BOUtil {
                         .flatMap(team -> team.getPlayerData(entry.getKey())));
     }
 
+    public static boolean resolveNoScopeFlag(boolean isScopedKill, boolean attackerIsDeadPlayer) {
+        return DeathMessageRules.resolveNoScopeFlag(isScopedKill, attackerIsDeadPlayer);
+    }
+
 
     /**
      * 构建死亡消息（包含击杀、助攻、爆头信息）
@@ -237,22 +242,22 @@ public class BOUtil {
      * @param deadPlayer 死亡玩家
      * @param deathItem  致死物品
      * @param isHeadShot 是否爆头
-     * @param isPassWall 是否穿墙
-     * @param isPassSmoke 是否穿烟
      * @return 死亡消息数据包
      */
     public static DeathMessageS2CPacket buildDeathMessagePacket(BaseMap map, ServerPlayer attacker, ServerPlayer deadPlayer,
-                                                                ItemStack deathItem, boolean isHeadShot,boolean isPassWall, boolean isPassSmoke, float minAssistDamageRatio) {
+                                                                ItemStack deathItem, boolean isHeadShot, boolean isPassWall,
+                                                                boolean isPassSmoke, boolean isScopedKill, float minAssistDamageRatio) {
 
         DeathMessage.Builder builder = new DeathMessage.Builder(attacker, deadPlayer, deathItem);
 
-        // 特殊击杀标记来自 FPSMatch 死亡上下文；即使攻击者被兜底成死者也不能丢失 UI 图标。
+        // Special kill flags come from DeathContext and must survive attacker fallback.
         builder.setHeadShot(isHeadShot);
         builder.setThroughWall(isPassWall);
         builder.setThroughSmoke(isPassSmoke);
 
         if(!attacker.is(deadPlayer)) {
             builder.setFlying(!attacker.equals(deadPlayer) && !attacker.onGround());
+            builder.setNoScope(resolveNoScopeFlag(isScopedKill, attacker.is(deadPlayer)));
 
             calculateAssistPlayer(map, deadPlayer, minAssistDamageRatio).ifPresent(assistData -> {
                 if (!attacker.getUUID().equals(assistData.getOwner())) {

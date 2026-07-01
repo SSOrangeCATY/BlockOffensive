@@ -20,7 +20,7 @@ public class MVPMusicManager {
     public static final Codec<MVPMusicManager> CODEC = Codec.unboundedMap(Codec.STRING, Entry.CODEC).xmap(MVPMusicManager::new,
             (manager)-> manager.mvpMusicMap);
     private final Map<String, Entry> mvpMusicMap;
-    private static MVPMusicManager INSTANCE = new MVPMusicManager();
+    private static volatile MVPMusicManager INSTANCE = new MVPMusicManager();
 
     public static MVPMusicManager getInstance(){
         return INSTANCE;

@@ -6,6 +6,7 @@ import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.compat.BOImpl;
 import com.phasetranscrystal.blockoffensive.compat.CSGrenadeCompat;
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
+import com.phasetranscrystal.blockoffensive.data.DeathMessageRules;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
 import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
@@ -21,6 +22,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 @SuppressWarnings("all")
@@ -129,11 +131,15 @@ public class CSDeathMessageHud{
         itemToIcon.put(item, id);
     }
 
+    public static boolean hasDistinctAssist(UUID assistUUID, UUID killerUUID) {
+        return DeathMessageRules.hasDistinctAssist(assistUUID, killerUUID);
+    }
+
     private void renderKillMessage(GuiGraphics guiGraphics, DeathMessage message, int x, int y) {
         PoseStack poseStack = guiGraphics.pose();
         Font font = minecraft.font;
         UUID local = minecraft.player.getUUID();
-        boolean isLocalPlayer = message.getKillerUUID().equals(local) || message.getAssistUUID().equals(local);
+        boolean isLocalPlayer = message.getKillerUUID().equals(local) || Objects.equals(message.getAssistUUID(), local);
 
         int width = calculateMessageWidth(message);
         int height = 16;
@@ -148,26 +154,23 @@ public class CSDeathMessageHud{
             guiGraphics.fill(x + width - 1, y, x + width, y + height, 0xFFFF0000);
         }
 
-        boolean isSuicide = message.getDeadUUID().equals(message.getKillerUUID()) || message.getWeapon().getItem() == BOItemRegister.C4.get();
+        boolean isSuicide = DeathMessageRules.isSuicide(message.getDeadUUID(), message.getKillerUUID());
 
         int currentX = x + 5;
         int rightPadding = x + width - 5;
 
         if (message.isBlinded()) {
-            renderIcon(guiGraphics, specialKillIcons.get("blindness"), currentX, y + 2, 12, 12);
-            currentX += 14;
+            currentX = renderConditionalIcon(guiGraphics, "blindness", currentX, y);
         }
 
         MutableComponent component = isSuicide ? message.getDead().copy() : message.getKiller().copy();
-        if(!message.getAssistUUID().equals(message.getKillerUUID())){
+        if(hasDistinctAssist(message.getAssistUUID(), message.getKillerUUID())){
             component.append(" + ");
             component.append(message.getAssist());
-        };
+        }
 
         guiGraphics.drawString(font, component, currentX, y + 4, -1, true);
         currentX += font.width(component) + 2;
-
-        if (message.isFlying()) currentX = renderConditionalIcon(guiGraphics, "fly", currentX, y);
 
         if(!isSuicide){
             ResourceLocation weaponIcon = message.getWeaponIcon();
@@ -198,6 +201,7 @@ public class CSDeathMessageHud{
             currentX += 14;
         }
 
+        if (message.isFlying()) currentX = renderConditionalIcon(guiGraphics, "fly", currentX, y);
         if (message.isHeadShot()) currentX = renderConditionalIcon(guiGraphics, "headshot", currentX, y);
         if (message.isThroughSmoke()) currentX = renderConditionalIcon(guiGraphics, "throw_smoke", currentX, y);
         if (message.isThroughWall()) currentX = renderConditionalIcon(guiGraphics, "throw_wall", currentX, y);
@@ -228,14 +232,14 @@ public class CSDeathMessageHud{
         Font font = minecraft.font;
         int width = 10;
 
-        boolean isSuicide = message.getDeadUUID().equals(message.getKillerUUID()) || message.getWeapon().getItem() == BOItemRegister.C4.get();
+        boolean isSuicide = DeathMessageRules.isSuicide(message.getDeadUUID(), message.getKillerUUID());
 
         if (message.isBlinded()) {
             width += 14;
         }
 
         MutableComponent killerComponent = isSuicide ? message.getDead().copy() : message.getKiller().copy();
-        if (!message.getAssistUUID().equals(message.getKillerUUID())) {
+        if (hasDistinctAssist(message.getAssistUUID(), message.getKillerUUID())) {
             killerComponent.append(" + ").append(message.getAssist());
         }
         width += font.width(killerComponent) + 2;

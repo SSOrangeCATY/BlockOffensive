@@ -19,19 +19,25 @@ public class CSCommand {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
         LiteralArgumentBuilder<CommandSourceStack> literal = Commands.literal("cs2").then(Commands.argument("action",StringArgumentType.string()).executes(context -> {
             String action = StringArgumentType.getString(context,"action");
-            if(context.getSource().getEntity() instanceof ServerPlayer player){
-                Optional<BaseMap> optional = FPSMCore.getInstance().getMapByPlayer(player);
-                if (optional.isPresent() && optional.get() instanceof CSGameMap csGameMap){
-                    csGameMap.handleChatCommand(action,player);
-                }else{
-                    context.getSource().sendFailure(Component.translatable("command.cs.noMap"));
-                }
-            }else{
-                context.getSource().sendFailure(Component.translatable("command.cs.onlyPlayer"));
-            }
-            return 1;
+            return handleAction(context.getSource(), action);
         }));
 
         dispatcher.register(literal);
+        dispatcher.register(Commands.literal("pause").executes(context -> handleAction(context.getSource(), "pause")));
+        dispatcher.register(Commands.literal("p").executes(context -> handleAction(context.getSource(), "p")));
+    }
+
+    private static int handleAction(CommandSourceStack source, String action) {
+        if(source.getEntity() instanceof ServerPlayer player){
+            Optional<BaseMap> optional = FPSMCore.getInstance().getMapByPlayer(player);
+            if (optional.isPresent() && optional.get() instanceof CSGameMap csGameMap){
+                csGameMap.handleChatCommand(action,player);
+            }else{
+                source.sendFailure(Component.translatable("command.cs.noMap"));
+            }
+        }else{
+            source.sendFailure(Component.translatable("command.cs.onlyPlayer"));
+        }
+        return 1;
     }
 }
