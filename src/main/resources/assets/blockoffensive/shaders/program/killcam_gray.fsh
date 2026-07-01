@@ -1,7 +1,6 @@
 #version 150
 
 uniform sampler2D DiffuseSampler;
-uniform vec2 InSize;
 uniform vec2 OutSize;
 uniform float Time;
 

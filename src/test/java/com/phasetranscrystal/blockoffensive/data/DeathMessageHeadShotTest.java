@@ -2,20 +2,24 @@ package com.phasetranscrystal.blockoffensive.data;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * 验证爆头标记在死亡消息构建过程中的正确传播。
+ * 验证死亡消息特殊击杀标记在构建过程中的正确传播。
  * <p>
  * 对应 Bug 2 修复：枪械爆头击杀后爆头图标不显示。
  * <p>
- * 根因：{@code BOUtil.buildDeathMessagePacket} 中 {@code setHeadShot} 被放在
+ * 历史根因：{@code BOUtil.buildDeathMessagePacket} 曾把部分特殊击杀标记放在
  * {@code if(!attacker.is(deadPlayer))} 块内，当 attacker 回退为 deadPlayer 时
- * （CSMap.handleDeath 中 attacker 为 null 的兜底），setHeadShot 不会被调用，
- * 导致 isHeadShot 始终为 false。
+ * （CSMap.handleDeath 中 attacker 为 null 的兜底），对应图标标记不会写入消息。
  * <p>
- * 修复：将 setHeadShot 移到 if 块外，确保爆头标记始终被设置。
+ * 修复：将 setHeadShot、setThroughWall、setThroughSmoke 放在攻击者兜底 guard 前，
+ * 确保 FPSMatch 死亡上下文中的图标标记始终被写入消息。
  */
 class DeathMessageHeadShotTest {
 
@@ -31,11 +35,46 @@ class DeathMessageHeadShotTest {
         boolean resultIsHeadShot = isHeadShot;
 
         if (!attackerIsDeadPlayer) {
-            // 其他标记（flying, throughWall, throughSmoke）仅在非自杀时设置
+            // flying/assist 等依赖真实攻击者的逻辑仍只在非自杀时设置
             // 不影响 isHeadShot
         }
 
         return resultIsHeadShot;
+    }
+
+    static boolean[] resolveSpecialIconFlags(boolean isHeadShot,
+                                             boolean isPassWall,
+                                             boolean isPassSmoke,
+                                             boolean attackerIsDeadPlayer) {
+        // 这三个图标标记由 FPSMatch 死亡上下文提供，不能被攻击者兜底/自杀判断吞掉。
+        boolean resultIsHeadShot = isHeadShot;
+        boolean resultIsPassWall = isPassWall;
+        boolean resultIsPassSmoke = isPassSmoke;
+
+        if (!attackerIsDeadPlayer) {
+            // flying/assist 等依赖真实攻击者的逻辑仍只在非自杀时设置。
+        }
+
+        return new boolean[]{resultIsHeadShot, resultIsPassWall, resultIsPassSmoke};
+    }
+
+    /**
+     * 模拟本次修复前的特殊图标逻辑：爆头已在 guard 外，但穿墙/穿烟仍在 guard 内。
+     */
+    static boolean[] resolveSpecialIconFlags_beforeWallSmokeFix(boolean isHeadShot,
+                                                                boolean isPassWall,
+                                                                boolean isPassSmoke,
+                                                                boolean attackerIsDeadPlayer) {
+        boolean resultIsHeadShot = isHeadShot;
+        boolean resultIsPassWall = false;
+        boolean resultIsPassSmoke = false;
+
+        if (!attackerIsDeadPlayer) {
+            resultIsPassWall = isPassWall;
+            resultIsPassSmoke = isPassSmoke;
+        }
+
+        return new boolean[]{resultIsHeadShot, resultIsPassWall, resultIsPassSmoke};
     }
 
     /**
@@ -98,5 +137,68 @@ class DeathMessageHeadShotTest {
         assertTrue(resolveHeadShotFlag(true, true));   // 回退爆头
         assertFalse(resolveHeadShotFlag(false, false)); // 正常非爆头
         assertFalse(resolveHeadShotFlag(false, true));  // 回退非爆头
+    }
+
+    @Test
+    void specialIconFlagsPreserved_whenAttackerFallbackToDeadPlayer() {
+        boolean[] beforeFix = resolveSpecialIconFlags_beforeWallSmokeFix(true, true, true, true);
+        assertTrue(beforeFix[0]);
+        assertFalse(beforeFix[1]);
+        assertFalse(beforeFix[2]);
+
+        boolean[] flags = resolveSpecialIconFlags(true, true, true, true);
+
+        assertTrue(flags[0]);
+        assertTrue(flags[1]);
+        assertTrue(flags[2]);
+    }
+
+    @Test
+    void iconFlagsAreSetBeforeAttackerFallbackGuard() throws IOException {
+        String code = Files.readString(Path.of("src/main/java/com/phasetranscrystal/blockoffensive/util/BOUtil.java"));
+
+        int headShot = code.indexOf("builder.setHeadShot(isHeadShot);");
+        int throughWall = code.indexOf("builder.setThroughWall(isPassWall);");
+        int throughSmoke = code.indexOf("builder.setThroughSmoke(isPassSmoke);");
+        int attackerGuard = code.indexOf("if(!attacker.is(deadPlayer))");
+
+        assertTrue(headShot >= 0);
+        assertTrue(throughWall >= 0);
+        assertTrue(throughSmoke >= 0);
+        assertTrue(attackerGuard >= 0);
+        assertTrue(headShot < attackerGuard);
+        assertTrue(throughWall < attackerGuard);
+        assertTrue(throughSmoke < attackerGuard);
+    }
+
+    @Test
+    void csMapPassesDeathContextIconFlagsToDeathMessagePacket() throws IOException {
+        String code = Files.readString(Path.of("src/main/java/com/phasetranscrystal/blockoffensive/map/CSMap.java"));
+        String handleDeath = code.substring(code.indexOf("public void handleDeath(DeathContext context)"));
+
+        assertTrue(handleDeath.contains("boolean passWall = context.isPassWall();"));
+        assertTrue(handleDeath.contains("boolean passSmoke = context.isPassSmoke();"));
+        assertTrue(handleDeath.contains("context.isHeadShot(),"));
+        assertTrue(handleDeath.contains("passWall,"));
+        assertTrue(handleDeath.contains("passSmoke,"));
+    }
+
+    @Test
+    void packetAndHudPreserveSpecialIconFlags() throws IOException {
+        String packet = Files.readString(Path.of("src/main/java/com/phasetranscrystal/blockoffensive/net/DeathMessageS2CPacket.java"));
+        assertTrue(packet.contains("isHeadShot() ? 1 : 0"));
+        assertTrue(packet.contains("isThroughSmoke() ? 4 : 0"));
+        assertTrue(packet.contains("isThroughWall() ? 8 : 0"));
+        assertTrue(packet.contains("setHeadShot((flags & 1) != 0)"));
+        assertTrue(packet.contains("setThroughSmoke((flags & 4) != 0)"));
+        assertTrue(packet.contains("setThroughWall((flags & 8) != 0)"));
+
+        String hud = Files.readString(Path.of("src/main/java/com/phasetranscrystal/blockoffensive/client/screen/hud/CSDeathMessageHud.java"));
+        assertTrue(hud.contains("registerSpecialKillIcon(\"headshot\""));
+        assertTrue(hud.contains("registerSpecialKillIcon(\"throw_smoke\""));
+        assertTrue(hud.contains("registerSpecialKillIcon(\"throw_wall\""));
+        assertTrue(hud.contains("message.isHeadShot()"));
+        assertTrue(hud.contains("message.isThroughSmoke()"));
+        assertTrue(hud.contains("message.isThroughWall()"));
     }
 }

@@ -6,8 +6,8 @@
     "srcalpha": "one",
     "dstalpha": "zero"
   },
-  "vertex": "killcam_gray",
-  "fragment": "killcam_gray",
+  "vertex": "blockoffensive:killcam_gray",
+  "fragment": "blockoffensive:killcam_gray",
   "attributes": [
     "Position",
     "UV0"
@@ -27,7 +27,6 @@
         0.0, 0.0, 0.0, 1.0
       ]
     },
-    { "name": "InSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
     { "name": "OutSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
     { "name": "Time", "type": "float", "count": 1, "values": [ 0.0 ] },
 

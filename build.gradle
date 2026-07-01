@@ -159,6 +159,8 @@ dependencies {
 
     modImplementation("icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_forge_version}")
     modCompileOnly("maven.modrinth:timeless-and-classics-zero:${tacz_version}")
+    // Dev client runs need TACZ on the runtime classpath because LR Tactical declares it as mandatory.
+    modRuntimeOnly("maven.modrinth:timeless-and-classics-zero:${tacz_version}")
     modImplementation("maven.modrinth:lr-tactical:${lrtactical_version}")
     modImplementation("maven.modrinth:cloth-config:${cloth_config_version}")
     modImplementation("com.phasetranscrystal:fpsmatch") {
@@ -177,6 +179,7 @@ dependencies {
     modRuntimeOnly("dev.latvian.mods:rhino-forge:${rhino_version}")
     modRuntimeOnly("dev.architectury:architectury-forge:${architectury_version}")
     testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }

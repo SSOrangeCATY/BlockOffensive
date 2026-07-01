@@ -237,6 +237,8 @@ public class BOUtil {
      * @param deadPlayer 死亡玩家
      * @param deathItem  致死物品
      * @param isHeadShot 是否爆头
+     * @param isPassWall 是否穿墙
+     * @param isPassSmoke 是否穿烟
      * @return 死亡消息数据包
      */
     public static DeathMessageS2CPacket buildDeathMessagePacket(BaseMap map, ServerPlayer attacker, ServerPlayer deadPlayer,
@@ -244,13 +246,13 @@ public class BOUtil {
 
         DeathMessage.Builder builder = new DeathMessage.Builder(attacker, deadPlayer, deathItem);
 
-        // 爆头标记始终设置，避免 attacker 回退为 deadPlayer 时丢失爆头信息
+        // 特殊击杀标记来自 FPSMatch 死亡上下文；即使攻击者被兜底成死者也不能丢失 UI 图标。
         builder.setHeadShot(isHeadShot);
+        builder.setThroughWall(isPassWall);
+        builder.setThroughSmoke(isPassSmoke);
 
         if(!attacker.is(deadPlayer)) {
             builder.setFlying(!attacker.equals(deadPlayer) && !attacker.onGround());
-            builder.setThroughWall(isPassWall);
-            builder.setThroughSmoke(isPassSmoke);
 
             calculateAssistPlayer(map, deadPlayer, minAssistDamageRatio).ifPresent(assistData -> {
                 if (!attacker.getUUID().equals(assistData.getOwner())) {
