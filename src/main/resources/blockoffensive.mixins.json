@@ -13,6 +13,7 @@
     "StepSoundMixin"
   ],
   "client": [
+    "client.C4ItemOutlineMixin",
     "PlayerRendererMixin"
   ],
   "injectors": {
