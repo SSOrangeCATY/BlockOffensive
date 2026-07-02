@@ -54,9 +54,9 @@ class CSIssueSourceGuardTest {
         String gameMap = read("src/main/java/com/phasetranscrystal/blockoffensive/map/CSGameMap.java");
         String gameEvents = read("src/main/java/com/phasetranscrystal/blockoffensive/map/CSGameEvents.java");
 
-        assertFalse(csMap.contains("setGlowingTag(true)"));
-        assertFalse(gameMap.contains("setGlowingTag(true)"));
-        assertFalse(gameEvents.contains("setGlowingTag(true)"));
+        assertFalse(csMap.contains("setGlowingTag("));
+        assertFalse(gameMap.contains("setGlowingTag("));
+        assertFalse(gameEvents.contains("setGlowingTag("));
     }
 
     @Test

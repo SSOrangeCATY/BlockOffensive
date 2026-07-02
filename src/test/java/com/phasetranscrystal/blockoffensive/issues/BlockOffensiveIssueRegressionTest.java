@@ -14,6 +14,8 @@ class BlockOffensiveIssueRegressionTest {
     private static final Path CS_MAP = Path.of("src/main/java/com/phasetranscrystal/blockoffensive/map/CSMap.java");
     private static final Path CS_GAME_EVENTS = Path.of("src/main/java/com/phasetranscrystal/blockoffensive/map/CSGameEvents.java");
     private static final Path CS_COMMAND = Path.of("src/main/java/com/phasetranscrystal/blockoffensive/command/CSCommand.java");
+    private static final Path C4_OUTLINE_MIXIN = Path.of("src/main/java/com/phasetranscrystal/blockoffensive/mixin/client/C4ItemOutlineMixin.java");
+    private static final Path MIXINS_CONFIG = Path.of("src/main/resources/blockoffensive.mixins.json");
 
     @Test
     void csTabRendererHandlesMissingTeamsAndPlayerData() throws IOException {
@@ -54,9 +56,24 @@ class BlockOffensiveIssueRegressionTest {
 
     @Test
     void droppedObjectiveItemsDoNotUseVanillaGlowing() throws IOException {
-        assertFalse(Files.readString(CS_MAP).contains("setGlowingTag(true)"));
-        assertFalse(Files.readString(CS_GAME_MAP).contains("setGlowingTag(true)"));
-        assertFalse(Files.readString(CS_GAME_EVENTS).contains("setGlowingTag(true)"));
+        assertFalse(Files.readString(CS_MAP).contains("setGlowingTag("));
+        assertFalse(Files.readString(CS_GAME_MAP).contains("setGlowingTag("));
+        assertFalse(Files.readString(CS_GAME_EVENTS).contains("setGlowingTag("));
+    }
+
+    @Test
+    void droppedC4OutlineIsClientSideAndTTeamOnly() throws IOException {
+        String mixin = Files.readString(C4_OUTLINE_MIXIN);
+        String mixinsConfig = Files.readString(MIXINS_CONFIG);
+
+        assertTrue(mixin.contains("@OnlyIn(Dist.CLIENT)"));
+        assertTrue(mixin.contains("isCurrentGameType(\"cs\")"));
+        assertTrue(mixin.contains("isCurrentTeam(\"t\")"));
+        assertTrue(mixin.contains("stack.is(BOItemRegister.C4.get())"));
+        assertTrue(mixin.contains("shouldRenderAtSqrDistance"));
+        assertTrue(mixin.contains("C4_OUTLINE_RENDER_DISTANCE_SQR"));
+        assertTrue(mixin.contains("cir.setReturnValue(canLocalPlayerSeeDroppedC4Outline())"));
+        assertTrue(mixinsConfig.contains("client.C4ItemOutlineMixin"));
     }
 
     @Test
