@@ -2,7 +2,7 @@ package com.phasetranscrystal.blockoffensive.net;
 
 import com.phasetranscrystal.blockoffensive.compat.PhysicsModCompat;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -18,7 +18,7 @@ public record PxRagdollRemovalCompatS2CPacket(UUID uuid) {
         return new PxRagdollRemovalCompatS2CPacket(buf.readUUID());
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             if (uuid.equals(ALL)) {
                 PhysicsModCompat.reset();

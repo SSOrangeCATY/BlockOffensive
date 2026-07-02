@@ -1,6 +1,6 @@
 package com.phasetranscrystal.blockoffensive.compat;
 
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 
 public class BOImpl {
     public static boolean isGD656KillIconLoaded(){
@@ -8,14 +8,22 @@ public class BOImpl {
     }
 
     public static boolean isCounterStrikeGrenadesLoaded(){
-        return ModList.get().isLoaded("csgrenades");
+        return false;
     }
 
     public static boolean isHitIndicationLoaded(){
-        return ModList.get().isLoaded("hitindication");
+        return false;
     }
 
     public static boolean isPhysicsModLoaded(){
-        return ModList.get().isLoaded("physicsmod");
+        return false;
+    }
+
+    public static boolean isClothConfigLoaded(){
+        return ModList.get().isLoaded("cloth_config");
+    }
+
+    public static boolean isLrtacticalLoaded(){
+        return false;
     }
 }

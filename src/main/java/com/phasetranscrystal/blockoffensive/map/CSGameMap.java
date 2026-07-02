@@ -23,6 +23,7 @@ import com.phasetranscrystal.blockoffensive.net.spec.BombFuseS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
 import com.phasetranscrystal.blockoffensive.sound.MVPMusicManager;
 import com.phasetranscrystal.blockoffensive.spectator.BOSpecManager;
+import com.phasetranscrystal.blockoffensive.util.BOUtil;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
 import com.phasetranscrystal.fpsmatch.common.capability.map.DemolitionModeCapability;
@@ -54,7 +55,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -66,10 +67,11 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.scores.Team;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.network.PacketDistributor;
+import net.minecraft.world.scores.TeamColor;
+import net.minecraft.world.level.storage.LevelData;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.loading.FMLEnvironment;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -80,7 +82,7 @@ import java.util.function.Function;
  * 反恐精英（CS）模式地图核心逻辑类
  * 管理回合制战斗、炸弹逻辑、商店系统、队伍经济、玩家装备等核心机制
  */
-@Mod.EventBusSubscriber(modid = BlockOffensive.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = BlockOffensive.MODID)
 public class CSGameMap extends CSMap{
     public static final String TYPE = "cs";
     /**
@@ -90,7 +92,7 @@ public class CSGameMap extends CSMap{
             // 基础地图数据
             Codec.STRING.fieldOf("mapName").forGetter(CSGameMap::getMapName),
             AreaData.CODEC.fieldOf("mapArea").forGetter(CSGameMap::getMapArea),
-            ResourceLocation.CODEC.fieldOf("serverLevel").forGetter(map -> map.getServerLevel().dimension().location()),
+            Identifier.CODEC.fieldOf("serverLevel").forGetter(map -> map.getServerLevel().dimension().identifier()),
             CapabilityMap.Wrapper.DATA_CODEC.fieldOf("capabilities").forGetter(csGameMap -> csGameMap.getCapabilityMap().getData().data()),
             // 队伍数据
             Codec.unboundedMap(
@@ -161,7 +163,7 @@ public class CSGameMap extends CSMap{
         this.getCT().setEnableRounds(true);
     }
 
-    private CSGameMap(String mapName,AreaData areaData,ResourceLocation serverLevel, Map<String, JsonElement> capabilities, Map<String, CapabilityMap.Wrapper> teams) {
+    private CSGameMap(String mapName,AreaData areaData,Identifier serverLevel, Map<String, JsonElement> capabilities, Map<String, CapabilityMap.Wrapper> teams) {
         this(FPSMCore.getInstance().getServer().getLevel(ResourceKey.create(Registries.DIMENSION,serverLevel)), mapName, areaData);
         this.getCapabilityMap().write(capabilities);
         this.getMapTeams().writeData(teams);
@@ -180,7 +182,7 @@ public class CSGameMap extends CSMap{
         this.registerCommand("drop", this::handleDropKnifeCommand);
 
         this.registerCommand("debug_1",(p)->{
-            if(!p.hasPermissions(2)) return;
+            if(!hasCommandPermission(p, 2)) return;
             getCT().setScores(winnerRound.get() - 2);
             getT().setScores(winnerRound.get() - 1);
         });
@@ -190,12 +192,12 @@ public class CSGameMap extends CSMap{
         }));
 
         this.registerCommand("debug_3",CSCommand.withPermission(2,(p)-> {
-            p.displayClientMessage(Component.literal("team: " + this.getMapTeams().getTeamByPlayer(p).map(t -> t.name).orElse("none")), false);
+            BOUtil.sendClientMessage(p, Component.literal("team: " + this.getMapTeams().getTeamByPlayer(p).map(t -> t.name).orElse("none")), false);
         }));
 
         this.registerCommand("debug_4",CSCommand.withPermission(2,(p)->{
-            p.displayClientMessage(Component.literal("Victory Round: " + requiredScoreStr()),false);
-            p.displayClientMessage(Component.literal("OverCount: " + overCount),false);
+            BOUtil.sendClientMessage(p, Component.literal("Victory Round: " + requiredScoreStr()),false);
+            BOUtil.sendClientMessage(p, Component.literal("OverCount: " + overCount),false);
         }));
     }
 
@@ -353,8 +355,8 @@ public class CSGameMap extends CSMap{
      * 设置队伍名称颜色（CT蓝、T黄）
      */
     private void setTeamNameColors() {
-        getT().getPlayerTeam().setColor(ChatFormatting.YELLOW);
-        getCT().getPlayerTeam().setColor(ChatFormatting.BLUE);
+        getT().getPlayerTeam().setColor(Optional.of(TeamColor.YELLOW));
+        getCT().getPlayerTeam().setColor(Optional.of(TeamColor.BLUE));
     }
 
 
@@ -470,7 +472,7 @@ public class CSGameMap extends CSMap{
         if(this.isWaiting && currentPauseTime < waitingTime.get()){
             // 最后三秒 向全体玩家发送无来源声音
             if(waitingTime.get() - currentPauseTime <= 60 && currentPauseTime % 20 == 0){
-                this.sendPacketToAllPlayer(new FPSMusicPlayS2CPacket(SoundEvents.NOTE_BLOCK_BELL.value().getLocation()));
+                this.sendPacketToAllPlayer(new FPSMusicPlayS2CPacket(BOUtil.soundId(SoundEvents.NOTE_BLOCK_BELL.value())));
             }
 
             this.currentPauseTime++;
@@ -659,7 +661,7 @@ public class CSGameMap extends CSMap{
         MvpReason mvpReason = processMvpLogic(winnerTeam, mapTeams);
 
         sendPacketToAllPlayer(new MvpMessageS2CPacket(mvpReason));
-        MinecraftForge.EVENT_BUS.post(new CSGameRoundEndEvent(this, winnerTeam, reason));
+        NeoForge.EVENT_BUS.post(new CSGameRoundEndEvent(this, winnerTeam, reason));
 
         processRoundScoreAndOvertimeVote(winnerTeam);
 
@@ -737,7 +739,7 @@ public class CSGameMap extends CSMap{
                 .build();
 
         CSGamePlayerGetMvpEvent mvpEvent = new CSGamePlayerGetMvpEvent(mvpPlayer.get(), this, originalMvpReason);
-        MinecraftForge.EVENT_BUS.post(mvpEvent);
+        NeoForge.EVENT_BUS.post(mvpEvent);
 
         // 播放MVP专属音乐
         String mvpPlayerUuid = mvpData.uuid().toString();
@@ -907,12 +909,12 @@ public class CSGameMap extends CSMap{
 
             if(ctScore - check == 1 || tScore - check == 1){
                 this.sendAllPlayerTitle(Component.translatable("blockoffensive.map.cs.match.point").withStyle(ChatFormatting.RED),null);
-                this.sendPacketToAllPlayer(new FPSMSoundPlayS2CPacket(BOSoundRegister.MATCH_POINT.get().getLocation()));
+                this.sendPacketToAllPlayer(new FPSMSoundPlayS2CPacket(BOUtil.soundId(BOSoundRegister.MATCH_POINT.get())));
             }
         }else{
             if(ctScore == winnerRound.get() - 1 || tScore == winnerRound.get() - 1){
                 this.sendAllPlayerTitle(Component.translatable("blockoffensive.map.cs.match.point").withStyle(ChatFormatting.RED),null);
-                this.sendPacketToAllPlayer(new FPSMSoundPlayS2CPacket(BOSoundRegister.MATCH_POINT.get().getLocation()));
+                this.sendPacketToAllPlayer(new FPSMSoundPlayS2CPacket(BOUtil.soundId(BOSoundRegister.MATCH_POINT.get())));
             }
         }
     }
@@ -1068,10 +1070,7 @@ public class CSGameMap extends CSMap{
 
         getMapTeams().getSpecPlayers().forEach(pUUID ->
                 FPSMCore.getInstance().getPlayerByUUID(pUUID)
-                        .ifPresent(player -> BlockOffensive.INSTANCE.send(
-                                PacketDistributor.PLAYER.with(() -> player),
-                                fusePacket
-                        ))
+                        .ifPresent(player -> BlockOffensive.sendToPlayer(player, fusePacket))
         );
     }
 
@@ -1309,7 +1308,7 @@ public class CSGameMap extends CSMap{
                     this.sendAllPlayerMessage(Component.translatable("blockoffensive.map.cs.pause.success").withStyle(ChatFormatting.GOLD), false);
                 }
             } else {
-                player.displayClientMessage(Component.translatable("blockoffensive.map.cs.pause.fail").withStyle(ChatFormatting.RED), false);
+                BOUtil.sendClientMessage(player, Component.translatable("blockoffensive.map.cs.pause.fail").withStyle(ChatFormatting.RED), false);
             }
         });
     }
@@ -1335,7 +1334,7 @@ public class CSGameMap extends CSMap{
             this.getVote().processVote(serverPlayer,true);
         }else{
             Component translation = Component.translatable("blockoffensive.cs." + this.getVote().getVoteTitle());
-            serverPlayer.displayClientMessage(Component.translatable("blockoffensive.map.vote.fail.alreadyHasVote", translation).withStyle(ChatFormatting.RED),false);
+            BOUtil.sendClientMessage(serverPlayer, Component.translatable("blockoffensive.map.vote.fail.alreadyHasVote", translation).withStyle(ChatFormatting.RED),false);
         }
     }
 
@@ -1381,7 +1380,7 @@ public class CSGameMap extends CSMap{
         // 换边前关闭商店，防止换边后显示错误阵营的商店界面
         syncShopInfo(false, 0);
         super.switchTeams();
-        MinecraftForge.EVENT_BUS.post(new CSGameMapEvent.TeamSwitchEvent(this));
+        NeoForge.EVENT_BUS.post(new CSGameMapEvent.TeamSwitchEvent(this));
     }
 
     public boolean checkCanPlacingBombs(String team){
@@ -1469,7 +1468,8 @@ public class CSGameMap extends CSMap{
                 // 优先切换到旁观者模式，防止后续操作异常导致旁观者切换失败
                 dead.heal(dead.getMaxHealth());
                 dead.setGameMode(GameType.SPECTATOR);
-                dead.setRespawnPosition(dead.level().dimension(), dead.getOnPos().above(), 0, true, false);
+                dead.setRespawnPosition(new ServerPlayer.RespawnConfig(
+                        LevelData.RespawnData.of(dead.level().dimension(), dead.getOnPos().above(), 0.0F, 0.0F), true), false);
                 this.setBystander(dead);
 
                 CapabilityMap.getTeamCapability(deadPlayerTeam, ShopCapability.class)

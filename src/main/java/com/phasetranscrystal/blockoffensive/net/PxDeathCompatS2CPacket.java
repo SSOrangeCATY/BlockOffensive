@@ -3,7 +3,7 @@ package com.phasetranscrystal.blockoffensive.net;
 import com.phasetranscrystal.blockoffensive.compat.PhysicsModCompat;
 import com.phasetranscrystal.blockoffensive.compat.PhysicsDeathProxyGuard;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.function.Supplier;
 
@@ -17,7 +17,7 @@ public record PxDeathCompatS2CPacket(int entityId) {
         return new PxDeathCompatS2CPacket(buf.readInt());
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             PhysicsModCompat.handleDead(entityId);
         });

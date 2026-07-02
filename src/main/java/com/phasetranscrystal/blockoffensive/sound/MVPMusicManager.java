@@ -6,19 +6,19 @@ import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.fpsmatch.common.event.register.RegisterFPSMSaveDataEvent;
 import com.phasetranscrystal.fpsmatch.core.persistence.FPSMDataManager;
 import com.phasetranscrystal.fpsmatch.core.persistence.SaveHolder;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.minecraft.resources.Identifier;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 
 @SuppressWarnings("all")
-@Mod.EventBusSubscriber(modid = BlockOffensive.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = BlockOffensive.MODID)
 public class MVPMusicManager {
-    public static final Codec<MVPMusicManager> CODEC = Codec.unboundedMap(Codec.STRING, ResourceLocation.CODEC).xmap(MVPMusicManager::new,
+    public static final Codec<MVPMusicManager> CODEC = Codec.unboundedMap(Codec.STRING, Identifier.CODEC).xmap(MVPMusicManager::new,
             (manager)-> manager.mvpMusicMap);
-    private final Map<String, ResourceLocation> mvpMusicMap;
+    private final Map<String, Identifier> mvpMusicMap;
     private static MVPMusicManager INSTANCE = new MVPMusicManager();
 
     public static MVPMusicManager getInstance(){
@@ -29,17 +29,17 @@ public class MVPMusicManager {
         mvpMusicMap = Maps.newHashMap();
     }
 
-    public MVPMusicManager(Map<String, ResourceLocation> mvpMusicMap){
+    public MVPMusicManager(Map<String, Identifier> mvpMusicMap){
         this.mvpMusicMap = Maps.newHashMap();
         this.mvpMusicMap.putAll(mvpMusicMap);
     }
 
-    public void addMvpMusic(String uuid, ResourceLocation music){
+    public void addMvpMusic(String uuid, Identifier music){
         mvpMusicMap.put(uuid, music);
     }
 
-    public ResourceLocation getMvpMusic(String uuid){
-        return this.mvpMusicMap.getOrDefault(uuid, ResourceLocation.tryBuild("fpsmatch", "empty"));
+    public Identifier getMvpMusic(String uuid){
+        return this.mvpMusicMap.getOrDefault(uuid, Identifier.tryBuild("fpsmatch", "empty"));
     }
 
     public boolean playerHasMvpMusic(String uuid){

@@ -1,34 +1,29 @@
 package com.phasetranscrystal.blockoffensive.compat;
 
-import club.pisquad.minecraft.csgrenades.entity.CounterStrikeGrenadeEntity;
-import club.pisquad.minecraft.csgrenades.event.GrenadeThrowEvent;
-import com.phasetranscrystal.blockoffensive.client.BOClientEvent;
 import com.phasetranscrystal.blockoffensive.util.BOUtil;
 import com.phasetranscrystal.blockoffensive.util.ThrowableType;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.Item;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.Map;
 
 public class CSGrenadeCompat {
-    private static final ResourceLocation HE_GRENADE = ResourceLocation.fromNamespaceAndPath("csgrenades", "hegrenade");
-    private static final ResourceLocation HE_GRENADE_T = ResourceLocation.fromNamespaceAndPath("csgrenades", "hegrenade_t");
-    private static final ResourceLocation INCENDIARY = ResourceLocation.fromNamespaceAndPath("csgrenades", "incendiary");
-    private static final ResourceLocation INCENDIARY_T = ResourceLocation.fromNamespaceAndPath("csgrenades", "incendiary_t");
-    private static final ResourceLocation MOLOTOV = ResourceLocation.fromNamespaceAndPath("csgrenades", "molotov");
-    private static final ResourceLocation MOLOTOV_T = ResourceLocation.fromNamespaceAndPath("csgrenades", "molotov_t");
-    private static final ResourceLocation SMOKE_GRENADE = ResourceLocation.fromNamespaceAndPath("csgrenades", "smokegrenade");
-    private static final ResourceLocation SMOKE_GRENADE_T = ResourceLocation.fromNamespaceAndPath("csgrenades", "smokegrenade_t");
-    private static final ResourceLocation FLASH_BANG = ResourceLocation.fromNamespaceAndPath("csgrenades", "flashbang");
-    private static final ResourceLocation FLASH_BANG_T = ResourceLocation.fromNamespaceAndPath("csgrenades", "flashbang_t");
-    private static final ResourceLocation DECOY = ResourceLocation.fromNamespaceAndPath("csgrenades", "decoy");
-    private static final ResourceLocation DECOY_T = ResourceLocation.fromNamespaceAndPath("csgrenades", "decoy_t");
+    private static final Identifier HE_GRENADE = Identifier.fromNamespaceAndPath("csgrenades", "hegrenade");
+    private static final Identifier HE_GRENADE_T = Identifier.fromNamespaceAndPath("csgrenades", "hegrenade_t");
+    private static final Identifier INCENDIARY = Identifier.fromNamespaceAndPath("csgrenades", "incendiary");
+    private static final Identifier INCENDIARY_T = Identifier.fromNamespaceAndPath("csgrenades", "incendiary_t");
+    private static final Identifier MOLOTOV = Identifier.fromNamespaceAndPath("csgrenades", "molotov");
+    private static final Identifier MOLOTOV_T = Identifier.fromNamespaceAndPath("csgrenades", "molotov_t");
+    private static final Identifier SMOKE_GRENADE = Identifier.fromNamespaceAndPath("csgrenades", "smokegrenade");
+    private static final Identifier SMOKE_GRENADE_T = Identifier.fromNamespaceAndPath("csgrenades", "smokegrenade_t");
+    private static final Identifier FLASH_BANG = Identifier.fromNamespaceAndPath("csgrenades", "flashbang");
+    private static final Identifier FLASH_BANG_T = Identifier.fromNamespaceAndPath("csgrenades", "flashbang_t");
+    private static final Identifier DECOY = Identifier.fromNamespaceAndPath("csgrenades", "decoy");
+    private static final Identifier DECOY_T = Identifier.fromNamespaceAndPath("csgrenades", "decoy_t");
 
-    public static void registerKillIcon(Map<ResourceLocation, String> registry){
+    public static void registerKillIcon(Map<Identifier, String> registry){
         registerKillIcon(registry, HE_GRENADE, "grenade");
         registerKillIcon(registry, HE_GRENADE_T, "grenade");
         registerKillIcon(registry, INCENDIARY, "ct_incendiary_grenade");
@@ -42,8 +37,6 @@ public class CSGrenadeCompat {
     }
 
     public static void init() {
-        MinecraftForge.EVENT_BUS.register(CSGrenadeCompat.class);
-
         registerThrowable(ThrowableType.FLASH_BANG, FLASH_BANG);
         registerThrowable(ThrowableType.FLASH_BANG, FLASH_BANG_T);
         registerThrowable(ThrowableType.DECOY, DECOY);
@@ -59,26 +52,17 @@ public class CSGrenadeCompat {
     }
 
     public static boolean is(Entity entity){
-        return entity instanceof CounterStrikeGrenadeEntity;
+        return false;
     }
 
-    @SubscribeEvent
-    public static void onThrowGrenadeEvent(GrenadeThrowEvent event) {
-        if(BOClientEvent.isLocked()){
-            event.setCanceled(true);
-        }else{
-            BOUtil.buildGrenadeMessageAndSend(event.getItemStack());
-        }
-    }
-
-    private static void registerKillIcon(Map<ResourceLocation, String> registry, ResourceLocation itemId, String iconId) {
-        if (ForgeRegistries.ITEMS.containsKey(itemId)) {
+    private static void registerKillIcon(Map<Identifier, String> registry, Identifier itemId, String iconId) {
+        if (BuiltInRegistries.ITEM.containsKey(itemId)) {
             registry.put(itemId, iconId);
         }
     }
 
-    private static void registerThrowable(ThrowableType type, ResourceLocation itemId) {
-        Item item = ForgeRegistries.ITEMS.getValue(itemId);
+    private static void registerThrowable(ThrowableType type, Identifier itemId) {
+        Item item = BuiltInRegistries.ITEM.getValue(itemId);
         if (item != null) {
             BOUtil.registerThrowable(type, item);
         }

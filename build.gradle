@@ -135,7 +135,8 @@ dependencies {
     compileOnly('org.apache.commons:commons-math3:3.6.1')
 
     implementation("icyllis.modernui:ModernUI-NeoForge:26.1.2-3.13.0.5")
-    compileOnly("maven.modrinth:timeless-and-classics-zero:${tacz_version}")
+    compileOnly("com.tacz:tacz-mc26.2:${tacz_version}")
+    localRuntime("com.tacz:tacz-mc26.2:${tacz_version}")
     implementation("maven.modrinth:lr-tactical:${lrtactical_version}")
     implementation("maven.modrinth:cloth-config:${cloth_config_version}")
     implementation("com.phasetranscrystal:fpsmatch") {

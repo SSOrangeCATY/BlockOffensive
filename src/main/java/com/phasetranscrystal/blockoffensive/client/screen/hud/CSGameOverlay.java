@@ -1,6 +1,5 @@
 package com.phasetranscrystal.blockoffensive.client.screen.hud;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import com.phasetranscrystal.blockoffensive.util.BOUtil;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
@@ -10,7 +9,7 @@ import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
@@ -26,7 +25,7 @@ public class CSGameOverlay {
 
     private final Map<UUID,String> cachedName = new HashMap<>();
 
-    public void render(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
+    public void render(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight) {
         Font font = Minecraft.getInstance().font;
         FPSMClientGlobalData data = FPSMClient.getGlobalData();
         // 计算缩放因子 (以855x480为基准)
@@ -82,40 +81,38 @@ public class CSGameOverlay {
         );
 
         // CT存活数字
-        guiGraphics.pose().pushPose();
+        guiGraphics.pose().pushMatrix();
         float numberScale = scaleFactor * 1.5f;
         guiGraphics.pose().translate(
                 ctBoxX + (float) boxWidth /2,
-                startY + (float) backgroundHeight /2 - 6 * scaleFactor, // 从-2改为-6，向上移动4px
-                0
+                startY + (float) backgroundHeight /2 - 6 * scaleFactor // 从-2改为-6，向上移动4px
         );
-        guiGraphics.pose().scale(numberScale, numberScale, 1.0f);
+        guiGraphics.pose().scale(numberScale, numberScale);
         int ctNumberWidth = font.width(ctLivingStr);
-        guiGraphics.drawString(font, ctLivingStr,
+        guiGraphics.text(font, ctLivingStr,
                 -ctNumberWidth/2,
                 -4,
                 BOUtil.CT_COLOR,
                 false);
-        guiGraphics.pose().popPose();
+        guiGraphics.pose().popMatrix();
 
         // CT "存活" 文字
         float smallScale = numberScale * 0.5f; // 恢复为数字大小的一半
         Component livingText = Component.literal("存活").withStyle(ChatFormatting.BOLD);
         int smallTextWidth = font.width(livingText);
 
-        guiGraphics.pose().pushPose();
+        guiGraphics.pose().pushMatrix();
         guiGraphics.pose().translate(
                 ctBoxX + (float) boxWidth /2,
-                startY + (float) backgroundHeight /2 + 2 * scaleFactor,
-                0
+                startY + (float) backgroundHeight /2 + 2 * scaleFactor
         );
-        guiGraphics.pose().scale(smallScale, smallScale, 1.0f); // 使用smallScale
-        guiGraphics.drawString(font, livingText,
+        guiGraphics.pose().scale(smallScale, smallScale); // 使用smallScale
+        guiGraphics.text(font, livingText,
                 -smallTextWidth/2, // 使用smallTextWidth
                 0,
                 BOUtil.CT_COLOR,
                 false);
-        guiGraphics.pose().popPose();
+        guiGraphics.pose().popMatrix();
 
         // 渲染T存活信息（右侧）
         int tLivingCount = data.getLivingWithTeam("t");
@@ -142,85 +139,81 @@ public class CSGameOverlay {
         );
 
         // T存活数字
-        guiGraphics.pose().pushPose();
+        guiGraphics.pose().pushMatrix();
         guiGraphics.pose().translate(
                 tBoxX + (float) boxWidth /2,
-                startY + (float) backgroundHeight /2 - 6 * scaleFactor, // 从-2改为-6
-                0
+                startY + (float) backgroundHeight /2 - 6 * scaleFactor // 从-2改为-6
         );
-        guiGraphics.pose().scale(numberScale, numberScale, 1.0f);
+        guiGraphics.pose().scale(numberScale, numberScale);
         int tNumberWidth = font.width(tLivingStr);
-        guiGraphics.drawString(font, tLivingStr,
+        guiGraphics.text(font, tLivingStr,
                 -tNumberWidth/2,
                 -4,
                 BOUtil.T_COLOR,
                 false);
-        guiGraphics.pose().popPose();
+        guiGraphics.pose().popMatrix();
 
         // T "存活" 文字
-        guiGraphics.pose().pushPose();
+        guiGraphics.pose().pushMatrix();
         guiGraphics.pose().translate(
                 tBoxX + (float) boxWidth /2,
-                startY + (float) backgroundHeight /2 + 2 * scaleFactor,
-                0
+                startY + (float) backgroundHeight /2 + 2 * scaleFactor
         );
-        guiGraphics.pose().scale(smallScale, smallScale, 1.0f); // 使用smallScale
-        guiGraphics.drawString(font, livingText,
+        guiGraphics.pose().scale(smallScale, smallScale); // 使用smallScale
+        guiGraphics.text(font, livingText,
                 -smallTextWidth/2, // 使用smallTextWidth
                 0,
                 BOUtil.T_COLOR,
                 false);
-        guiGraphics.pose().popPose();
+        guiGraphics.pose().popMatrix();
 
         // 渲染时间
         Component roundTime = getRoundTimeString();
         float timeScale = scaleFactor * 1.2f;
-        guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(centerX, startY + (float) timeBarHeight /2, 0);
-        guiGraphics.pose().scale(timeScale, timeScale, 1.0f);
-        guiGraphics.drawString(font, roundTime,
+        guiGraphics.pose().pushMatrix();
+        guiGraphics.pose().translate(centerX, startY + (float) timeBarHeight /2);
+        guiGraphics.pose().scale(timeScale, timeScale);
+        guiGraphics.text(font, roundTime,
                 -font.width(roundTime) / 2,
                 -4,
                 textRoundTimeColor,
                 false);
-        guiGraphics.pose().popPose();
+        guiGraphics.pose().popMatrix();
 
         // 渲染比分
         float scoreScale = scaleFactor * 1.2f;
 
         // CT比分
         Component ctScore = Component.literal(String.valueOf(CSClientData.cTWinnerRounds)).withStyle(ChatFormatting.BOLD);
-        guiGraphics.pose().pushPose();
+        guiGraphics.pose().pushMatrix();
         guiGraphics.pose().translate(
                 centerX - (float) timeAreaWidth /2 - scaleFactor, // 左侧分数栏中心，向左偏移1px
-                startY + timeBarHeight + gap + (float) scoreBarHeight /2,
-                0
+                startY + timeBarHeight + gap + (float) scoreBarHeight /2
         );
-        guiGraphics.pose().scale(scoreScale, scoreScale, 1.0f);
+        guiGraphics.pose().scale(scoreScale, scoreScale);
         int ctScoreWidth = font.width(ctScore);
-        guiGraphics.drawString(font, ctScore,
+        guiGraphics.text(font, ctScore,
                 -ctScoreWidth/2,
                 -font.lineHeight/2,
                 BOUtil.CT_COLOR,
                 false);
-        guiGraphics.pose().popPose();
+        guiGraphics.pose().popMatrix();
 
         // T比分
         Component tScore = Component.literal(String.valueOf(CSClientData.tWinnerRounds)).withStyle(ChatFormatting.BOLD);
-        guiGraphics.pose().pushPose();
+        guiGraphics.pose().pushMatrix();
         guiGraphics.pose().translate(
                 centerX + (float) timeAreaWidth /2 + scaleFactor, // 右侧分数栏中心，向右偏移1px
-                startY + timeBarHeight + gap + (float) scoreBarHeight /2,
-                0
+                startY + timeBarHeight + gap + (float) scoreBarHeight /2
         );
-        guiGraphics.pose().scale(scoreScale, scoreScale, 1.0f);
+        guiGraphics.pose().scale(scoreScale, scoreScale);
         int tScoreWidth = font.width(tScore);
-        guiGraphics.drawString(font, tScore,
+        guiGraphics.text(font, tScore,
                 -tScoreWidth/2,
                 -font.lineHeight/2,
                 BOUtil.T_COLOR,
                 false);
-        guiGraphics.pose().popPose();
+        guiGraphics.pose().popMatrix();
 
         if(CSClientData.dismantleBombProgress > 0) {
             renderDemolitionProgress(guiGraphics,screenWidth,screenHeight);
@@ -259,7 +252,7 @@ public class CSGameOverlay {
         return getCSGameTime();
     }
 
-    private void renderDemolitionProgress(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
+    private void renderDemolitionProgress(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight) {
         float progress = CSClientData.dismantleBombProgress;
 
         int progressBarWidth = 150;
@@ -295,7 +288,7 @@ public class CSGameOverlay {
         guiGraphics.fill(progressBarX + 1, progressBarY + progressBarHeight - 1, progressBarX + progressBarWidth, progressBarY + progressBarHeight, 0x66000000);
     }
 
-    private void drawRoundedRect(GuiGraphics guiGraphics, int x, int y, int width, int height, int color, int cornerRadius) {
+    private void drawRoundedRect(GuiGraphicsExtractor guiGraphics, int x, int y, int width, int height, int color, int cornerRadius) {
         guiGraphics.fill(x + cornerRadius, y, x + width - cornerRadius, y + height, color);
         guiGraphics.fill(x, y + cornerRadius, x + width, y + height - cornerRadius, color);
 
@@ -309,16 +302,16 @@ public class CSGameOverlay {
         }
     }
 
-    private void renderMoneyText(GuiGraphics guiGraphics, int screenHeight) {
+    private void renderMoneyText(GuiGraphicsExtractor guiGraphics, int screenHeight) {
         Font font = Minecraft.getInstance().font;
-        guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(5,screenHeight - 20,0 );
-        guiGraphics.pose().scale(2,2,0);
-        guiGraphics.drawString(font, "$ "+CSClientData.getMoney(), 0,0, FPSMClient.getGlobalData().isCurrentTeam("ct") ? BOUtil.CT_COLOR : BOUtil.T_COLOR);
-        guiGraphics.pose().popPose();
+        guiGraphics.pose().pushMatrix();
+        guiGraphics.pose().translate(5,screenHeight - 20);
+        guiGraphics.pose().scale(2,2);
+        guiGraphics.text(font, "$ "+CSClientData.getMoney(), 0,0, FPSMClient.getGlobalData().isCurrentTeam("ct") ? BOUtil.CT_COLOR : BOUtil.T_COLOR);
+        guiGraphics.pose().popMatrix();
     }
 
-    private void renderAvatarRow(GuiGraphics guiGraphics,
+    private void renderAvatarRow(GuiGraphicsExtractor guiGraphics,
                                  List<PlayerInfo> players,
                                  int boxStartX,
                                  int rowY,
@@ -339,7 +332,7 @@ public class CSGameOverlay {
         Font font = Minecraft.getInstance().font;
         for (int i=0; i<players.size(); i++) {
             PlayerInfo player = players.get(i);
-            UUID uuid = player.getProfile().getId();
+            UUID uuid = player.getProfile().id();
             int drawX = leftSide
                     ? (boxStartX + boxWidth - avatarSize - 2 - i*(avatarSize+gap))
                     : (boxStartX + 2 + i*(avatarSize+gap));
@@ -353,20 +346,15 @@ public class CSGameOverlay {
             guiGraphics.fill(drawX, rowY, drawX + avatarSize, rowY + avatarSize, bgColor);
 
             // 4) 灰度头像(dead)
-            float r=1f,g=1f,b=1f,a=1f;
-            if (checked && !data.get().isLiving()) {
-                r=g=b=0.3f;
-            }
-            RenderSystem.setShaderColor(r,g,b,a);
-
             int margin      = 1;
             int avX         = drawX + margin;
             int avY         = rowY + margin;
             int smallAvSize = avatarSize - margin*2;
 
-            PlayerFaceRenderer.draw(guiGraphics, player.getSkinLocation(), avX, avY, smallAvSize);
-
-            RenderSystem.setShaderColor(1f,1f,1f,1f);
+            if (checked && !data.get().isLiving()) {
+                guiGraphics.fill(avX, avY, avX + smallAvSize, avY + smallAvSize, 0x99000000);
+            }
+            PlayerFaceRenderer.draw(guiGraphics, player.getSkin().body().texturePath(), avX, avY, smallAvSize);
             int startY = rowY + avatarSize + margin;
             if (barRatio>0f) {
                 int barHeight = showNameInfo ? 4 : 2;
@@ -390,7 +378,7 @@ public class CSGameOverlay {
         }
     }
 
-    private void drawPlayerName(GuiGraphics guiGraphics, Font font, UUID uuid,
+    private void drawPlayerName(GuiGraphicsExtractor guiGraphics, Font font, UUID uuid,
                                 int avX, int avY, int smallAvSize,int width,boolean isCT,float scale)
     {
         String nameStr = getNameFromUUID(uuid);
@@ -399,13 +387,13 @@ public class CSGameOverlay {
         int nameY = avY - 8;
         guiGraphics.fill(avX-1, nameY, avX + width - 1, nameY+6, -1072689136);
 
-        guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(xCenter, nameY - 1, 0);
-        guiGraphics.pose().scale(textScale, textScale, 1f);
+        guiGraphics.pose().pushMatrix();
+        guiGraphics.pose().translate(xCenter, nameY - 1);
+        guiGraphics.pose().scale(textScale, textScale);
 
         int nameWidth = font.width(nameStr);
         if(nameWidth < width) {
-            guiGraphics.drawString(font, nameStr, -nameWidth/2, 0,
+            guiGraphics.text(font, nameStr, -nameWidth/2, 0,
                     isCT ? BOUtil.CT_COLOR:BOUtil.T_COLOR, false);
         }else{
             StringBuilder modified = new StringBuilder();
@@ -419,10 +407,10 @@ public class CSGameOverlay {
                 }
             }
             int truncatedWidth = font.width(modified.toString());
-            guiGraphics.drawString(font, modified.toString(), -truncatedWidth/2, 0,
+            guiGraphics.text(font, modified.toString(), -truncatedWidth/2, 0,
                     isCT ? BOUtil.CT_COLOR:BOUtil.T_COLOR, false);
         }
-        guiGraphics.pose().popPose();
+        guiGraphics.pose().popMatrix();
     }
 
     private String getNameFromUUID(UUID uuid) {
@@ -435,21 +423,21 @@ public class CSGameOverlay {
         return cachedName.getOrDefault(uuid,uuid.toString().substring(0,8));
     }
 
-    private void drawPlayerKills(GuiGraphics guiGraphics, Font font,int count,
+    private void drawPlayerKills(GuiGraphicsExtractor guiGraphics, Font font,int count,
                                  int centerX, int startY,float scaleFactor){
         String str = "\uD83D\uDC80".repeat(Math.max(0, count));
         if(str.isEmpty()) return;
         float textScale = 0.6f * scaleFactor;
-        guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(centerX, startY, 0);
-        guiGraphics.pose().scale(textScale, textScale, 1f);
+        guiGraphics.pose().pushMatrix();
+        guiGraphics.pose().translate(centerX, startY);
+        guiGraphics.pose().scale(textScale, textScale);
 
         int w = font.width(str);
-        guiGraphics.drawString(font, str, -w/2, 0, 0xFFFFFFFF, false);
-        guiGraphics.pose().popPose();
+        guiGraphics.text(font, str, -w/2, 0, 0xFFFFFFFF, false);
+        guiGraphics.pose().popMatrix();
     }
 
-    private void drawPlayerMoney(GuiGraphics guiGraphics, Font font, UUID uuid,
+    private void drawPlayerMoney(GuiGraphicsExtractor guiGraphics, Font font, UUID uuid,
                                  int centerX, int startY ,float scaleFactor)
     {
         int moneyValue = FPSMClient.getGlobalData().getPlayerMoney(uuid);
@@ -457,18 +445,18 @@ public class CSGameOverlay {
 
         float textScale = 0.8f * scaleFactor;
 
-        guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(centerX, startY, 0);
-        guiGraphics.pose().scale(textScale, textScale, 1f);
+        guiGraphics.pose().pushMatrix();
+        guiGraphics.pose().translate(centerX, startY);
+        guiGraphics.pose().scale(textScale, textScale);
 
         int w = font.width(moneyStr);
-        guiGraphics.drawString(font, moneyStr, -w/2, 0, 0xFFFFFFFF, false);
+        guiGraphics.text(font, moneyStr, -w/2, 0, 0xFFFFFFFF, false);
 
-        guiGraphics.pose().popPose();
+        guiGraphics.pose().popMatrix();
     }
 
     // 平滑血条
-    private void drawSmoothHealthBar(GuiGraphics gg, float ratio,
+    private void drawSmoothHealthBar(GuiGraphicsExtractor gg, float ratio,
                                      int startX, int startY, int endX, int endY)
     {
         int total = endX - startX;

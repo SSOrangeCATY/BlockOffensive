@@ -8,18 +8,18 @@ import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.scores.Objective;
 import net.minecraft.world.scores.Scoreboard;
 
 import java.util.*;
 
 public class CSGameTabRenderer implements TabRenderer {
-    public static final ResourceLocation GUI_ICONS_LOCATION = ResourceLocation.tryBuild("minecraft","textures/gui/icons.png");
+    public static final Identifier GUI_ICONS_LOCATION = Identifier.tryBuild("minecraft","textures/gui/icons.png");
     protected final Minecraft minecraft = Minecraft.getInstance();
 
     @Override
@@ -28,7 +28,7 @@ public class CSGameTabRenderer implements TabRenderer {
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int windowWidth, List<PlayerInfo> playerInfoList, Scoreboard scoreboard, Objective objective) {
+    public void render(GuiGraphicsExtractor guiGraphics, int windowWidth, List<PlayerInfo> playerInfoList, Scoreboard scoreboard, Objective objective) {
         // 列宽定义（总宽度400px）
         int padding = 5;
         int pingWidth = 40;
@@ -54,8 +54,8 @@ public class CSGameTabRenderer implements TabRenderer {
 
         // 按伤害排序
         Comparator<PlayerInfo> damageComparator = (p1, p2) -> {
-            Optional<PlayerData> t1 = FPSMClient.getGlobalData().getPlayerData(p1.getProfile().getId());
-            Optional<PlayerData> t2 = FPSMClient.getGlobalData().getPlayerData(p2.getProfile().getId());
+            Optional<PlayerData> t1 = FPSMClient.getGlobalData().getPlayerData(p1.getProfile().id());
+            Optional<PlayerData> t2 = FPSMClient.getGlobalData().getPlayerData(p2.getProfile().id());
             return Float.compare(t1.map(PlayerData::getDamage).orElse(0F), t2.map(PlayerData::getDamage).orElse(0F));
         };
 
@@ -102,10 +102,10 @@ public class CSGameTabRenderer implements TabRenderer {
         int currentHeaderX = bgX + bgPadding;
 
         // Ping图标（满格）
-        guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(0.0F, 0.0F, 100.0F);
-        guiGraphics.blit(GUI_ICONS_LOCATION, currentHeaderX + (pingWidth - 10) / 2, headerY + 2, 0, 176, 10, 8);
-        guiGraphics.pose().popPose();
+        guiGraphics.pose().pushMatrix();
+        guiGraphics.pose().translate(0.0F, 0.0F);
+        guiGraphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, GUI_ICONS_LOCATION, currentHeaderX + (pingWidth - 10) / 2, headerY + 2, 0.0F, 176.0F, 10, 8, 256, 256);
+        guiGraphics.pose().popMatrix();
         currentHeaderX += pingWidth;
 
         // 占位
@@ -113,35 +113,35 @@ public class CSGameTabRenderer implements TabRenderer {
 
         // 金钱
         Component moneyText = Component.translatable("blockoffensive.tab.header.money").withStyle(ChatFormatting.BOLD);
-        guiGraphics.drawString(minecraft.font, moneyText,
+        guiGraphics.text(minecraft.font, moneyText,
                 currentHeaderX + (moneyWidth - minecraft.font.width(moneyText)) / 2, headerY, 0xFFFFFFFF);
         currentHeaderX += moneyWidth;
 
         // K/D/A
         Component killsText = Component.translatable("blockoffensive.tab.header.kills").withStyle(ChatFormatting.BOLD);
-        guiGraphics.drawString(minecraft.font, killsText,
+        guiGraphics.text(minecraft.font, killsText,
                 currentHeaderX + (killWidth - minecraft.font.width(killsText)) / 2, headerY, 0xFFFFFFFF);
         currentHeaderX += killWidth;
 
         Component deathsText = Component.translatable("blockoffensive.tab.header.deaths").withStyle(ChatFormatting.BOLD);
-        guiGraphics.drawString(minecraft.font, deathsText,
+        guiGraphics.text(minecraft.font, deathsText,
                 currentHeaderX + (deathWidth - minecraft.font.width(deathsText)) / 2, headerY, 0xFFFFFFFF);
         currentHeaderX += deathWidth;
 
         Component assistsText = Component.translatable("blockoffensive.tab.header.assists").withStyle(ChatFormatting.BOLD);
-        guiGraphics.drawString(minecraft.font, assistsText,
+        guiGraphics.text(minecraft.font, assistsText,
                 currentHeaderX + (assistWidth - minecraft.font.width(assistsText)) / 2, headerY, 0xFFFFFFFF);
         currentHeaderX += assistWidth;
 
         // 爆头率
         Component headshotText = Component.translatable("blockoffensive.tab.header.headshot").withStyle(ChatFormatting.BOLD);
-        guiGraphics.drawString(minecraft.font, headshotText,
+        guiGraphics.text(minecraft.font, headshotText,
                 currentHeaderX + (headshotWidth - minecraft.font.width(headshotText)) / 2, headerY, 0xFFFFFFFF);
         currentHeaderX += headshotWidth;
 
         // 伤害（直接跟在爆头率后面）
         Component damageText = Component.translatable("blockoffensive.tab.header.damage").withStyle(ChatFormatting.BOLD);
-        guiGraphics.drawString(minecraft.font, damageText,
+        guiGraphics.text(minecraft.font, damageText,
                 currentHeaderX + (damageWidth - minecraft.font.width(damageText)) / 2, headerY, 0xFFFFFFFF);
 
         // 渲染CT玩家（从顶部开始）
@@ -161,13 +161,13 @@ public class CSGameTabRenderer implements TabRenderer {
         }
     }
 
-    private void renderPlayerRow(GuiGraphics guiGraphics, PlayerInfo player, int x, int y, int width, int height, int textColor) {
-        UUID uuid = player.getProfile().getId();
+    private void renderPlayerRow(GuiGraphicsExtractor guiGraphics, PlayerInfo player, int x, int y, int width, int height, int textColor) {
+        UUID uuid = player.getProfile().id();
         PlayerData tabData = FPSMClient.getGlobalData().getPlayerData(uuid).get();
         String playerTeam = FPSMClient.getGlobalData().getTeamByUUID(uuid).map(BaseTeam::getName).orElse("");
         String localTeam = FPSMClient.getGlobalData().getCurrentTeam();
         boolean isSameTeam = Objects.equals(playerTeam, localTeam);
-        boolean isLocalPlayer = player.getProfile().getId().equals(minecraft.player.getUUID());
+        boolean isLocalPlayer = player.getProfile().id().equals(minecraft.player.getUUID());
 
         // 背景 - 如果是本地玩家，使用对应队伍颜色的背景
         int bgColor = isLocalPlayer ? (textColor & 0xFFFFFF) | 0x40000000 : 0x40000000;
@@ -190,16 +190,16 @@ public class CSGameTabRenderer implements TabRenderer {
 
         // Ping值
         String pingText = String.valueOf(player.getLatency());
-        guiGraphics.drawString(minecraft.font, pingText,
+        guiGraphics.text(minecraft.font, pingText,
                 currentX + (pingWidth - minecraft.font.width(pingText)) / 2, textY, RenderUtil.color(25,180,60));
         currentX += pingWidth;
 
         // 头像
-        PlayerFaceRenderer.draw(guiGraphics, player.getSkinLocation(), currentX, y, avatarSize);
+        PlayerFaceRenderer.draw(guiGraphics, player.getSkin().body().texturePath(), currentX, y, avatarSize);
         currentX += avatarSize + padding;
 
         // 玩家名（左对齐）
-        guiGraphics.drawString(minecraft.font, getNameForDisplay(player), currentX, textY, textColor);
+        guiGraphics.text(minecraft.font, getNameForDisplay(player), currentX, textY, textColor);
 
         // 金钱（与表头对齐）
         int moneyX = x + pingWidth + avatarSize + padding + nameWidth;
@@ -207,26 +207,26 @@ public class CSGameTabRenderer implements TabRenderer {
         guiGraphics.fill(moneyX, y, moneyX + moneyWidth, y + height, 0x20FFFFFF);
         // 只在同队时显示金钱数值
         if (isSameTeam) {
-            String money = "$" + FPSMClient.getGlobalData().getPlayerMoney(player.getProfile().getId());
-            guiGraphics.drawString(minecraft.font, money,
+            String money = "$" + FPSMClient.getGlobalData().getPlayerMoney(player.getProfile().id());
+            guiGraphics.text(minecraft.font, money,
                     moneyX + (moneyWidth - minecraft.font.width(money)) / 2, textY, textColor);
         }
 
         // K/D/A（与表头对齐）
         int kdaX = moneyX + moneyWidth;
         Component kills = Component.literal(String.valueOf(tabData.getKills())).withStyle(ChatFormatting.BOLD);
-        guiGraphics.drawString(minecraft.font, kills,
+        guiGraphics.text(minecraft.font, kills,
                 kdaX + (killWidth - minecraft.font.width(kills)) / 2, textY, textColor);
 
         int deathsX = kdaX + killWidth;
         guiGraphics.fill(deathsX, y, deathsX + deathWidth, y + height, 0x20FFFFFF);
         Component deaths = Component.literal(String.valueOf(tabData.getDeaths())).withStyle(ChatFormatting.BOLD);
-        guiGraphics.drawString(minecraft.font, deaths,
+        guiGraphics.text(minecraft.font, deaths,
                 deathsX + (deathWidth - minecraft.font.width(deaths)) / 2, textY, textColor);
 
         int assistsX = deathsX + deathWidth;
         Component assists = Component.literal(String.valueOf(tabData.getAssists())).withStyle(ChatFormatting.BOLD);
-        guiGraphics.drawString(minecraft.font, assists,
+        guiGraphics.text(minecraft.font, assists,
                 assistsX + (assistWidth - minecraft.font.width(assists)) / 2, textY, textColor);
 
         // 爆头率（与表头对齐）
@@ -234,14 +234,14 @@ public class CSGameTabRenderer implements TabRenderer {
         guiGraphics.fill(headshotX, y, headshotX + headshotWidth, y + height, 0x20FFFFFF);
         float headShotRate = tabData.getHeadshotRate();
         Component headshotPercentage = Component.literal(String.format("%.0f%%", headShotRate * 100)).withStyle(ChatFormatting.BOLD);
-        guiGraphics.drawString(minecraft.font, headshotPercentage,
+        guiGraphics.text(minecraft.font, headshotPercentage,
                 headshotX + (headshotWidth - minecraft.font.width(headshotPercentage)) / 2, textY, textColor);
 
         // 伤害（与表头对齐）
         int damageX = x + width - damageWidth;
         guiGraphics.fill(damageX, y, damageX + damageWidth, y + height, 0x40FFFFFF);
         Component damage = Component.literal(String.valueOf(Math.round(tabData.getDamage()))).withStyle(ChatFormatting.BOLD);
-        guiGraphics.drawString(minecraft.font, damage,
+        guiGraphics.text(minecraft.font, damage,
                 damageX + (damageWidth - minecraft.font.width(damage)) / 2, textY, textColor);
 
         if(!tabData.isLiving()){
@@ -251,6 +251,6 @@ public class CSGameTabRenderer implements TabRenderer {
     }
 
     protected Component getNameForDisplay(PlayerInfo info) {
-        return info.getTabListDisplayName() != null ? info.getTabListDisplayName() : Component.literal(info.getProfile().getName());
+        return info.getTabListDisplayName() != null ? info.getTabListDisplayName() : Component.literal(info.getProfile().name());
     }
-} 
+}

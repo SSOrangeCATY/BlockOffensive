@@ -3,17 +3,17 @@ package com.phasetranscrystal.blockoffensive.client.screen;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import com.phasetranscrystal.blockoffensive.client.renderer.ShopSlotRenderer;
+import com.phasetranscrystal.blockoffensive.compat.BOImpl;
 import com.phasetranscrystal.blockoffensive.map.shop.ItemType;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.music.FPSClientMusicManager;
 import com.phasetranscrystal.fpsmatch.common.client.shop.ClientShopSlot;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMSoundPlayC2SPacket;
-import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 import com.phasetranscrystal.fpsmatch.common.packet.shop.ShopActionC2SPacket;
 import com.phasetranscrystal.fpsmatch.common.sound.FPSMSoundRegister;
-import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
+import com.phasetranscrystal.blockoffensive.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
-import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.core.shop.ShopAction;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
@@ -38,7 +38,7 @@ import icyllis.modernui.widget.TextView;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -502,7 +502,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback {
                 }
             };
             returnGoodsLayout.addView(returnGoodsText);
-            returnGoodsLayout.setOnClickListener((l) -> NetworkPacketRegister.getChannelFromCache(ShopActionC2SPacket.class).sendToServer(new ShopActionC2SPacket(FPSMClient.getGlobalData().getCurrentMap(), this.type, this.index, ShopAction.RETURN)));
+            returnGoodsLayout.setOnClickListener((l) -> FPSMatch.sendToServer(new ShopActionC2SPacket(FPSMClient.getGlobalData().getCurrentMap(), this.type, this.index, ShopAction.RETURN)));
             returnGoodsLayout.setEnabled(false);
             addView(returnGoodsLayout);
 
@@ -539,7 +539,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback {
             setOnClickListener((v) -> {
                 boolean enable = CSClientData.canOpenShop && CSClientData.getMoney() >= currentSlot.cost() && !currentSlot.itemStack().isEmpty() && !currentSlot.isLocked();
                 if (enable){
-                    NetworkPacketRegister.getChannelFromCache(ShopActionC2SPacket.class).sendToServer(new ShopActionC2SPacket(FPSMClient.getGlobalData().getCurrentMap(), this.type, this.index, ShopAction.BUY));
+                    FPSMatch.sendToServer(new ShopActionC2SPacket(FPSMClient.getGlobalData().getCurrentMap(), this.type, this.index, ShopAction.BUY));
                     ItemStack itemStack = currentSlot.itemStack();
                     if (GunCompatManager.isGun(itemStack)) {
                         Optional<com.phasetranscrystal.fpsmatch.compat.gun.GunTabTypeEnum> t = FPSMUtil.getGunTypeByGunId(GunCompatManager.findProvider(itemStack).getGunId(itemStack));
@@ -548,7 +548,7 @@ public class CSGameShopScreen extends Fragment implements ScreenCallback {
                         });
                     } else {
                         SoundEvent sound;
-                        if(FPSMImpl.findLrtacticalMod() && LrtacticalCompat.isKnife(itemStack.getItem())){
+                        if(BOImpl.isLrtacticalLoaded() && LrtacticalCompat.isKnife(itemStack.getItem())){
                             sound = FPSMSoundRegister.getKnifeDropSound();
                         }else{
                             sound = FPSMSoundRegister.getItemDropSound(itemStack.getItem());

@@ -19,35 +19,32 @@ import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextColor;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.UseAnim;
+import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector3f;
+import net.minecraft.util.TriState;
 
 import java.util.Optional;
 import java.util.function.Consumer;
 
-@Mod.EventBusSubscriber(modid = "blockoffensive", bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = "blockoffensive")
 public class CompositionC4 extends Item implements BlastBombItem {
 	@SubscribeEvent
 	public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
@@ -55,8 +52,8 @@ public class CompositionC4 extends Item implements BlastBombItem {
 		ItemStack stack = player.getItemInHand(event.getHand());
 
 		if (stack.getItem() instanceof CompositionC4) {
-			event.setUseItem(Event.Result.ALLOW);
-			event.setUseBlock(Event.Result.DENY);
+			event.setUseItem(TriState.TRUE);
+			event.setUseBlock(TriState.FALSE);
 		}
 	}
 
@@ -64,28 +61,13 @@ public class CompositionC4 extends Item implements BlastBombItem {
 		super(pProperties);
 	}
 
-	@Override
 	public void initializeClient(Consumer<IClientItemExtensions> consumer) {
 		consumer.accept(new IClientItemExtensions() {
-			private static final HumanoidModel.ArmPose ITEM_C4 = HumanoidModel.ArmPose.create("ITEM_C4", true, (model, entity, arm) -> {
-				float rotationAngle = (float) Math.toRadians(30);  // 将角度设置为 30 度（可以根据需要调整）
-				// 右臂旋转
-				if (arm == HumanoidArm.RIGHT) {
-					model.rightArm.xRot = -rotationAngle;  // 右臂旋转向中间
-					model.rightArm.yRot = -rotationAngle; // 右臂绕 Y 轴旋转
-				}
-				// 左臂旋转
-				else {
-					model.leftArm.xRot = -rotationAngle;  // 左臂旋转向中间
-					model.leftArm.yRot = rotationAngle;   // 左臂绕 Y 轴旋转（相反方向）
-				}
-			});
-
 			@Override
 			public HumanoidModel.ArmPose getArmPose(LivingEntity entityLiving, InteractionHand hand, ItemStack itemStack) {
 				if (!itemStack.isEmpty()) {
 					if (entityLiving.getUsedItemHand() == hand && entityLiving.getUseItemRemainingTicks() > 0) {
-						return ITEM_C4;
+						return HumanoidModel.ArmPose.ITEM;
 					}
 				}
 				return HumanoidModel.ArmPose.EMPTY;
@@ -111,39 +93,39 @@ public class CompositionC4 extends Item implements BlastBombItem {
 				double distance = -0.5;
 				double xOffset = -Math.sin(yawRad) * distance;
 				double zOffset = Math.cos(yawRad) * distance;
-				serverLevel.sendParticles(new DustParticleOptions(new Vector3f(1,0.1f,0.1f),1),player.getX()+xOffset,player.getY() + 1,player.getZ()+zOffset,1,0,0,0,1);
+				serverLevel.sendParticles(new DustParticleOptions(0xFF1A1A,1),player.getX()+xOffset,player.getY() + 1,player.getZ()+zOffset,1,0,0,0,1);
 			}
 		}
 	}
 
 	@Override
-	public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
+	public @NotNull InteractionResult use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
 		ItemStack stack = player.getItemInHand(hand);
-		if (level.isClientSide) return InteractionResultHolder.success(stack);
+		if (level.isClientSide()) return InteractionResult.SUCCESS;
 
 		FPSMCore core = FPSMCore.getInstance();
 		Optional<BaseMap> optional = core.getMapByPlayer(player);
 
 		if (optional.isEmpty()) {
-			player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.noMap"), true);
-			return InteractionResultHolder.pass(stack);
+			BOUtil.sendClientMessage(player, Component.translatable("blockoffensive.item.c4.use.fail.noMap"), true);
+			return InteractionResult.PASS;
 		}
 		BaseMap baseMap = optional.get();
 
 		if (!(baseMap instanceof CSGameMap map)) {
-			player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.noMap"), true);
-			return InteractionResultHolder.pass(stack);
+			BOUtil.sendClientMessage(player, Component.translatable("blockoffensive.item.c4.use.fail.noMap"), true);
+			return InteractionResult.PASS;
 		}
 
 		if (!baseMap.isStart()) {
-			player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.map.notStart"), true);
-			return InteractionResultHolder.pass(stack);
+			BOUtil.sendClientMessage(player, Component.translatable("blockoffensive.item.c4.use.fail.map.notStart"), true);
+			return InteractionResult.PASS;
 		}
 
 		ServerTeam team = baseMap.getMapTeams().getTeamByPlayer(player).orElse(null);
 		if (team == null) {
-			player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.team.notInTeam"), true);
-			return InteractionResultHolder.pass(stack);
+			BOUtil.sendClientMessage(player, Component.translatable("blockoffensive.item.c4.use.fail.team.notInTeam"), true);
+			return InteractionResult.PASS;
 		}
 
 		boolean canPlace = map.checkCanPlacingBombs(team.getFixedName())
@@ -154,18 +136,18 @@ public class CompositionC4 extends Item implements BlastBombItem {
 		if (canPlace && inBombArea) {
 			player.startUsingItem(hand);
 			playClickSound(level, player, team);
-			team.sendMessage(BOUtil.buildTeamChatMessage(player,team,Component.translatable("blockoffensive.place.message.c4"),Component.empty(), TextColor.parseColor(team.name.equals("ct") ? "#96C8FA" : "#EAC055")));
-			return InteractionResultHolder.consume(stack);
+			team.sendMessage(BOUtil.buildTeamChatMessage(player,team,Component.translatable("blockoffensive.place.message.c4"),Component.empty(), BOUtil.parseTextColor(team.name.equals("ct") ? "#96C8FA" : "#EAC055")));
+			return InteractionResult.CONSUME;
 		}
 
 		if (!canPlace) {
-			player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail"), true);
+			BOUtil.sendClientMessage(player, Component.translatable("blockoffensive.item.c4.use.fail"), true);
 		} else if (map.getBombAreaData().isEmpty()) {
-			player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.noArea"), true);
+			BOUtil.sendClientMessage(player, Component.translatable("blockoffensive.item.c4.use.fail.noArea"), true);
 		} else {
-			player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.notInArea"), true);
+			BOUtil.sendClientMessage(player, Component.translatable("blockoffensive.item.c4.use.fail.notInArea"), true);
 		}
-		return InteractionResultHolder.pass(stack);
+		return InteractionResult.PASS;
 	}
 
 	public @NotNull InteractionResult useOn(UseOnContext context) {
@@ -174,13 +156,13 @@ public class CompositionC4 extends Item implements BlastBombItem {
 
 		if (player == null) return InteractionResult.PASS;
 
-		if (level.isClientSide) {
+		if (level.isClientSide()) {
 			return InteractionResult.SUCCESS;
 		}
 
-		InteractionResultHolder<ItemStack> result = this.use(level, player, context.getHand());
+		InteractionResult result = this.use(level, player, context.getHand());
 
-		if (result.getResult() == InteractionResult.CONSUME) {
+		if (result == InteractionResult.CONSUME) {
 			return InteractionResult.SUCCESS;
 		}
 
@@ -191,7 +173,7 @@ public class CompositionC4 extends Item implements BlastBombItem {
 		level.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
 				BOSoundRegister.CLICK.get(), SoundSource.PLAYERS, 3.0F, 1.0F);
 		team.getOnline().forEach(player -> {
-			FPSMatch.sendToPlayer(player,new FPSMSoundPlayS2CPacket(BOSoundRegister.T_PLANTINGBOMB.get().getLocation()));
+			FPSMatch.sendToPlayer(player,new FPSMSoundPlayS2CPacket(BOUtil.soundId(BOSoundRegister.T_PLANTINGBOMB.get())));
 		});
 
 	}
@@ -234,7 +216,7 @@ public class CompositionC4 extends Item implements BlastBombItem {
 		if (!(baseMap instanceof CSGameMap map)) return stack;
 
 		if (!map.checkPlayerIsInBombArea(player)) {
-			player.displayClientMessage(Component.translatable("blockoffensive.item.c4.use.fail.notInArea"), true);
+			BOUtil.sendClientMessage(player, Component.translatable("blockoffensive.item.c4.use.fail.notInArea"), true);
 			return stack;
 		}
 
@@ -258,23 +240,23 @@ public class CompositionC4 extends Item implements BlastBombItem {
 		// 通知所有玩家
 		Component message = Component.translatable("blockoffensive.item.c4.planted").withStyle(ChatFormatting.RED);
 		baseMap.getMapTeams().getJoinedPlayers().forEach(data ->
-				data.getPlayer().ifPresent(p -> p.displayClientMessage(message, true))
+				data.getPlayer().ifPresent(p -> BOUtil.sendClientMessage(p, message, true))
 		);
 
 		map.getMapTeams().getTeamByPlayer(player).ifPresent(team -> {
-			MinecraftForge.EVENT_BUS.post(new CSGameMapEvent.PlayerEvent.PlacedC4Event(map,team,player));
+			NeoForge.EVENT_BUS.post(new CSGameMapEvent.PlayerEvent.PlacedC4Event(map,team,player));
 		});
 
 		return ItemStack.EMPTY;
 	}
 
 	@Override
-	public @NotNull UseAnim getUseAnimation(@NotNull ItemStack stack) {
-		return UseAnim.CUSTOM;
+	public @NotNull ItemUseAnimation getUseAnimation(@NotNull ItemStack stack) {
+		return ItemUseAnimation.NONE;
 	}
 
 	@Override
-	public int getUseDuration(@NotNull ItemStack stack) {
+	public int getUseDuration(@NotNull ItemStack stack, @NotNull LivingEntity entity) {
 		return 80;
 	}
 

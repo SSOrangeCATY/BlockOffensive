@@ -3,7 +3,7 @@ package com.phasetranscrystal.blockoffensive.net.spec;
 import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.function.Supplier;
 
@@ -19,7 +19,7 @@ public record BombFuseS2CPacket(int fuseTime , int totalFuseTime) {
         return new BombFuseS2CPacket(fuseTime,totalFuseTime);
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             CSClientData.bombFuse = fuseTime;
             CSClientData.bombTotalFuse = totalFuseTime;

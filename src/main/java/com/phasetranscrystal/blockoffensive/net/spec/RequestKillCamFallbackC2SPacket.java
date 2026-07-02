@@ -7,7 +7,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -26,8 +26,8 @@ public class RequestKillCamFallbackC2SPacket {
         return new RequestKillCamFallbackC2SPacket(buf.readUUID());
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctxSup){
-        NetworkEvent.Context ctx = ctxSup.get();
+    public void handle(Supplier<NetworkPacketRegister.Context> ctxSup){
+        NetworkPacketRegister.Context ctx = ctxSup.get();
         ServerPlayer victim = ctx.getSender();
         ctx.enqueueWork(() -> {
             if (victim == null) return;

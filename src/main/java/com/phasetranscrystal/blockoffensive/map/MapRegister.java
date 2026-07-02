@@ -9,11 +9,11 @@ import com.phasetranscrystal.fpsmatch.common.event.register.RegisterFPSMapEvent;
 import com.phasetranscrystal.fpsmatch.core.persistence.SaveHolder;
 import com.phasetranscrystal.fpsmatch.core.persistence.datafixer.DataFixer;
 import com.phasetranscrystal.fpsmatch.core.shop.FPSMShop;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 
 
-@Mod.EventBusSubscriber(modid = BlockOffensive.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = BlockOffensive.MODID)
 public class MapRegister {
 
     @SubscribeEvent

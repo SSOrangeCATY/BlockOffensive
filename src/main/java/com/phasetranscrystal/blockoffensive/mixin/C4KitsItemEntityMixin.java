@@ -22,9 +22,9 @@ import java.util.Optional;
 public abstract class C4KitsItemEntityMixin {
     @Shadow public abstract ItemStack getItem();
 
-    @Inject(at = @At("HEAD"), method = "playerTouch", cancellable = true)
+    @Inject(at = @At("HEAD"), method = "playerTouch", cancellable = true, remap = false)
     public void fpsMatch$playerTouch$CustomC4(Player player, CallbackInfo ci) {
-        if(!player.isCreative() && !player.level().isClientSide){
+        if(!player.isCreative() && !player.level().isClientSide()){
             if(this.getItem().getItem() instanceof CompositionC4){
                 Optional<BaseMap> optional = FPSMCore.getInstance().getMapByPlayer(player);
                 if (optional.isEmpty()) {

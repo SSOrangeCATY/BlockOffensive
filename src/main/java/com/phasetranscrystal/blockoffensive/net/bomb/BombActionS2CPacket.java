@@ -4,7 +4,7 @@ import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.client.key.DismantleBombKey;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.function.Supplier;
 
@@ -17,9 +17,9 @@ public record BombActionS2CPacket() {
     }
 
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ctx.get().enqueueWork(() -> {
-            BlockOffensive.INSTANCE.sendToServer(new BombActionC2SPacket(DismantleBombKey.DISMANTLE_BOMB_KEY.isDown()));
+            BlockOffensive.sendToServer(new BombActionC2SPacket(DismantleBombKey.DISMANTLE_BOMB_KEY.isDown()));
         });
         ctx.get().setPacketHandled(true);
     }

@@ -3,11 +3,10 @@ package com.phasetranscrystal.blockoffensive.net.spec;
 import com.mojang.logging.LogUtils;
 import com.phasetranscrystal.blockoffensive.client.spec.KillCamClientCache;
 import com.phasetranscrystal.blockoffensive.client.spec.KillCamManager;
-import com.phasetranscrystal.fpsmatch.util.FPSMFormatUtil;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 import org.slf4j.Logger;
 
 import java.util.UUID;
@@ -35,24 +34,24 @@ public class KillCamS2CPacket {
         this.victimPos  = new Vec3(vx, vy, vz);
     }
 
-    public static void encode(KillCamS2CPacket p, FriendlyByteBuf buf) {
+    public static void encode(KillCamS2CPacket p, RegistryFriendlyByteBuf buf) {
         buf.writeUUID(p.killerId);
         buf.writeUtf(p.killerName);
-        buf.writeItem(p.weapon);
+        ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, p.weapon);
         buf.writeDouble(p.killerPos.x).writeDouble(p.killerPos.y).writeDouble(p.killerPos.z);
         buf.writeDouble(p.victimPos.x).writeDouble(p.victimPos.y).writeDouble(p.victimPos.z);
     }
 
-    public static KillCamS2CPacket decode(FriendlyByteBuf buf) {
+    public static KillCamS2CPacket decode(RegistryFriendlyByteBuf buf) {
         UUID   id   = buf.readUUID();
         String name = buf.readUtf();
-        ItemStack weapon = buf.readItem();
+        ItemStack weapon = ItemStack.OPTIONAL_STREAM_CODEC.decode(buf);
         double kx = buf.readDouble(), ky = buf.readDouble(), kz = buf.readDouble();
         double vx = buf.readDouble(), vy = buf.readDouble(), vz = buf.readDouble();
         return new KillCamS2CPacket(id, name, weapon, kx, ky, kz, vx, vy, vz);
     }
 
-    public void handle( Supplier<NetworkEvent.Context> ctx) {
+    public void handle( Supplier<NetworkPacketRegister.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             LOG.info("[KillCamC] RECV packet  killer='{}'  A(victimEye)=({},{},{})  B(killerEye)=({},{},{})",
                     killerName,

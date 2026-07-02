@@ -12,7 +12,7 @@ import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,7 +29,7 @@ public record BombActionC2SPacket(boolean action) {
                 buf.readBoolean());
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ServerPlayer sender = ctx.get().getSender();
         Optional<BaseMap> optional = FPSMCore.getInstance().getMapByPlayer(sender);
         if (optional.isEmpty() || sender == null) {
@@ -45,7 +45,7 @@ public record BombActionC2SPacket(boolean action) {
 
         ctx.get().enqueueWork(() -> {
             if (map instanceof CSGameMap csGameMap && !csGameMap.checkCanPlacingBombs(team.getFixedName())) {
-                List<? extends CompositionC4Entity> entities = sender.serverLevel().getEntities(EntityTypeTest.forClass(CompositionC4Entity.class),(t)->{
+                List<? extends CompositionC4Entity> entities = sender.level().getEntities(EntityTypeTest.forClass(CompositionC4Entity.class),(t)->{
                     LivingEntity player = t.getDemolisher();
                     return player != null && player.getUUID().equals(sender.getUUID());
                 });

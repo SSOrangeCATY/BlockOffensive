@@ -3,7 +3,7 @@ package com.phasetranscrystal.blockoffensive.event;
 import com.phasetranscrystal.blockoffensive.data.MvpReason;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.bus.api.Event;
 
 public class CSGamePlayerGetMvpEvent extends Event {
     Player player;

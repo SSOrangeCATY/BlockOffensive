@@ -12,9 +12,7 @@
     "C4KitsItemEntityMixin",
     "StepSoundMixin"
   ],
-  "client": [
-    "PlayerRendererMixin"
-  ],
+  "client": [],
   "injectors": {
     "defaultRequire": 1
   }

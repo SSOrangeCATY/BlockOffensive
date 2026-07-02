@@ -5,9 +5,9 @@ import com.phasetranscrystal.fpsmatch.util.FPSMFormatUtil;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import org.slf4j.Logger;
 
 import java.util.Map;
@@ -15,7 +15,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Mod.EventBusSubscriber
+@EventBusSubscriber
 public final class DamagePosTracker {
 
     private static final Logger LOG = LogUtils.getLogger();
@@ -26,10 +26,10 @@ public final class DamagePosTracker {
     private DamagePosTracker(){}
 
     @SubscribeEvent
-    public static void onLivingHurt(LivingHurtEvent e){
+    public static void onLivingHurt(LivingIncomingDamageEvent e){
         LivingEntity ent = e.getEntity();
         if (!(ent instanceof ServerPlayer victim)) return;
-        if (victim.level().isClientSide) return;
+        if (victim.level().isClientSide()) return;
 
         Vec3 vEye = victim.getEyePosition(1.0F);
         LAST_VICTIM_EYE.put(victim.getUUID(), vEye);
@@ -72,7 +72,7 @@ public final class DamagePosTracker {
         long now = System.nanoTime();
         if (now - t > TTL_NS) {
             LOG.info("[KillCamS][Track] last damage pos expired: victim='{}' age={}ms",
-                    victim.getGameProfile().getName(), (now - t)/1_000_000.0);
+                    victim.getGameProfile().name(), (now - t)/1_000_000.0);
             return Optional.empty();
         }
         return Optional.of(v);

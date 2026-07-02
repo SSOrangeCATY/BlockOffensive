@@ -9,24 +9,24 @@ import com.phasetranscrystal.fpsmatch.common.event.register.RegisterFPSMCommandE
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
-import net.minecraft.commands.arguments.ResourceLocationArgument;
+import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.commands.synchronization.SuggestionProviders;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import java.util.Collection;
 
-@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE, modid = BlockOffensive.MODID)
+@EventBusSubscriber(modid = BlockOffensive.MODID)
 public class BOCommandRegister {
 
     @SubscribeEvent
     public static void onFPSMCommandRegister(RegisterFPSMCommandEvent event) {
         event.addChild(Commands.literal("mvp")
                 .then(Commands.argument("targets", EntityArgument.players())
-                        .then(Commands.argument("sound", ResourceLocationArgument.id())
-                                .suggests(SuggestionProviders.AVAILABLE_SOUNDS)
+                        .then(Commands.argument("sound", IdentifierArgument.id())
+                                .suggests(SuggestionProviders.cast(SuggestionProviders.AVAILABLE_SOUNDS))
                                 .executes(BOCommandRegister::handleMvp))));
         FPSMHelpManager.getInstance().registerCommandHelp("fpsm mvp", Component.translatable("commands.blockoffensive.mvp.description"));
         FPSMHelpManager.getInstance().registerCommandParameters("fpsm mvp", "*targets", "*sound");
@@ -34,7 +34,7 @@ public class BOCommandRegister {
 
     private static int handleMvp(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Collection<ServerPlayer> players = EntityArgument.getPlayers(context, "targets");
-        ResourceLocation sound = ResourceLocationArgument.getId(context, "sound");
+        Identifier sound = IdentifierArgument.getId(context, "sound");
         players.forEach(player -> MVPMusicManager.getInstance().addMvpMusic(player.getUUID().toString(), sound));
         context.getSource().sendSuccess(() -> Component.translatable("commands.blockoffensive.mvp.success", players.size(), sound), true);
         return 1;

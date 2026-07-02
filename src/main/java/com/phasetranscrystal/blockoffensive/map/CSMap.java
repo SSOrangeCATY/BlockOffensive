@@ -26,8 +26,7 @@ import com.phasetranscrystal.fpsmatch.common.drop.DropType;
 import com.phasetranscrystal.fpsmatch.common.entity.MatchDropEntity;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMSoundPlayS2CPacket;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMatchStatsResetS2CPacket;
-import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
-import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
+import com.phasetranscrystal.blockoffensive.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.config.FPSMConfig;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.capability.CapabilityMap;
@@ -48,24 +47,25 @@ import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunTabTypeEnum;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.item.equipment.Equippable;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Team;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.network.PacketDistributor;
+import net.minecraft.world.scores.TeamColor;
+import net.neoforged.fml.ModList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
@@ -141,11 +141,11 @@ public abstract class CSMap extends BaseMap  {
         this.loadConfig();
         this.ctTeam = this.addTeam(TeamData.of("ct",getCTLimit(), ctCapabilities));
         this.ctTeam.setColor(CT_COLOR);
-        this.ctTeam.getPlayerTeam().setColor(ChatFormatting.BLUE);
+        this.ctTeam.getPlayerTeam().setColor(Optional.of(TeamColor.BLUE));
 
         this.tTeam = this.addTeam(TeamData.of("t",getTLimit(), tCapabilities));
         this.tTeam.setColor(T_COLOR);
-        this.tTeam.getPlayerTeam().setColor(ChatFormatting.YELLOW);
+        this.tTeam.getPlayerTeam().setColor(Optional.of(TeamColor.YELLOW));
     }
 
     public int getCTLimit(){
@@ -232,7 +232,7 @@ public abstract class CSMap extends BaseMap  {
         return entity instanceof ItemEntity
                 || entity instanceof CompositionC4Entity
                 || entity instanceof MatchDropEntity
-                || (FPSMImpl.findCounterStrikeGrenadesMod() && CSGrenadeCompat.is(entity));
+                || (BOImpl.isCounterStrikeGrenadesLoaded() && CSGrenadeCompat.is(entity));
     }
 
     /**
@@ -255,8 +255,8 @@ public abstract class CSMap extends BaseMap  {
     }
 
     public void sendNewRoundVoice(){
-        this.sendPacketToTeamPlayer(this.getCT(),new FPSMSoundPlayS2CPacket(BOSoundRegister.CT_ROUNDSTART.get().getLocation()),false);
-        this.sendPacketToTeamPlayer(this.getT(),new FPSMSoundPlayS2CPacket(BOSoundRegister.T_ROUNDSTART.get().getLocation()),false);
+        this.sendPacketToTeamPlayer(this.getCT(),new FPSMSoundPlayS2CPacket(BOUtil.soundId(BOSoundRegister.CT_ROUNDSTART.get())),false);
+        this.sendPacketToTeamPlayer(this.getT(),new FPSMSoundPlayS2CPacket(BOUtil.soundId(BOSoundRegister.T_ROUNDSTART.get())),false);
     }
 
     public void sendRoundDamageMessage(){
@@ -561,7 +561,7 @@ public abstract class CSMap extends BaseMap  {
             for (UUID uuid : this.getVote().getEligiblePlayers()){
                 this.getPlayerByUUID(uuid).ifPresent(player -> {
                     for (Component message : messages){
-                        player.displayClientMessage(message,actionBar);
+                        BOUtil.sendClientMessage(player, message,actionBar);
                     }
                 });
             }
@@ -573,12 +573,12 @@ public abstract class CSMap extends BaseMap  {
      */
     public void configureGameRules(ServerLevel serverLevel) {
         GameRules gameRules = serverLevel.getGameRules();
-        gameRules.getRule(GameRules.RULE_KEEPINVENTORY).set(BOConfig.common.keepInventory.get(), null);
-        gameRules.getRule(GameRules.RULE_DO_IMMEDIATE_RESPAWN).set(BOConfig.common.immediateRespawn.get(), null);
-        gameRules.getRule(GameRules.RULE_DAYLIGHT).set(BOConfig.common.daylightCycle.get(), null);
-        gameRules.getRule(GameRules.RULE_WEATHER_CYCLE).set(BOConfig.common.weatherCycle.get(), null);
-        gameRules.getRule(GameRules.RULE_DOMOBSPAWNING).set(BOConfig.common.mobSpawning.get(), null);
-        gameRules.getRule(GameRules.RULE_NATURAL_REGENERATION).set(BOConfig.common.naturalRegeneration.get(), null);
+        gameRules.set(GameRules.KEEP_INVENTORY, BOConfig.common.keepInventory.get(), null);
+        gameRules.set(GameRules.IMMEDIATE_RESPAWN, BOConfig.common.immediateRespawn.get(), null);
+        gameRules.set(GameRules.ADVANCE_TIME, BOConfig.common.daylightCycle.get(), null);
+        gameRules.set(GameRules.ADVANCE_WEATHER, BOConfig.common.weatherCycle.get(), null);
+        gameRules.set(GameRules.SPAWN_MOBS, BOConfig.common.mobSpawning.get(), null);
+        gameRules.set(GameRules.NATURAL_HEALTH_REGENERATION, BOConfig.common.naturalRegeneration.get(), null);
 
         if (BOConfig.common.hardDifficulty.get()) {
             serverLevel.getServer().setDifficulty(Difficulty.HARD, true);
@@ -635,7 +635,7 @@ public abstract class CSMap extends BaseMap  {
             ServerPlayer p = players.get(getRandom().nextInt(0,players.size()));
             ShopCapability.getPlayerShopData(this,p.getUUID()).ifPresent(shopData -> {
                 shopData.addMoney(300);
-                p.displayClientMessage(Component.translatable("blockoffensive.kill.message.suicide",player.getDisplayName(), 300),false);
+                BOUtil.sendClientMessage(p, Component.translatable("blockoffensive.kill.message.suicide",player.getDisplayName(), 300),false);
             });
             return;
         }
@@ -644,13 +644,13 @@ public abstract class CSMap extends BaseMap  {
             int reward = getRewardByItem(itemStack);
             ShopCapability.getShopByPlayer(attacker).ifPresent(shopData -> {
                 shopData.addMoney(attacker,reward);
-                attacker.displayClientMessage(Component.translatable("blockoffensive.kill.message.enemy",reward),false);
+                BOUtil.sendClientMessage(attacker, Component.translatable("blockoffensive.kill.message.enemy",reward),false);
             });
         }else{
             if(punish){
                 ShopCapability.getShopByPlayer(attacker).ifPresent(shopData -> {
                     shopData.reduceMoney(attacker,300);
-                    attacker.displayClientMessage(Component.translatable("blockoffensive.kill.message.teammate",300),false);
+                    BOUtil.sendClientMessage(attacker, Component.translatable("blockoffensive.kill.message.teammate",300),false);
                 });
             }
         }
@@ -671,8 +671,9 @@ public abstract class CSMap extends BaseMap  {
                         if(!checker.apply(type)){
                             continue;
                         }
-                        if(copy.getItem() instanceof ArmorItem armorItem){
-                            player.setItemSlot(armorItem.getEquipmentSlot(),copy);
+                        Equippable armorItem = copy.getItem().components().get(net.minecraft.core.component.DataComponents.EQUIPPABLE);
+                        if(armorItem != null){
+                            player.setItemSlot(armorItem.slot(),copy);
                         }else{
                             player.getInventory().add(FPSMUtil.fixGunItem(copy));
                         }
@@ -719,11 +720,11 @@ public abstract class CSMap extends BaseMap  {
 
     public void resetPlayerClientData(ServerPlayer serverPlayer){
         FPSMatchStatsResetS2CPacket packet = new FPSMatchStatsResetS2CPacket();
-        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(()-> serverPlayer), packet);
+        FPSMatch.sendToPlayer(serverPlayer, packet);
     }
 
     public void sendAllPlayerMessage(Component message, boolean actionBar){
-        this.getMapTeams().getJoinedPlayers().forEach(data -> data.getPlayer().ifPresent(player -> player.displayClientMessage(message,actionBar)));
+        this.getMapTeams().getJoinedPlayers().forEach(data -> data.getPlayer().ifPresent(player -> BOUtil.sendClientMessage(player, message,actionBar)));
     }
 
     public void teleportPlayerToMatchEndPoint(){
@@ -733,7 +734,7 @@ public abstract class CSMap extends BaseMap  {
             this.getMapTeams().getJoinedPlayersWithSpec().forEach((uuid -> this.getPlayerByUUID(uuid).ifPresent(player->{
                 teleportToPoint(player, data);
                 player.setGameMode(FPSMConfig.common.autoAdventureMode.get() ? GameType.ADVENTURE : GameType.SURVIVAL);
-                player.setRespawnPosition(null, null, 0, false, false);
+                player.setRespawnPosition(null, false);
             })));
         });
     }
@@ -793,33 +794,28 @@ public abstract class CSMap extends BaseMap  {
 
     public void syncWeaponData(){
         Map<UUID, WeaponData> weaponDataMap = new HashMap<>();
-        Map<UUID, Map<String, List<ResourceLocation>>> itemIdMap = new HashMap<>();
+        Map<UUID, Map<String, List<Identifier>>> itemIdMap = new HashMap<>();
 
         for (PlayerData data : this.getMapTeams().getJoinedPlayers()){
             Optional<ServerPlayer> optional = data.getPlayer();
             if(optional.isEmpty()) continue;
             ServerPlayer player = optional.get();
             Map<String, List<String>> weaponData = new HashMap<>();
-            Map<String, List<ResourceLocation>> itemIds = new HashMap<>();
+            Map<String, List<Identifier>> itemIds = new HashMap<>();
 
-            List<List<ItemStack>> items = new ArrayList<>();
-            items.add(player.getInventory().items);
-            items.add(player.getInventory().armor);
-            items.add(player.getInventory().offhand);
-            for (List<ItemStack> itemStacks : items) {
-                for(ItemStack itemStack : itemStacks){
-                    if(itemStack.isEmpty()) continue;
-                    for (DropType dropType : DropType.values()) {
-                        if(dropType.itemMatch().test(itemStack)){
-                            weaponData.computeIfAbsent(dropType.name(), k -> new ArrayList<>()).add(itemStack.getHoverName().getString());
-                            ResourceLocation regId = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(itemStack.getItem());
-                            if (GunCompatManager.isGun(itemStack)) {
-                                itemIds.computeIfAbsent(dropType.name(), k -> new ArrayList<>()).add(GunCompatManager.findProvider(itemStack).getGunId(itemStack));
-                            } else {
-                                itemIds.computeIfAbsent(dropType.name(), k -> new ArrayList<>()).add(regId);
-                            }
-                            break;
+            for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+                ItemStack itemStack = player.getInventory().getItem(slot);
+                if(itemStack.isEmpty()) continue;
+                for (DropType dropType : DropType.values()) {
+                    if(dropType.itemMatch().test(itemStack)){
+                        weaponData.computeIfAbsent(dropType.name(), k -> new ArrayList<>()).add(itemStack.getHoverName().getString());
+                        Identifier regId = BuiltInRegistries.ITEM.getKey(itemStack.getItem());
+                        if (GunCompatManager.isGun(itemStack)) {
+                            itemIds.computeIfAbsent(dropType.name(), k -> new ArrayList<>()).add(GunCompatManager.findProvider(itemStack).getGunId(itemStack));
+                        } else {
+                            itemIds.computeIfAbsent(dropType.name(), k -> new ArrayList<>()).add(regId);
                         }
+                        break;
                     }
                 }
             }
@@ -829,7 +825,7 @@ public abstract class CSMap extends BaseMap  {
             if (GunCompatManager.isGun(mainHand)) {
                 itemIds.computeIfAbsent("CARRIED", k -> new ArrayList<>()).add(GunCompatManager.findProvider(mainHand).getGunId(mainHand));
             } else {
-                ResourceLocation carriedId = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(mainHand.getItem());
+                Identifier carriedId = BuiltInRegistries.ITEM.getKey(mainHand.getItem());
                 itemIds.computeIfAbsent("CARRIED", k -> new ArrayList<>()).add(carriedId);
             }
 
@@ -926,7 +922,7 @@ public abstract class CSMap extends BaseMap  {
     }
 
     public int getRewardByItem(ItemStack itemStack){
-        if(FPSMImpl.findLrtacticalMod() && LrtacticalCompat.isKnife(itemStack)){
+        if(BOImpl.isLrtacticalLoaded() && LrtacticalCompat.isKnife(itemStack)){
             return knifeKillEconomy.get();
         }else{
             if(GunCompatManager.isGun(itemStack)){
@@ -937,7 +933,7 @@ public abstract class CSMap extends BaseMap  {
         }
     }
 
-    public int gerRewardByGunId(ResourceLocation gunId){
+    public int gerRewardByGunId(Identifier gunId){
         Optional<GunTabTypeEnum> optional = FPSMUtil.getGunTypeByGunId(gunId);
         if(optional.isPresent()){
             switch(optional.get()){
@@ -987,8 +983,12 @@ public abstract class CSMap extends BaseMap  {
                 return action::accept;
             }
             return player -> {
-                if(player.hasPermissions(level)) action.accept(player);
+                if(CSMap.hasCommandPermission(player, level)) action.accept(player);
             };
         }
+    }
+
+    protected static boolean hasCommandPermission(ServerPlayer player, int level) {
+        return player.permissions().hasPermission(new net.minecraft.server.permissions.Permission.HasCommandLevel(net.minecraft.server.permissions.PermissionLevel.byId(level)));
     }
 }

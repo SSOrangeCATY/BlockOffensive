@@ -3,17 +3,17 @@ package com.phasetranscrystal.blockoffensive.net.spec;
 import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import com.phasetranscrystal.blockoffensive.client.data.WeaponData;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.*;
 import java.util.function.Supplier;
 
 public record CSGameWeaponDataS2CPacket(Map<UUID, WeaponData> weaponDataMap) {
     public static void encode(CSGameWeaponDataS2CPacket packet, FriendlyByteBuf buf) {
-        buf.writeMap(packet.weaponDataMap, FriendlyByteBuf::writeUUID,
+        buf.writeMap(packet.weaponDataMap, (b, uuid) -> b.writeUUID(uuid),
                 (b, weaponData) -> {
-                    b.writeMap(weaponData.weaponData(), FriendlyByteBuf::writeUtf,
-                            (b1, list) -> b1.writeCollection(list, FriendlyByteBuf::writeUtf));
+                    b.writeMap(weaponData.weaponData(), (b1, value) -> b1.writeUtf(value),
+                            (b1, list) -> b1.writeCollection(list, (b2, value) -> b2.writeUtf(value)));
                     b.writeBoolean(weaponData.bpAttributeHasHelmet());
                     b.writeInt(weaponData.bpAttributeDurability());
                 });
@@ -21,11 +21,11 @@ public record CSGameWeaponDataS2CPacket(Map<UUID, WeaponData> weaponDataMap) {
 
     public static CSGameWeaponDataS2CPacket decode(FriendlyByteBuf buf) {
         Map<UUID, WeaponData> weaponDataMap = buf.readMap(
-                FriendlyByteBuf::readUUID,
+                b -> b.readUUID(),
                 b -> {
                     Map<String, List<String>> weaponData = b.readMap(
-                            FriendlyByteBuf::readUtf,
-                            b1 -> b1.readList(FriendlyByteBuf::readUtf)
+                            b1 -> b1.readUtf(),
+                            b1 -> b1.readList(b2 -> b2.readUtf())
                     );
                     boolean hasHelmet = b.readBoolean();
                     int durability = b.readInt();
@@ -36,8 +36,8 @@ public record CSGameWeaponDataS2CPacket(Map<UUID, WeaponData> weaponDataMap) {
         return new CSGameWeaponDataS2CPacket(weaponDataMap);
     }
 
-    public void handle(Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
+    public void handle(Supplier<NetworkPacketRegister.Context> contextSupplier) {
+        NetworkPacketRegister.Context context = contextSupplier.get();
         context.enqueueWork(() -> {
             synchronized (CSClientData.weaponData) {
                 CSClientData.weaponData.putAll(weaponDataMap);

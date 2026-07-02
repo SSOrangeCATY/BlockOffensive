@@ -1,6 +1,5 @@
 package com.phasetranscrystal.blockoffensive.client.screen.hud;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
@@ -8,7 +7,7 @@ import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
@@ -25,7 +24,7 @@ public class CSDMOverlay {
 
     private final Minecraft minecraft = Minecraft.getInstance();
 
-    public void render(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
+    public void render(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight) {
         Font font = minecraft.font;
         if (minecraft.player == null) return;
 
@@ -46,7 +45,7 @@ public class CSDMOverlay {
         renderPlayerAvatars(guiGraphics, font, centerX, startY + timeBarHeight + 2, avatarSize, avatarGap, scoreBgHeight, scaleFactor);
     }
 
-    private void renderTimeCounter(GuiGraphics guiGraphics, Font font, int centerX, int startY, int timeBarHeight, float scaleFactor) {
+    private void renderTimeCounter(GuiGraphicsExtractor guiGraphics, Font font, int centerX, int startY, int timeBarHeight, float scaleFactor) {
         // 渲染中间时间区域背景
         int timeAreaWidth = (int) (20 * scaleFactor);
         guiGraphics.fillGradient(centerX - timeAreaWidth, startY, centerX + timeAreaWidth, startY + timeBarHeight, -1072689136, -804253680);
@@ -54,18 +53,18 @@ public class CSDMOverlay {
         // 渲染时间
         Component roundTime = getRoundTimeString();
         float timeScale = scaleFactor * 1.2f;
-        guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(centerX, startY + (float) timeBarHeight / 2, 0);
-        guiGraphics.pose().scale(timeScale, timeScale, 1.0f);
-        guiGraphics.drawString(font, roundTime,
+        guiGraphics.pose().pushMatrix();
+        guiGraphics.pose().translate(centerX, startY + (float) timeBarHeight / 2);
+        guiGraphics.pose().scale(timeScale, timeScale);
+        guiGraphics.text(font, roundTime,
                 -font.width(roundTime) / 2,
                 -4,
                 textRoundTimeColor,
                 false);
-        guiGraphics.pose().popPose();
+        guiGraphics.pose().popMatrix();
     }
 
-    private void renderPlayerAvatars(GuiGraphics guiGraphics, Font font, int centerX, int startY, int avatarSize, int avatarGap, int scoreBgHeight, float scaleFactor) {
+    private void renderPlayerAvatars(GuiGraphicsExtractor guiGraphics, Font font, int centerX, int startY, int avatarSize, int avatarGap, int scoreBgHeight, float scaleFactor) {
         // 获取所有玩家信息
         Map<String, List<PlayerInfo>> teamPlayers = RenderUtil.getTeamsPlayerInfo();
         List<PlayerInfo> allPlayers = new ArrayList<>();
@@ -103,34 +102,29 @@ public class CSDMOverlay {
             Component scoreText = Component.literal(String.valueOf(playerScore)).withStyle(ChatFormatting.BOLD);
             float scoreScale = scaleFactor * 0.8f;
 
-            guiGraphics.pose().pushPose();
-            guiGraphics.pose().translate(drawX + (float) avatarSize / 2, startY + avatarSize + (float) scoreBgHeight / 2, 0);
-            guiGraphics.pose().scale(scoreScale, scoreScale, 1.0f);
-            guiGraphics.drawString(font, scoreText,
+            guiGraphics.pose().pushMatrix();
+            guiGraphics.pose().translate(drawX + (float) avatarSize / 2, startY + avatarSize + (float) scoreBgHeight / 2);
+            guiGraphics.pose().scale(scoreScale, scoreScale);
+            guiGraphics.text(font, scoreText,
                     -font.width(scoreText) / 2,
                     -font.lineHeight / 2,
                     textFontColor,
                     false);
-            guiGraphics.pose().popPose();
+            guiGraphics.pose().popMatrix();
         }
     }
 
-    private void renderPlayerAvatar(GuiGraphics guiGraphics, PlayerInfo player, PlayerData data, int x, int y, int size) {
+    private void renderPlayerAvatar(GuiGraphicsExtractor guiGraphics, PlayerInfo player, PlayerData data, int x, int y, int size) {
         // 灰度头像(dead)
-        float r = 1f, g = 1f, b = 1f, a = 1f;
-        if (!data.isLiving()) {
-            r = g = b = 0.3f;
-        }
-        RenderSystem.setShaderColor(r, g, b, a);
-
         int margin = 1;
         int avX = x + margin;
         int avY = y + margin;
         int smallAvSize = size - margin * 2;
 
-        PlayerFaceRenderer.draw(guiGraphics, player.getSkinLocation(), avX, avY, smallAvSize);
-
-        RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+        if (!data.isLiving()) {
+            guiGraphics.fill(avX, avY, avX + smallAvSize, avY + smallAvSize, 0x99000000);
+        }
+        PlayerFaceRenderer.draw(guiGraphics, player.getSkin().body().texturePath(), avX, avY, smallAvSize);
     }
 
     private int getPlayerScore(PlayerInfo player) {

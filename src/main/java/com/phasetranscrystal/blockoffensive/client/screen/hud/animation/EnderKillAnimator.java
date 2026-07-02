@@ -1,22 +1,21 @@
 package com.phasetranscrystal.blockoffensive.client.screen.hud.animation;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class EnderKillAnimator implements KillAnimator {
     // 资源常量
-    private static final ResourceLocation ENDER_EYE = ResourceLocation.tryBuild("minecraft", "textures/item/ender_eye.png");
-    private static final ResourceLocation ENDER_PEARL = ResourceLocation.tryBuild("minecraft", "textures/item/ender_pearl.png");
+    private static final Identifier ENDER_EYE = Identifier.tryBuild("minecraft", "textures/item/ender_eye.png");
+    private static final Identifier ENDER_PEARL = Identifier.tryBuild("minecraft", "textures/item/ender_pearl.png");
 
     // 动画参数
     private static final int ANIMATION_DURATION = 3500;
@@ -69,7 +68,7 @@ public class EnderKillAnimator implements KillAnimator {
     }
 
     @Override
-    public void render(Minecraft mc, ForgeGui gui, GuiGraphics guiGraphics, int centerX, int baseY) {
+    public void render(Minecraft mc, GuiGraphicsExtractor guiGraphics, int centerX, int baseY) {
         if (!isActive()) return;
 
         final int renderY = baseY - 75;
@@ -86,7 +85,7 @@ public class EnderKillAnimator implements KillAnimator {
         }
     }
 
-    private void renderItemPhase(GuiGraphics guiGraphics, int centerX, int centerY, float progress) {
+    private void renderItemPhase(GuiGraphicsExtractor guiGraphics, int centerX, int centerY, float progress) {
         if (progress < 0.05f) {
             renderCenteredItem(guiGraphics, ENDER_PEARL, centerX, centerY, ITEM_SCALE);
         } else if (progress < 0.1f) {
@@ -100,22 +99,17 @@ public class EnderKillAnimator implements KillAnimator {
         }
     }
 
-    private void renderCenteredItem(GuiGraphics guiGraphics, ResourceLocation texture,
+    private void renderCenteredItem(GuiGraphicsExtractor guiGraphics, Identifier texture,
                                     int centerX, int centerY, float scale) {
-        guiGraphics.pose().pushPose();
+        guiGraphics.pose().pushMatrix();
         float offset = 8 * scale;
-        guiGraphics.pose().translate(
-                centerX - offset - 1,
-                centerY - offset - 1,
-                0
-        );
-        guiGraphics.pose().scale(scale, scale, 1);
-        RenderSystem.enableBlend();
-        guiGraphics.blit(texture, 0, 0, 0, 0, 16, 16, 16, 16);
-        guiGraphics.pose().popPose();
+        guiGraphics.pose().translate(centerX - offset - 1, centerY - offset - 1);
+        guiGraphics.pose().scale(scale, scale);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, texture, 0, 0, 0.0F, 0.0F, 16, 16, 16, 16);
+        guiGraphics.pose().popMatrix();
     }
 
-    private void renderCirclePhase(GuiGraphics guiGraphics, int centerX, int centerY, float progress) {
+    private void renderCirclePhase(GuiGraphicsExtractor guiGraphics, int centerX, int centerY, float progress) {
         // 动态半径计算
         float radiusProgress = Math.min((progress - 0.1f) / 0.15f, 1.0f);
         // 动态半径计算
@@ -131,19 +125,19 @@ public class EnderKillAnimator implements KillAnimator {
 
     }
 
-    private void drawSmoothCircle(GuiGraphics guiGraphics, int x, int y, int radius, int color) {
-        guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(x, y, 0);
+    private void drawSmoothCircle(GuiGraphicsExtractor guiGraphics, int x, int y, int radius, int color) {
+        guiGraphics.pose().pushMatrix();
+        guiGraphics.pose().translate(x, y);
         for (int i = 0; i < 360; i++) {
             double radian = Math.toRadians(i);
             int px = (int) (radius * Math.cos(radian));
             int py = (int) (radius * Math.sin(radian));
             guiGraphics.fill(px-1, py-1, px+1, py+1, color);
         }
-        guiGraphics.pose().popPose();
+        guiGraphics.pose().popMatrix();
     }
 
-    private void drawArcSegments(GuiGraphics guiGraphics, int centerX, int centerY,
+    private void drawArcSegments(GuiGraphicsExtractor guiGraphics, int centerX, int centerY,
                                  int radius, float progress) {
         float angleStep = 360.0f / arcRotations.size();
         for (int i = 0; i < arcRotations.size(); i++) {
@@ -169,10 +163,10 @@ public class EnderKillAnimator implements KillAnimator {
         }
     }
 
-    private void drawArc(GuiGraphics guiGraphics, int centerX, int centerY,
+    private void drawArc(GuiGraphicsExtractor guiGraphics, int centerX, int centerY,
                          int radius, float startAngle, float endAngle,int color) {
-        guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(centerX, centerY, 0);
+        guiGraphics.pose().pushMatrix();
+        guiGraphics.pose().translate(centerX, centerY);
 
         float angleIncrement = (endAngle - startAngle) / ARC_SEGMENTS;
         for (int i = 0; i <= ARC_SEGMENTS; i++) {
@@ -182,10 +176,10 @@ public class EnderKillAnimator implements KillAnimator {
             int y = (int) (radius * Math.sin(radian));
             guiGraphics.fill(x-1, y-1, x+1, y+1, color);
         }
-        guiGraphics.pose().popPose();
+        guiGraphics.pose().popMatrix();
     }
 
-    private void renderExitEffect(GuiGraphics guiGraphics, int centerX, int centerY, float progress) {
+    private void renderExitEffect(GuiGraphicsExtractor guiGraphics, int centerX, int centerY, float progress) {
         float exitProgress = (progress - 0.75f) / 0.25f;
         float innerProgress = exitProgress * 1.1f;
         float centerProgress = exitProgress * 1;

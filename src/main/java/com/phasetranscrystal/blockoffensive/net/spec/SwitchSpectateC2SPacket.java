@@ -6,7 +6,8 @@ import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.server.MinecraftServer;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,8 +31,8 @@ public class SwitchSpectateC2SPacket {
         return new SwitchSpectateC2SPacket(buf.readEnum(SwitchDirection.class));
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctxSup) {
-        NetworkEvent.Context ctx = ctxSup.get();
+    public void handle(Supplier<NetworkPacketRegister.Context> ctxSup) {
+        NetworkPacketRegister.Context ctx = ctxSup.get();
         ctx.enqueueWork(() -> {
             ServerPlayer sp = ctx.getSender();
             if (sp == null || !sp.isSpectator()) return;
@@ -46,8 +47,11 @@ public class SwitchSpectateC2SPacket {
             BaseTeam team = mapTeams.getTeamByPlayer(sp.getUUID()).orElse(null);
             if (team == null) return;
 
+            MinecraftServer server = sp.level().getServer();
+            if (server == null) return;
+
             List<ServerPlayer> teammates = team.getPlayerList().stream()
-                    .map(uuid -> sp.server.getPlayerList().getPlayer(uuid))
+                    .map(uuid -> server.getPlayerList().getPlayer(uuid))
                     .filter(p -> p != null && p.isAlive() && !p.isSpectator())
                     .toList();
 

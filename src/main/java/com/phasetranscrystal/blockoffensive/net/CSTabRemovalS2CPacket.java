@@ -2,7 +2,7 @@ package com.phasetranscrystal.blockoffensive.net;
 
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -16,7 +16,7 @@ public record CSTabRemovalS2CPacket(UUID uuid) {
         return new CSTabRemovalS2CPacket(buf.readUUID());
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             FPSMClient.getGlobalData().getTeamByUUID(uuid).ifPresent(team-> {
                 team.delPlayer(uuid);

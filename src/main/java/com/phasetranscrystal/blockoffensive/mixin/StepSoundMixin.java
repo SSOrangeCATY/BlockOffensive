@@ -34,9 +34,9 @@ public abstract class StepSoundMixin extends LivingEntity {
         super(pEntityType, pLevel);
     }
 
-    @Inject(at = @At("HEAD"), method = "playStepSound", cancellable = true)
+    @Inject(at = @At("HEAD"), method = "playStepSound", cancellable = true, remap = false)
     public void fpsMatch$playStepSound$stepSoundFix(BlockPos pPos, BlockState pState, CallbackInfo ci) {
-        if(this.level().isClientSide) return;
+        if(this.level().isClientSide()) return;
 
         Player me = (Player)(Object)this;
         Optional<BaseMap> optional = FPSMCore.getInstance().getMapByPlayer(me);

@@ -6,8 +6,8 @@ import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.client.ConfigScreenHandler;
-import net.minecraftforge.fml.ModLoadingContext;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import org.jetbrains.annotations.Nullable;
 
 public class BOMenuIntegration {
@@ -223,10 +223,9 @@ public class BOMenuIntegration {
         };
     }
     
-    @SuppressWarnings("removal")
-    public static void registerModsPage() {
-        ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class, () ->
-                new ConfigScreenHandler.ConfigScreenFactory((client, parent) -> getConfigScreen(parent)));
+    public static void registerModsPage(ModContainer container) {
+        container.registerExtensionPoint(IConfigScreenFactory.class,
+                (IConfigScreenFactory) (modContainer, parent) -> getConfigScreen(parent));
     }
     
     public static Screen getConfigScreen(@Nullable Screen parent) {

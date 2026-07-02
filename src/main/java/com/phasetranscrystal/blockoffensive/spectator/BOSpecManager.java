@@ -26,12 +26,11 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.network.PacketDistributor;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
@@ -40,7 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.phasetranscrystal.fpsmatch.util.FPSMFormatUtil.fmt2;
 
-@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber
 public final class BOSpecManager {
 
     private static final Logger LOG = LogUtils.getLogger();
@@ -87,7 +86,7 @@ public final class BOSpecManager {
         if (!weaponForSend.isEmpty() && weaponForSend.getCount() != 1) weaponForSend.setCount(1);
 
         LOG.info("[KillCamS] SEND packet to '{}'  killer='{}'  A(victimEye)=({},{},{})  B(killerEye)=({},{},{})  item='{}'",
-                dead.getGameProfile().getName(), killer.getGameProfile().getName(),
+                dead.getGameProfile().name(), killer.getGameProfile().name(),
                 fmt2(dEye.x), fmt2(dEye.y), fmt2(dEye.z),
                 fmt2(kEye.x), fmt2(kEye.y), fmt2(kEye.z),
                 weaponForSend.isEmpty() ? "EMPTY" : weaponForSend.getHoverName().getString());
@@ -103,9 +102,8 @@ public final class BOSpecManager {
     }
 
     @SubscribeEvent
-    public static void onPlayerTick(TickEvent.PlayerTickEvent e) {
-        if (e.side.isClient() || e.phase != TickEvent.Phase.END) return;
-        if (!(e.player instanceof ServerPlayer sp)) return;
+    public static void onPlayerTick(PlayerTickEvent.Post e) {
+        if (e.getEntity().level().isClientSide() || !(e.getEntity() instanceof ServerPlayer sp)) return;
 
         UUID id = sp.getUUID();
         SpectateMode mode = SPECTATE_MODE.getOrDefault(id, SpectateMode.FREE);
@@ -114,8 +112,7 @@ public final class BOSpecManager {
         if (!sp.isSpectator()) {
             if (mode != SpectateMode.FREE) {
                 SPECTATE_MODE.remove(id);
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> sp),
-                        new SpectateModeS2CPacket(SpectateMode.FREE));
+                FPSMatch.sendToPlayer(sp, new SpectateModeS2CPacket(SpectateMode.FREE));
             }
             return;
         }
@@ -125,8 +122,7 @@ public final class BOSpecManager {
             boolean ok = forceAttachToNearestTeammate(sp);
             if (!ok) {
                 SPECTATE_MODE.put(id, SpectateMode.FREE);
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> sp),
-                        new SpectateModeS2CPacket(SpectateMode.FREE));
+                FPSMatch.sendToPlayer(sp, new SpectateModeS2CPacket(SpectateMode.FREE));
             }
         }
     }
@@ -141,8 +137,7 @@ public final class BOSpecManager {
 
     private static void markAttach(ServerPlayer sp){
         SPECTATE_MODE.put(sp.getUUID(), SpectateMode.ATTACH);
-        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> sp),
-                new SpectateModeS2CPacket(SpectateMode.ATTACH));
+        FPSMatch.sendToPlayer(sp, new SpectateModeS2CPacket(SpectateMode.ATTACH));
     }
 
     private static boolean isCameraOnTeammate(ServerPlayer sp){
@@ -182,11 +177,11 @@ public final class BOSpecManager {
     }
 
     private static Entity getOtherEntity(MapTeams teams, ServerPlayer player, AABB aabb){
-        ServerLevel level = player.serverLevel();
+        ServerLevel level = (ServerLevel) player.level();
         Optional<ServerTeam> teamOpt = teams.getTeamByPlayer(player);
         if (teamOpt.isEmpty()) return null;
         ServerTeam team = teamOpt.get();
-        TargetingConditions conditions = TargetingConditions.forNonCombat().ignoreInvisibilityTesting().ignoreLineOfSight().selector(entity-> selector(entity, team));
+        TargetingConditions conditions = TargetingConditions.forNonCombat().ignoreInvisibilityTesting().ignoreLineOfSight().selector((entity, targetLevel) -> selector(entity, team));
         List<Player> teammate = level.getNearbyPlayers(conditions,player,aabb);
         if(!teammate.isEmpty()) return teammate.get(0);
 
@@ -209,11 +204,11 @@ public final class BOSpecManager {
 
     @OnlyIn(Dist.CLIENT)
     public static void requestKillCamFallback(@NotNull UUID killer){
-        BlockOffensive.INSTANCE.sendToServer(new RequestKillCamFallbackC2SPacket(killer));
+        BlockOffensive.sendToServer(new RequestKillCamFallbackC2SPacket(killer));
     }
 
     @OnlyIn(Dist.CLIENT)
     public static void sendSwitchSpectate(SwitchSpectateC2SPacket.SwitchDirection dir){
-        BlockOffensive.INSTANCE.sendToServer(new SwitchSpectateC2SPacket(dir));
+        BlockOffensive.sendToServer(new SwitchSpectateC2SPacket(dir));
     }
 }

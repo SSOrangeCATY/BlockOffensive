@@ -16,9 +16,7 @@ import com.phasetranscrystal.fpsmatch.core.map.BlastBombState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextColor;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -26,6 +24,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
@@ -34,7 +35,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
@@ -64,7 +64,6 @@ public class CompositionC4Entity extends BlastBombEntity {
     public CompositionC4Entity(EntityType<?> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.blocksBuilding = true;
-        this.noCulling = true;
         this.setDeleteTime(0);
         this.setExplosionRadius(DEFAULT_INSTANT_KILL_RADIUS + 31);
         this.setInstantKillRadius(DEFAULT_INSTANT_KILL_RADIUS);
@@ -115,11 +114,11 @@ public class CompositionC4Entity extends BlastBombEntity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        this.entityData.define(DATA_EXPLOSION_RADIUS, DEFAULT_EXPLOSION_RADIUS);
-        this.entityData.define(DATA_DELETE_TIME, 0);
-        this.entityData.define(DATA_EXPLOSION_INTERACTION, Level.ExplosionInteraction.NONE.ordinal());
-        this.entityData.define(DATA_INSTANT_KILL_RADIUS, DEFAULT_INSTANT_KILL_RADIUS);
+    protected void defineSynchedData(SynchedEntityData.Builder entityData) {
+        entityData.define(DATA_EXPLOSION_RADIUS, DEFAULT_EXPLOSION_RADIUS);
+        entityData.define(DATA_DELETE_TIME, 0);
+        entityData.define(DATA_EXPLOSION_INTERACTION, Level.ExplosionInteraction.NONE.ordinal());
+        entityData.define(DATA_INSTANT_KILL_RADIUS, DEFAULT_INSTANT_KILL_RADIUS);
     }
 
     @Override
@@ -133,27 +132,32 @@ public class CompositionC4Entity extends BlastBombEntity {
 
 
     @Override
-    public void onAddedToWorld() {
-        super.onAddedToWorld();
+    public void onAddedToLevel() {
+        super.onAddedToLevel();
     }
 
     @Override
-    public void onRemovedFromWorld() {
-        super.onRemovedFromWorld();
-        if (!this.level().isClientSide) {
+    public void onRemovedFromLevel() {
+        super.onRemovedFromLevel();
+        if (!this.level().isClientSide()) {
             if(map != null){
                 map.setBombEntity(null);
             }
         }
     }
+
     @Override
-    protected void readAdditionalSaveData(CompoundTag pCompound) {
-        this.setFuse(pCompound.getInt("Fuse"));
+    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        return false;
+    }
+    @Override
+    protected void readAdditionalSaveData(ValueInput input) {
+        this.setFuse(input.getIntOr("Fuse", DEFAULT_FUSE_TIME));
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag pCompound) {
-        pCompound.putInt("Fuse", this.getFuse());
+    protected void addAdditionalSaveData(ValueOutput output) {
+        output.putInt("Fuse", this.getFuse());
     }
 
     public void tick() {
@@ -162,7 +166,7 @@ public class CompositionC4Entity extends BlastBombEntity {
             this.discard();
         }
 
-        if(!this.level().isClientSide){
+        if(!this.level().isClientSide()){
             if(this.map == null){
                 this.discard();
                 return;
@@ -186,7 +190,7 @@ public class CompositionC4Entity extends BlastBombEntity {
                         this.demolisher = null;
                     }
                     if(i % 2 == 0 && i > 0){
-                        BlockOffensive.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new BombActionS2CPacket());
+                        BlockOffensive.sendToPlayer(serverPlayer, new BombActionS2CPacket());
                     }
                 }
             }
@@ -201,14 +205,14 @@ public class CompositionC4Entity extends BlastBombEntity {
             }
 
             if (i <= 0) {
-                if (!this.level().isClientSide) {
+                if (!this.level().isClientSide()) {
                     this.state = BlastBombState.EXPLODED;
                     this.explode();
                 }
             }
             if(i % 20 == 0){
                 if (i > 200) this.playBeepSound();
-                ((ServerLevel)this.level()).sendParticles(new DustParticleOptions(new Vector3f(1,0.1f,0.1f),1),this.getX(),this.getY() + 0.25,this.getZ(),1,0,0,0,1);
+                ((ServerLevel)this.level()).sendParticles(new DustParticleOptions(0xFF1A1A,1),this.getX(),this.getY() + 0.25,this.getZ(),1,0,0,0,1);
             }
 
             if(i < 200){
@@ -259,7 +263,7 @@ public class CompositionC4Entity extends BlastBombEntity {
         this.fuse = pLife;
         this.map.getMapTeams().getSpecPlayers().forEach((pUUID)->{
             Optional<ServerPlayer> receiver = FPSMCore.getInstance().getPlayerByUUID(pUUID);
-            receiver.ifPresent(player -> BlockOffensive.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new BombFuseS2CPacket(pLife,BOConfig.common.fuseTime.get())));
+            receiver.ifPresent(player -> BlockOffensive.sendToPlayer(player, new BombFuseS2CPacket(pLife,BOConfig.common.fuseTime.get())));
         });
     }
 
@@ -272,7 +276,7 @@ public class CompositionC4Entity extends BlastBombEntity {
                     map.getMapTeams().getTeamByPlayer(receiver).ifPresent(team->{
                         boolean flag = this.map.checkCanPlacingBombs(team.getFixedName());
                         if(!flag){
-                            BlockOffensive.INSTANCE.send(PacketDistributor.PLAYER.with(() -> receiver), new BombDemolitionProgressS2CPacket(progress));
+                            BlockOffensive.sendToPlayer(receiver, new BombDemolitionProgressS2CPacket(progress));
                         }
                     });
                 });
@@ -281,7 +285,7 @@ public class CompositionC4Entity extends BlastBombEntity {
             map.getMapTeams().getSpecPlayers().forEach((pUUID)-> {
                 ServerPlayer receiver = (ServerPlayer) this.level().getPlayerByUUID(pUUID);
                 if (receiver != null) {
-                    BlockOffensive.INSTANCE.send(PacketDistributor.PLAYER.with(() -> receiver), new BombDemolitionProgressS2CPacket(progress));
+                    BlockOffensive.sendToPlayer(receiver, new BombDemolitionProgressS2CPacket(progress));
                 }
             });
         }
@@ -325,7 +329,7 @@ public class CompositionC4Entity extends BlastBombEntity {
                 this.playDefusingSound();
                 this.demolisher = player;
                 map.getMapTeams().getTeamByPlayer(player).ifPresent(team->{
-                    team.sendMessage(BOUtil.buildTeamChatMessage(player,team, Component.translatable("blockoffensive.demolish.message.c4"),Component.empty(), TextColor.parseColor(team.name.equals("ct") ? "#96C8FA" : "#EAC055")));
+                    team.sendMessage(BOUtil.buildTeamChatMessage(player,team, Component.translatable("blockoffensive.demolish.message.c4"),Component.empty(), BOUtil.parseTextColor(team.name.equals("ct") ? "#96C8FA" : "#EAC055")));
                 });
             }
         }

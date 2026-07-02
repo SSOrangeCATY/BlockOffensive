@@ -2,7 +2,7 @@ package com.phasetranscrystal.blockoffensive.net.bomb;
 
 import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.function.Supplier;
 
@@ -18,7 +18,7 @@ public record BombDemolitionProgressS2CPacket(float progress) {
     }
 
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             CSClientData.dismantleBombProgress = progress;
         });

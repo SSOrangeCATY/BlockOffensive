@@ -1,19 +1,19 @@
 package com.phasetranscrystal.blockoffensive;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class BOConfig {
     public static class Client{
-        public final ForgeConfigSpec.BooleanValue killMessageHudEnabled;
-        public final ForgeConfigSpec.IntValue killMessageHudPosition;
-        public final ForgeConfigSpec.IntValue messageShowTime;
-        public final ForgeConfigSpec.IntValue maxShowCount;
+        public final ModConfigSpec.BooleanValue killMessageHudEnabled;
+        public final ModConfigSpec.IntValue killMessageHudPosition;
+        public final ModConfigSpec.IntValue messageShowTime;
+        public final ModConfigSpec.IntValue maxShowCount;
 
-        public final ForgeConfigSpec.BooleanValue killIconHudEnabled;
+        public final ModConfigSpec.BooleanValue killIconHudEnabled;
 
 
-        private Client(ForgeConfigSpec.Builder builder) {
+        private Client(ModConfigSpec.Builder builder) {
             builder.push("kill message");
             {
                 killMessageHudEnabled = builder.comment("Kill message enabled").define("hudEnabled",true);
@@ -34,25 +34,25 @@ public class BOConfig {
     }
 
     public static class Common {
-        public final ForgeConfigSpec.DoubleValue teammateMuffledStepVolume;
-        public final ForgeConfigSpec.DoubleValue teammateStepVolume;
-        public final ForgeConfigSpec.DoubleValue enemyMuffledStepVolume;
-        public final ForgeConfigSpec.DoubleValue enemyStepVolume;
+        public final ModConfigSpec.DoubleValue teammateMuffledStepVolume;
+        public final ModConfigSpec.DoubleValue teammateStepVolume;
+        public final ModConfigSpec.DoubleValue enemyMuffledStepVolume;
+        public final ModConfigSpec.DoubleValue enemyStepVolume;
 
-        public final ForgeConfigSpec.IntValue fuseTime;
+        public final ModConfigSpec.IntValue fuseTime;
         // 新增的游戏规则配置项
-        public final ForgeConfigSpec.BooleanValue keepInventory;
-        public final ForgeConfigSpec.BooleanValue immediateRespawn;
-        public final ForgeConfigSpec.BooleanValue daylightCycle;
-        public final ForgeConfigSpec.BooleanValue weatherCycle;
-        public final ForgeConfigSpec.BooleanValue mobSpawning;
-        public final ForgeConfigSpec.BooleanValue naturalRegeneration;
-        public final ForgeConfigSpec.BooleanValue hardDifficulty;
+        public final ModConfigSpec.BooleanValue keepInventory;
+        public final ModConfigSpec.BooleanValue immediateRespawn;
+        public final ModConfigSpec.BooleanValue daylightCycle;
+        public final ModConfigSpec.BooleanValue weatherCycle;
+        public final ModConfigSpec.BooleanValue mobSpawning;
+        public final ModConfigSpec.BooleanValue naturalRegeneration;
+        public final ModConfigSpec.BooleanValue hardDifficulty;
 
-        public final ForgeConfigSpec.BooleanValue webServerEnabled;
-        public final ForgeConfigSpec.IntValue webServerPort;
+        public final ModConfigSpec.BooleanValue webServerEnabled;
+        public final ModConfigSpec.IntValue webServerPort;
 
-        private Common(ForgeConfigSpec.Builder builder) {
+        private Common(ModConfigSpec.Builder builder) {
             builder.push("step sound");
             {
                 teammateMuffledStepVolume = builder.comment("Teammate Muffled Step Volume").defineInRange("teammateMuffledStepVolume", 0.05D, 0, 10);
@@ -104,15 +104,15 @@ public class BOConfig {
     }
 
     public static final Client client;
-    public static final ForgeConfigSpec clientSpec;
+    public static final ModConfigSpec clientSpec;
     public static final Common common;
-    public static final ForgeConfigSpec commonSpec;
+    public static final ModConfigSpec commonSpec;
 
     static {
-        final Pair<Client, ForgeConfigSpec> clientSpecPair = new ForgeConfigSpec.Builder().configure(Client::new);
+        final Pair<Client, ModConfigSpec> clientSpecPair = new ModConfigSpec.Builder().configure(Client::new);
         client = clientSpecPair.getLeft();
         clientSpec = clientSpecPair.getRight();
-        final Pair<Common,ForgeConfigSpec> serverSpecPair = new ForgeConfigSpec.Builder().configure(Common::new);
+        final Pair<Common,ModConfigSpec> serverSpecPair = new ModConfigSpec.Builder().configure(Common::new);
         common = serverSpecPair.getLeft();
         commonSpec = serverSpecPair.getRight();
     }

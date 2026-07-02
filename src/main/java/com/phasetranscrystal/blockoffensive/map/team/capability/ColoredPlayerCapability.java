@@ -8,7 +8,7 @@ import com.phasetranscrystal.fpsmatch.common.event.FPSMTeamEvent;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.neoforged.bus.api.SubscribeEvent;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -66,13 +66,13 @@ public class ColoredPlayerCapability extends TeamCapability implements FPSMCapab
     @Override
     public void readFromBuf(FriendlyByteBuf buf) {
         colored.clear();
-        Map<UUID, TeamPlayerColor> map = buf.readMap(FriendlyByteBuf::readUUID,(friendlyByteBuf)-> friendlyByteBuf.readEnum(TeamPlayerColor.class));
+        Map<UUID, TeamPlayerColor> map = buf.readMap(friendlyByteBuf -> friendlyByteBuf.readUUID(), friendlyByteBuf -> friendlyByteBuf.readEnum(TeamPlayerColor.class));
         colored.putAll(map);
     }
 
     @Override
     public void writeToBuf(FriendlyByteBuf buf) {
-        buf.writeMap(colored,FriendlyByteBuf::writeUUID,FriendlyByteBuf::writeEnum);
+        buf.writeMap(colored, (friendlyByteBuf, uuid) -> friendlyByteBuf.writeUUID(uuid), (friendlyByteBuf, color) -> friendlyByteBuf.writeEnum(color));
         dirty = false;
     }
 

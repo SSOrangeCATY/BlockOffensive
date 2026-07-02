@@ -1,20 +1,21 @@
 package com.phasetranscrystal.blockoffensive.client.screen.hud;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.phasetranscrystal.blockoffensive.data.MvpReason;
 import com.phasetranscrystal.blockoffensive.event.CSHUDRenderEvent;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
 import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundSource;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.common.NeoForge;
+import org.joml.Matrix3x2fStack;
 
 import java.util.UUID;
 
@@ -59,7 +60,7 @@ public class CSMvpHud {
     private Component mvpReason = Component.empty();
 
     public void triggerAnimation(MvpReason reason) {
-        MinecraftForge.EVENT_BUS.post(new CSHUDRenderEvent.RenderMvpHud.TriggeredAnimation(reason));
+        NeoForge.EVENT_BUS.post(new CSHUDRenderEvent.RenderMvpHud.TriggeredAnimation(reason));
         this.player = reason.uuid;
         this.currentTeamName = reason.getTeamName().copy()
                 .append(Component.translatable("cs.game.winner.mvpNameSub"))
@@ -96,7 +97,7 @@ public class CSMvpHud {
     /**
      * 渲染MVP HUD（适配MC原生GUI缩放）
      */
-    public void render(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
+    public void render(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight) {
         if (isClosing) {
             renderCloseAnimation(guiGraphics, screenWidth, screenHeight);
             return;
@@ -104,10 +105,10 @@ public class CSMvpHud {
 
         if (!animationPlaying) return;
 
-        MinecraftForge.EVENT_BUS.post(new CSHUDRenderEvent.RenderMvpHud.Pre(guiGraphics,screenWidth,screenHeight,this));
+        NeoForge.EVENT_BUS.post(new CSHUDRenderEvent.RenderMvpHud.Pre(guiGraphics,screenWidth,screenHeight,this));
 
         long currentTime = System.currentTimeMillis();
-        PoseStack pose = guiGraphics.pose();
+        Matrix3x2fStack pose = guiGraphics.pose();
         float scaleFactor = ((float) screenWidth / BASE_WIDTH);
 
         // 回合胜利横幅动画
@@ -129,13 +130,13 @@ public class CSMvpHud {
             renderMVPInfoPanel(guiGraphics, pose, mvpProgress, scaleFactor, screenWidth, screenHeight, currentTime);
         }
 
-        MinecraftForge.EVENT_BUS.post(new CSHUDRenderEvent.RenderMvpHud.Post(guiGraphics,screenWidth,screenHeight,this));
+        NeoForge.EVENT_BUS.post(new CSHUDRenderEvent.RenderMvpHud.Post(guiGraphics,screenWidth,screenHeight,this));
     }
 
     /**
      * 渲染回合胜利横幅
      */
-    private void renderRoundVictoryBanner(GuiGraphics guiGraphics, PoseStack pose, float bannerProgress,
+    private void renderRoundVictoryBanner(GuiGraphicsExtractor guiGraphics, Matrix3x2fStack pose, float bannerProgress,
                                           float scaleFactor, int screenWidth, int screenHeight, long currentTime) {
         int scaledWidth = (int) (ROUND_BANNER_WIDTH * scaleFactor);
         int scaledHeight = (int) (ROUND_BANNER_HEIGHT * scaleFactor);
@@ -188,22 +189,22 @@ public class CSMvpHud {
             }
 
             // 渲染左侧箭头
-            pose.pushPose();
-            pose.scale(combinedArrowScale, combinedArrowScale, 1f);
-            guiGraphics.drawString(font, leftArrow,
+            pose.pushMatrix();
+            pose.scale(combinedArrowScale, combinedArrowScale);
+            guiGraphics.text(font, leftArrow,
                     (int) ((leftX / scaleFactor) / ARROW_SCALE),
                     (int) ((textY / scaleFactor) / ARROW_SCALE) - verticalOffset / 2,
                     textColor, false);
-            pose.popPose();
+            pose.popMatrix();
 
             // 渲染右侧箭头
-            pose.pushPose();
-            pose.scale(combinedArrowScale, combinedArrowScale, 1f);
-            guiGraphics.drawString(font, rightArrow,
+            pose.pushMatrix();
+            pose.scale(combinedArrowScale, combinedArrowScale);
+            guiGraphics.text(font, rightArrow,
                     (int) ((rightX / scaleFactor) / ARROW_SCALE),
                     (int) ((textY / scaleFactor) / ARROW_SCALE) - verticalOffset / 2,
                     textColor, false);
-            pose.popPose();
+            pose.popMatrix();
 
             // 渲染中间队伍名称
             int middleWidth = (int) (font.width(currentTeamName) * combinedTextScale);
@@ -216,7 +217,7 @@ public class CSMvpHud {
     /**
      * 渲染MVP信息面板
      */
-    private void renderMVPInfoPanel(GuiGraphics guiGraphics, PoseStack pose, float progress,
+    private void renderMVPInfoPanel(GuiGraphicsExtractor guiGraphics, Matrix3x2fStack pose, float progress,
                                     float scaleFactor, int screenWidth, int screenHeight, long currentTime) {
         int scaledPanelWidth = (int) (MVP_PANEL_WIDTH * scaleFactor);
         int scaledPanelHeight = (int) (MVP_PANEL_HEIGHT * scaleFactor);
@@ -290,28 +291,28 @@ public class CSMvpHud {
     /**
      * 渲染缩放后的文本（保持粗体样式）
      */
-    private void renderScaledText(GuiGraphics guiGraphics, PoseStack pose, Component text,
+    private void renderScaledText(GuiGraphicsExtractor guiGraphics, Matrix3x2fStack pose, Component text,
                                   int x, int y, int color, float scale) {
-        pose.pushPose();
-        pose.translate(x, y, 0);
-        pose.scale(scale, scale, 1f);
-        guiGraphics.drawString(font, text, 0, 0, color, false);
-        pose.popPose();
+        pose.pushMatrix();
+        pose.translate(x, y);
+        pose.scale(scale, scale);
+        guiGraphics.text(font, text, 0, 0, color, false);
+        pose.popMatrix();
     }
 
     /**
      * 渲染玩家头像（适配缩放）
      */
-    private void renderAvatar(GuiGraphics guiGraphics, int x, int y, float scaleFactor) {
+    private void renderAvatar(GuiGraphicsExtractor guiGraphics, int x, int y, float scaleFactor) {
         int scaledSize = (int) (AVATAR_SIZE * scaleFactor);
-        ResourceLocation defaultAvatar = ResourceLocation.tryBuild("fpsmatch", "textures/ui/avatar.png");
+        Identifier defaultAvatar = Identifier.tryBuild("fpsmatch", "textures/ui/avatar.png");
         PlayerInfo info = getPlayerInfoByUUID(this.player);
 
         if (info != null) {
-            PlayerFaceRenderer.draw(guiGraphics, info.getSkinLocation(), x, y, scaledSize);
+            PlayerFaceRenderer.draw(guiGraphics, info.getSkin().body().texturePath(), x, y, scaledSize);
         } else {
             if (defaultAvatar != null) {
-                guiGraphics.blit(defaultAvatar, x, y, scaledSize, scaledSize, 0, 0, 64, 64, 64, 64);
+                guiGraphics.blit(RenderPipelines.GUI_TEXTURED, defaultAvatar, x, y, 0.0F, 0.0F, scaledSize, scaledSize, 64, 64);
             }
         }
     }
@@ -339,7 +340,7 @@ public class CSMvpHud {
     /**
      * 渲染关闭动画（适配MC缩放）
      */
-    private void renderCloseAnimation(GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
+    private void renderCloseAnimation(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight) {
         long currentTime = System.currentTimeMillis();
         float progress = Math.min((currentTime - closeAnimationStartTime) / (float) CLOSING_ANIMATION_DURATION, 1f);
 
@@ -366,7 +367,7 @@ public class CSMvpHud {
     /**
      * 渲染关闭中的胜利横幅
      */
-    private void renderClosingBanner(GuiGraphics guiGraphics, int screenWidth, int screenHeight,
+    private void renderClosingBanner(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight,
                                      float closingRatio, int color, float scaleFactor) {
         int originalWidth = (int) (ROUND_BANNER_WIDTH * scaleFactor);
         int currentWidth = (int) (originalWidth * (1 - closingRatio));
@@ -386,7 +387,7 @@ public class CSMvpHud {
     /**
      * 渲染关闭中的MVP面板
      */
-    private void renderClosingPanel(GuiGraphics guiGraphics, int screenWidth, int screenHeight,
+    private void renderClosingPanel(GuiGraphicsExtractor guiGraphics, int screenWidth, int screenHeight,
                                     float closingRatio, int color, float scaleFactor) {
         int originalWidth = (int) (MVP_PANEL_WIDTH * scaleFactor);
         int currentWidth = (int) (originalWidth * (1 - closingRatio));
@@ -485,7 +486,7 @@ public class CSMvpHud {
      */
     public PlayerInfo getPlayerInfoByUUID(UUID uuid) {
         return minecraft.player.connection.getListedOnlinePlayers().stream()
-                .filter(playerInfo -> playerInfo.getProfile().getId().equals(uuid))
+                .filter(playerInfo -> playerInfo.getProfile().id().equals(uuid))
                 .findFirst()
                 .orElse(null);
     }

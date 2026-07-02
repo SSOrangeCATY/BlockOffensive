@@ -6,15 +6,15 @@ import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.map.team.capability.ColoredPlayerCapability;
 import com.phasetranscrystal.blockoffensive.net.DeathMessageS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
+import com.phasetranscrystal.blockoffensive.compat.BOImpl;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
 import com.phasetranscrystal.fpsmatch.common.client.data.FPSMClientGlobalData;
 import com.phasetranscrystal.fpsmatch.common.drop.ThrowableRegistry;
 import com.phasetranscrystal.fpsmatch.common.drop.ThrowableSubType;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMSoundPlayC2SPacket;
-import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
-import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
-import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
+import com.phasetranscrystal.blockoffensive.compat.CounterStrikeGrenadesCompat;
+import com.phasetranscrystal.blockoffensive.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
@@ -27,14 +27,16 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
@@ -50,6 +52,22 @@ public class BOUtil {
     public static int T_COLOR = color(253,217,141);
 
     private static final Map<Item, ThrowableType> throwables = new ConcurrentHashMap<>();
+
+    public static TextColor parseTextColor(String color) {
+        return TextColor.parseColor(color).result().orElse(TextColor.WHITE);
+    }
+
+    public static Identifier soundId(SoundEvent sound) {
+        return BuiltInRegistries.SOUND_EVENT.getKey(sound);
+    }
+
+    public static void sendClientMessage(Player player, Component message, boolean actionBar) {
+        if (actionBar) {
+            player.sendOverlayMessage(message);
+        } else {
+            player.sendSystemMessage(message);
+        }
+    }
 
     public static void registerThrowable(ThrowableType type, Item item) {
         throwables.put(item, type);
@@ -123,7 +141,7 @@ public class BOUtil {
         team.getCapabilityMap().get(ColoredPlayerCapability.class).ifPresent(cap -> {
             TeamPlayerColor c = cap.getColor(player.getUUID());
             if (c != null) {
-                teamColor.withStyle(Style.EMPTY.withColor(TextColor.parseColor(c.getHex())));
+                teamColor.withStyle(Style.EMPTY.withColor(parseTextColor(c.getHex())));
             }
         });
 
@@ -143,7 +161,7 @@ public class BOUtil {
         if (player == null) return message;
 
         return FPSMClient.getGlobalData().getCurrentClientTeam().map(team -> {
-            TextColor textColor = TextColor.parseColor(team.name.equals("ct") ? "#96C8FA" : "#EAC055");
+            TextColor textColor = parseTextColor(team.name.equals("ct") ? "#96C8FA" : "#EAC055");
 
             MutableComponent head = Component.literal("[" + team.name.toUpperCase(Locale.US) + "]")
                     .withStyle(Style.EMPTY.withColor(textColor));
@@ -153,7 +171,7 @@ public class BOUtil {
             team.getCapabilityMap().get(ColoredPlayerCapability.class).ifPresent(cap -> {
                 TeamPlayerColor c = cap.getColor(player.getUUID());
                 if (c != null) {
-                    teamColor.withStyle(Style.EMPTY.withColor(TextColor.parseColor(c.getHex())));
+                    teamColor.withStyle(Style.EMPTY.withColor(parseTextColor(c.getHex())));
                 }
             });
 
@@ -177,14 +195,14 @@ public class BOUtil {
      * @return 致死物品栈（非空，默认返回主手物品）
      */
     public static ItemStack getDeathItemStack(ServerPlayer attacker, DamageSource source) {
-        if (FPSMImpl.findLrtacticalMod()) {
+        if (BOImpl.isLrtacticalLoaded()) {
             ItemStack projectileItem = LrtacticalCompat.getProjectileItem(source);
             if (!projectileItem.isEmpty()) {
                 return projectileItem;
             }
         }
 
-        if (FPSMImpl.findCounterStrikeGrenadesMod()) {
+        if (BOImpl.isCounterStrikeGrenadesLoaded()) {
             ItemStack grenade = CounterStrikeGrenadesCompat.getItemFromDamageSource(source);
             if (!grenade.isEmpty()) {
                 return grenade;
@@ -271,7 +289,7 @@ public class BOUtil {
 
         SoundEvent sound = BOUtil.getVoiceByThrowType(ThrowableRegistry.getThrowableSubType(itemStack.getItem()));
         if(sound != null){
-            FPSMatch.sendToServer(new FPSMSoundPlayC2SPacket(sound.getLocation(),true));
+            FPSMatch.sendToServer(new FPSMSoundPlayC2SPacket(soundId(sound),true));
         }
     }
 }

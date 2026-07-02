@@ -1,9 +1,6 @@
 package com.phasetranscrystal.blockoffensive.client.spec;
 
 import com.mojang.authlib.GameProfile;
-import com.mojang.blaze3d.platform.Window;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.net.spec.RequestAttachTeammateC2SPacket;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMClient;
@@ -16,31 +13,33 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
-import net.minecraft.client.GraphicsStatus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.resources.language.I18n;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.Team;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderGuiEvent;
-import net.minecraftforge.client.event.ViewportEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderGuiEvent;
+import net.neoforged.neoforge.client.event.ViewportEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import org.joml.Matrix3x2fStack;
 
-@EventBusSubscriber(value = {Dist.CLIENT}, bus = Bus.FORGE)
+@EventBusSubscriber(value = Dist.CLIENT)
 public final class KillCamManager {
     private static final int PULL_T = 40;
     private static final int FADE_T = 20;
@@ -70,8 +69,8 @@ public final class KillCamManager {
     private static final float KILLER_LIGHTEN = 0.28F;
     private static final float VICTIM_DARKEN = 0.18F;
 
-    private static final ResourceLocation KILLCAM_FILTER = ResourceLocation.tryBuild("blockoffensive", "shaders/post/killcam_gray.json");
-    private static final ResourceLocation FALLBACK_DESAT = ResourceLocation.tryBuild("minecraft", "shaders/post/desaturate.json");
+    private static final Identifier KILLCAM_FILTER = Identifier.tryBuild("blockoffensive", "shaders/post/killcam_gray.json");
+    private static final Identifier FALLBACK_DESAT = Identifier.tryBuild("minecraft", "shaders/post/desaturate.json");
 
     private static final int GRAY_BACKEND_SHADER = 0;
     private static final int GRAY_BACKEND_LIGHT = 1;
@@ -113,7 +112,7 @@ public final class KillCamManager {
     private static String killerName = "???";
     private static String gunName = "未知武器";
     private static ItemStack gunStack = ItemStack.EMPTY;
-    private static ResourceLocation killerSkin;
+    private static Identifier killerSkin;
 
     private static Side killerSide = Side.UNKNOWN;
     private static Side victimSide = Side.UNKNOWN;
@@ -210,7 +209,7 @@ public final class KillCamManager {
         gunName = FPSMFormatUtil.i18n(gunStack);
         killerSkin = fetchSkin(killerId, killerName);
 
-        killedByText = I18n.exists("blockoffensive.killed_by") ? I18n.get("blockoffensive.killed_by") : "击杀了你";
+        killedByText = I18n.get("blockoffensive.killed_by");
         hudText = "§c" + killerName + " §7使用 §e" + gunName + " §7" + killedByText;
 
         Font font = Minecraft.getInstance().font;
@@ -253,7 +252,7 @@ public final class KillCamManager {
         if (ghostCam != null) {
             float yaw0 = (float) Math.toDegrees(Math.atan2(-(kx - vx), kz - vz));
             float pitch0 = (float) Math.toDegrees(Math.atan2(-(ky - vy), Math.sqrt((kx - vx) * (kx - vx) + (kz - vz) * (kz - vz))));
-            ghostCam.moveTo(vx, vy, vz, yaw0, pitch0);
+            ghostCam.snapTo(vx, vy, vz, yaw0, pitch0);
             ghostCam.setOldPosAndRot();
             lastCamX = vx;
             lastCamY = vy;
@@ -263,11 +262,7 @@ public final class KillCamManager {
     }
 
     @SubscribeEvent
-    public static void tick(TickEvent.ClientTickEvent e) {
-        if (e.phase != TickEvent.Phase.END) {
-            return;
-        }
-
+    public static void tick(ClientTickEvent.Post e) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer pl = mc.player;
         if (pl == null) {
@@ -333,7 +328,7 @@ public final class KillCamManager {
             case FADE -> {
                 if (!holdBlack && ++tickIn >= FADE_T) {
                     holdBlack = true;
-                    BlockOffensive.INSTANCE.sendToServer(new RequestAttachTeammateC2SPacket());
+                    BlockOffensive.sendToServer(new RequestAttachTeammateC2SPacket());
                     tryLocalAttachToNearestTeammate();
                 }
             }
@@ -406,10 +401,9 @@ public final class KillCamManager {
             probeFrame(dt);
         }
 
-        Window win = e.getWindow();
-        int sw = win.getGuiScaledWidth();
-        int sh = win.getGuiScaledHeight();
-        GuiGraphics gg = e.getGuiGraphics();
+        GuiGraphicsExtractor gg = e.getGuiGraphics();
+        int sw = gg.guiWidth();
+        int sh = gg.guiHeight();
 
         if (grayRequested || uiVeilStrength > 0.01F) {
             renderUiVeil(gg, sw, sh, dt);
@@ -423,10 +417,9 @@ public final class KillCamManager {
             return;
         }
 
-        Window win = e.getWindow();
-        int sw = win.getGuiScaledWidth();
-        int sh = win.getGuiScaledHeight();
-        GuiGraphics gg = e.getGuiGraphics();
+        GuiGraphicsExtractor gg = e.getGuiGraphics();
+        int sw = gg.guiWidth();
+        int sh = gg.guiHeight();
         Minecraft mc = Minecraft.getInstance();
 
         if (hudOn) {
@@ -436,9 +429,7 @@ public final class KillCamManager {
         if (blackAlpha > 0.0F) {
             int a = Mth.clamp(Math.round(255.0F * blackAlpha), 0, 255);
             int argb = a << 24;
-            RenderSystem.enableBlend();
             gg.fill(0, 0, sw, sh, argb);
-            RenderSystem.disableBlend();
         }
     }
 
@@ -463,7 +454,7 @@ public final class KillCamManager {
         }
     }
 
-    private static void renderUiVeil(GuiGraphics gg, int sw, int sh, float dt) {
+    private static void renderUiVeil(GuiGraphicsExtractor gg, int sw, int sh, float dt) {
         float target = grayRequested ? 1.0F : 0.0F;
         float speed = grayRequested ? 16.0F : 20.0F;
         uiVeilStrength = approachExp(uiVeilStrength, target, dt, speed);
@@ -489,7 +480,6 @@ public final class KillCamManager {
         int grayArgb = (grayA << 24) | 0x808080;
         int darkArgb = darkA << 24;
 
-        RenderSystem.enableBlend();
         gg.fill(0, 0, sw, sh, grayArgb);
         gg.fill(0, 0, sw, sh, darkArgb);
 
@@ -510,10 +500,9 @@ public final class KillCamManager {
             gg.fill(sw - sideW, 0, sw, sh, sideA << 24);
         }
 
-        RenderSystem.disableBlend();
     }
 
-    private static void renderKillHud(Minecraft mc, GuiGraphics gg, int sw, int sh, float blackAlpha) {
+    private static void renderKillHud(Minecraft mc, GuiGraphicsExtractor gg, int sw, int sh, float blackAlpha) {
         Font font = mc.font;
         if (font == null) {
             return;
@@ -571,12 +560,10 @@ public final class KillCamManager {
         int x1 = x0 + totalW;
         int y1 = y0 + BG_H;
 
-        RenderSystem.enableBlend();
-
-        PoseStack pose = gg.pose();
-        pose.pushPose();
-        pose.translate(tx, ty, 0.0F);
-        pose.scale(scale, scale, 1.0F);
+        Matrix3x2fStack pose = gg.pose();
+        pose.pushMatrix();
+        pose.translate(tx, ty);
+        pose.scale(scale, scale);
 
         drawGradientPanelRect(gg, x0, y0, x1, y1, mulAlpha(startARGB, alphaMul), mulAlpha(endARGB, alphaMul), GRADIENT_GAMMA);
 
@@ -584,8 +571,8 @@ public final class KillCamManager {
         int headY = y0 + 5;
 
         if (killerSkin != null) {
-            gg.blit(killerSkin, headX, headY, 32, 32, 8.0F, 8.0F, 8, 8, 64, 64);
-            gg.blit(killerSkin, headX, headY, 32, 32, 40.0F, 8.0F, 8, 8, 64, 64);
+            gg.blit(RenderPipelines.GUI_TEXTURED, killerSkin, headX, headY, 8.0F, 8.0F, 32, 32, 8, 8, 64, 64);
+            gg.blit(RenderPipelines.GUI_TEXTURED, killerSkin, headX, headY, 40.0F, 8.0F, 32, 32, 8, 8, 64, 64);
         }
 
         int textLeft = headX + HEAD + PAD;
@@ -597,13 +584,13 @@ public final class KillCamManager {
         int textX = textLeft + (allowedW - tDrawW) / 2;
         int textY = y0 + (BG_H - 9) / 2;
 
-        pose.pushPose();
-        pose.translate((float) textX, (float) textY, 0.0F);
-        pose.scale(textScale, textScale, 1.0F);
-        gg.drawString(font, text, 0, 0, mulAlpha(0xFFFFFFFF, alphaMul), false);
-        pose.popPose();
+        pose.pushMatrix();
+        pose.translate((float) textX, (float) textY);
+        pose.scale(textScale, textScale);
+        gg.text(font, text, 0, 0, mulAlpha(0xFFFFFFFF, alphaMul), false);
+        pose.popMatrix();
 
-        pose.popPose();
+        pose.popMatrix();
 
         if (gunStack != null && !gunStack.isEmpty()) {
             int localIconX = x1 - PAD - ICON;
@@ -619,7 +606,6 @@ public final class KillCamManager {
             }
         }
 
-        RenderSystem.disableBlend();
     }
 
     private static float frameDtSeconds() {
@@ -660,13 +646,13 @@ public final class KillCamManager {
 
         shaderPrewarmAttempted = true;
         try {
-            mc.gameRenderer.loadEffect(KILLCAM_FILTER);
-            mc.gameRenderer.shutdownEffect();
+            mc.gameRenderer.setPostEffect(KILLCAM_FILTER);
+            mc.gameRenderer.clearPostEffect();
             shaderPrewarmed = true;
         } catch (Throwable t) {
             try {
-                mc.gameRenderer.loadEffect(FALLBACK_DESAT);
-                mc.gameRenderer.shutdownEffect();
+                mc.gameRenderer.setPostEffect(FALLBACK_DESAT);
+                mc.gameRenderer.clearPostEffect();
                 shaderPrewarmed = true;
             } catch (Throwable t2) {
                 shaderBroken = true;
@@ -692,13 +678,13 @@ public final class KillCamManager {
         try {
             Minecraft mc = Minecraft.getInstance();
             if (mc.gameRenderer != null) {
-                mc.gameRenderer.loadEffect(KILLCAM_FILTER);
+                mc.gameRenderer.setPostEffect(KILLCAM_FILTER);
             }
         } catch (Throwable t) {
             try {
                 Minecraft mc = Minecraft.getInstance();
                 if (mc.gameRenderer != null) {
-                    mc.gameRenderer.loadEffect(FALLBACK_DESAT);
+                    mc.gameRenderer.setPostEffect(FALLBACK_DESAT);
                 }
             } catch (Throwable t2) {
                 shaderBroken = true;
@@ -717,7 +703,7 @@ public final class KillCamManager {
             try {
                 Minecraft mc = Minecraft.getInstance();
                 if (mc.gameRenderer != null) {
-                    mc.gameRenderer.shutdownEffect();
+                    mc.gameRenderer.clearPostEffect();
                 }
             } catch (Throwable ignored) {
             }
@@ -730,8 +716,7 @@ public final class KillCamManager {
             if (mc == null || mc.options == null) {
                 return false;
             }
-            GraphicsStatus gs = mc.options.graphicsMode().get();
-            return gs.getId() != 0;
+            return mc.options.cloudStatus().get() != net.minecraft.client.CloudStatus.OFF;
         } catch (Throwable t) {
             return false;
         }
@@ -790,7 +775,7 @@ public final class KillCamManager {
         Minecraft mc = Minecraft.getInstance();
         if (mc != null && mc.gameRenderer != null) {
             try {
-                mc.gameRenderer.shutdownEffect();
+                mc.gameRenderer.clearPostEffect();
             } catch (Throwable ignored) {
             }
         }
@@ -862,11 +847,11 @@ public final class KillCamManager {
         };
     }
 
-    private static ResourceLocation fetchSkin(UUID id, String name) {
-        return Minecraft.getInstance().getSkinManager().getInsecureSkinLocation(new GameProfile(id, name));
+    private static Identifier fetchSkin(UUID id, String name) {
+        return Minecraft.getInstance().getSkinManager().createLookup(new GameProfile(id, name), false).get().body().texturePath();
     }
 
-    private static void drawGradientPanelRect(GuiGraphics gg, int x0, int y0, int x1, int y1, int startARGB, int endARGB, float gamma) {
+    private static void drawGradientPanelRect(GuiGraphicsExtractor gg, int x0, int y0, int x1, int y1, int startARGB, int endARGB, float gamma) {
         int w = Math.max(1, x1 - x0);
         if (w <= 2) {
             gg.fill(x0, y0, x1, y1, startARGB);
@@ -895,25 +880,25 @@ public final class KillCamManager {
         }
     }
 
-    private static void renderItemAt(GuiGraphics g, ItemStack s, int x, int y, int w, int h, Font font) {
+    private static void renderItemAt(GuiGraphicsExtractor g, ItemStack s, int x, int y, int w, int h, Font font) {
         if (s == null || s.isEmpty()) {
             return;
         }
 
-        PoseStack pose = g.pose();
-        pose.pushPose();
+        Matrix3x2fStack pose = g.pose();
+        pose.pushMatrix();
 
         float sc = Math.max(0.001F, (float) Math.min(w, h) / 16.0F);
         int dx = x + Math.round(((float) w - 16.0F * sc) / 2.0F);
         int dy = y + Math.round(((float) h - 16.0F * sc) / 2.0F);
 
-        pose.translate((float) dx, (float) dy, 0.0F);
-        pose.scale(sc, sc, 1.0F);
+        pose.translate((float) dx, (float) dy);
+        pose.scale(sc, sc);
 
-        g.renderItem(s, 0, 0);
-        g.renderItemDecorations(font, s, 0, 0);
+        g.item(s, 0, 0);
+        g.itemDecorations(font, s, 0, 0);
 
-        pose.popPose();
+        pose.popMatrix();
     }
 
     private static int lighten(int rgb) {
@@ -988,9 +973,9 @@ public final class KillCamManager {
         }
 
         if (ghostCam == null || ghostCam.level() != mc.level || ghostCam.isRemoved()) {
-            Entity g = EntityType.MARKER.create(mc.level);
+            Entity g = EntityTypes.MARKER.create(mc.level, EntitySpawnReason.LOAD);
             if (g == null) {
-                g = EntityType.ARMOR_STAND.create(mc.level);
+                g = EntityTypes.ARMOR_STAND.create(mc.level, EntitySpawnReason.LOAD);
             }
             ghostCam = g;
         }
@@ -1017,7 +1002,7 @@ public final class KillCamManager {
             return;
         }
 
-        BlockOffensive.INSTANCE.sendToServer(new RequestAttachTeammateC2SPacket());
+        BlockOffensive.sendToServer(new RequestAttachTeammateC2SPacket());
         tryLocalAttachToNearestTeammate();
         --clientAttachTries;
         clientAttachCooldown = 5;
@@ -1176,7 +1161,7 @@ public final class KillCamManager {
     }
 
     public interface ICustomHudRenderer {
-        boolean render(GuiGraphics var1, int var2, int var3, UUID var4, String var5, String var6, String var7, ItemStack var8, Style var9);
+        boolean render(GuiGraphicsExtractor var1, int var2, int var3, UUID var4, String var5, String var6, String var7, ItemStack var8, Style var9);
     }
 
     @FunctionalInterface

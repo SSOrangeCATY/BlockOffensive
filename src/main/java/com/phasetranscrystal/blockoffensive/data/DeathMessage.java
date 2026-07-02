@@ -1,16 +1,18 @@
 package com.phasetranscrystal.blockoffensive.data;
 
 import com.phasetranscrystal.fpsmatch.common.effect.FPSMEffectRegister;
-import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
+import com.phasetranscrystal.blockoffensive.compat.BOImpl;
+import com.phasetranscrystal.blockoffensive.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
-import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.core.Holder;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 import java.util.UUID;
 
@@ -30,7 +32,7 @@ public class DeathMessage {
     private final boolean isNoScope;
     private final boolean isFlying;
 
-    private final ResourceLocation itemRL;
+    private final Identifier itemRL;
     
     private DeathMessage(Builder builder) {
         this.killer = builder.killer;
@@ -40,7 +42,7 @@ public class DeathMessage {
         this.dead = builder.dead;
         this.deadUUID = builder.deadUUID;
         this.weapon = builder.weapon;
-        this.itemRL = ForgeRegistries.ITEMS.getKey(this.weapon.getItem());
+        this.itemRL = BuiltInRegistries.ITEM.getKey(this.weapon.getItem());
         this.arg = builder.arg;
         this.isHeadShot = builder.isHeadShot;
         this.isBlinded = builder.isBlinded;
@@ -90,13 +92,23 @@ public class DeathMessage {
         public void setBlinded(Player killer){
             if(deadUUID.equals(this.killerUUID)) return;
 
-            if(killer.hasEffect(FPSMEffectRegister.FLASH_BLINDNESS.get()) || killer.hasEffect(MobEffects.BLINDNESS) || killer.hasEffect(MobEffects.DARKNESS)){
+            if(hasEffect(killer, FPSMEffectRegister.FLASH_BLINDNESS.get()) || killer.hasEffect(MobEffects.BLINDNESS) || killer.hasEffect(MobEffects.DARKNESS)){
                 this.isBlinded = true;
             }else{
-                if(FPSMImpl.findCounterStrikeGrenadesMod()){
+                if(BOImpl.isCounterStrikeGrenadesLoaded()){
                     this.isBlinded = CounterStrikeGrenadesCompat.isPlayerFlashed(killer);
                 }
             }
+        }
+
+        private static boolean hasEffect(Player player, MobEffect effect) {
+            for (var instance : player.getActiveEffects()) {
+                Holder<MobEffect> holder = instance.getEffect();
+                if (holder.value() == effect) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public Builder setAssist(Component assist, UUID assistUUID){
@@ -163,7 +175,7 @@ public class DeathMessage {
     public boolean isThroughSmoke() { return isThroughSmoke; }
     public boolean isThroughWall() { return isThroughWall; }
     public boolean isNoScope() { return isNoScope; }
-    public ResourceLocation getItemRL() { return itemRL; }
+    public Identifier getItemRL() { return itemRL; }
 
     public Component getAssist() {
         return assist;
@@ -173,7 +185,7 @@ public class DeathMessage {
         return assistUUID;
     }
 
-    public ResourceLocation getWeaponIcon() {
+    public Identifier getWeaponIcon() {
         if (GunCompatManager.isGun(weapon)) {
             return GunCompatManager.findProvider(weapon).getGunHUDTexture(weapon);
         }

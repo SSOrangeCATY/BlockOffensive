@@ -18,33 +18,32 @@ import com.phasetranscrystal.fpsmatch.common.drop.ThrowableRegistry;
 import com.phasetranscrystal.fpsmatch.common.event.FPSMThrowGrenadeEvent;
 import com.phasetranscrystal.fpsmatch.common.event.RequestSpectatorOutlinesEvent;
 import com.phasetranscrystal.fpsmatch.common.packet.FPSMSoundPlayC2SPacket;
-import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
-import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
+import com.phasetranscrystal.blockoffensive.compat.CounterStrikeGrenadesCompat;
+import com.phasetranscrystal.blockoffensive.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
-import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
 import com.phasetranscrystal.fpsmatch.core.item.IThrowEntityAble;
 import com.phasetranscrystal.fpsmatch.core.team.ClientTeam;
 import icyllis.modernui.mc.MuiScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
-import net.minecraft.client.player.Input;
+import net.minecraft.client.player.ClientInput;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.client.event.MovementInputUpdateEvent;
-import net.minecraftforge.client.event.RenderNameTagEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
+import net.neoforged.neoforge.client.event.RenderNameTagEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 
-@Mod.EventBusSubscriber(modid = BlockOffensive.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@EventBusSubscriber(modid = BlockOffensive.MODID, value = Dist.CLIENT)
 public class BOClientEvent {
     @SubscribeEvent
-    public static void onClientTickEvent(TickEvent.ClientTickEvent event) {
+    public static void onClientTickEvent(ClientTickEvent.Post event) {
         FPSMClientGlobalData data = FPSMClient.getGlobalData();
         if(CSClientData.isStart && (!data.isInMap() || !data.isInGame())){
             FPSMatch.pullGameInfo();
@@ -72,10 +71,10 @@ public class BOClientEvent {
     @SubscribeEvent
     public static void onPlayerMoveInput(MovementInputUpdateEvent event) {
         if(Minecraft.getInstance().player == null) return;
-        Input input = event.getInput();
+        ClientInput input = event.getInput();
         if(!FPSMClient.getGlobalData().isCurrentGameType("csdm")) return;
 
-        if (input.left || input.right || input.up || input.down || input.shiftKeyDown) {
+        if (input.keyPresses.left() || input.keyPresses.right() || input.keyPresses.forward() || input.keyPresses.backward() || input.keyPresses.shift()) {
             FPSMatch.sendToServer(new PlayerMoveC2SPacket());
         }
     }
@@ -87,10 +86,10 @@ public class BOClientEvent {
 
     public static void checkOption(Minecraft mc){
         if(OpenShopKey.getLastGuiScaleOption() == -1) return;
-        boolean isShop = mc.screen instanceof MuiScreen muiScreen && muiScreen.getFragment() instanceof CSGameShopScreen;
+        boolean isShop = mc.gui.screen() instanceof MuiScreen muiScreen && muiScreen.getFragment() instanceof CSGameShopScreen;
         if(!isShop && OpenShopKey.getLastGuiScaleOption() != mc.options.guiScale().get()){
             mc.options.guiScale().set(OpenShopKey.getLastGuiScaleOption());
-            mc.resizeDisplay();
+            mc.resizeGui();
             OpenShopKey.resetLastGuiScaleOption();
         }
     }
@@ -131,7 +130,7 @@ public class BOClientEvent {
     public static boolean checkLocalPlayerHand(){
         LocalPlayer player = Minecraft.getInstance().player;
         if (player != null) {
-            return itemCheck(player) || (FPSMImpl.findLrtacticalMod() && LrtacticalCompat.itemCheck(player) || (BOImpl.isCounterStrikeGrenadesLoaded() && CounterStrikeGrenadesCompat.itemCheck(player)));
+            return itemCheck(player) || (BOImpl.isLrtacticalLoaded() && LrtacticalCompat.itemCheck(player) || (BOImpl.isCounterStrikeGrenadesLoaded() && CounterStrikeGrenadesCompat.itemCheck(player)));
         }
         return false;
     }

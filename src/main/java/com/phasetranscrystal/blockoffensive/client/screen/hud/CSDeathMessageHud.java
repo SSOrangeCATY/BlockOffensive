@@ -1,6 +1,5 @@
 package com.phasetranscrystal.blockoffensive.client.screen.hud;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.compat.BOImpl;
@@ -8,15 +7,16 @@ import com.phasetranscrystal.blockoffensive.compat.CSGrenadeCompat;
 import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
-import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
+import com.phasetranscrystal.blockoffensive.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import org.joml.Matrix3x2fStack;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -28,42 +28,42 @@ public class CSDeathMessageHud{
     private final Object queueLock = new Object();
     private final LinkedList<MessageData> messageQueue = new LinkedList<>();
     public final Minecraft minecraft;
-    private final Map<String, ResourceLocation> specialKillIcons = new HashMap<>();
-    private final Map<ResourceLocation, String> itemToIcon = new HashMap<>();
+    private final Map<String, Identifier> specialKillIcons = new HashMap<>();
+    private final Map<Identifier, String> itemToIcon = new HashMap<>();
 
     public CSDeathMessageHud() {
         minecraft = Minecraft.getInstance();
         // 注册特殊击杀图标
-        registerSpecialKillIcon("headshot", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/headshot.png"));
-        registerSpecialKillIcon("throw_wall", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/throw_wall.png"));
-        registerSpecialKillIcon("throw_smoke", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/throw_smoke.png"));
-        registerSpecialKillIcon("explode", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/explode.png"));
-        registerSpecialKillIcon("suicide", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/suicide.png"));
-        registerSpecialKillIcon("fire", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/fire.png"));
-        registerSpecialKillIcon("blindness", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/blindness.png"));
-        registerSpecialKillIcon("no_zoom", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/no_zoom.png"));
-        registerSpecialKillIcon("ct_incendiary_grenade", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/ct_incendiary_grenade.png"));
-        registerSpecialKillIcon("grenade", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/grenade.png"));
-        registerSpecialKillIcon("t_incendiary_grenade", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/t_incendiary_grenade.png"));
-        registerSpecialKillIcon("flash_bomb", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/flash_bomb.png"));
-        registerSpecialKillIcon("smoke_shell", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/smoke_shell.png"));
-        registerSpecialKillIcon("fly", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/fly.png"));
-        registerSpecialKillIcon("hand", ResourceLocation.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/hand.png"));
+        registerSpecialKillIcon("headshot", Identifier.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/headshot.png"));
+        registerSpecialKillIcon("throw_wall", Identifier.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/throw_wall.png"));
+        registerSpecialKillIcon("throw_smoke", Identifier.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/throw_smoke.png"));
+        registerSpecialKillIcon("explode", Identifier.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/explode.png"));
+        registerSpecialKillIcon("suicide", Identifier.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/suicide.png"));
+        registerSpecialKillIcon("fire", Identifier.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/fire.png"));
+        registerSpecialKillIcon("blindness", Identifier.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/blindness.png"));
+        registerSpecialKillIcon("no_zoom", Identifier.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/no_zoom.png"));
+        registerSpecialKillIcon("ct_incendiary_grenade", Identifier.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/ct_incendiary_grenade.png"));
+        registerSpecialKillIcon("grenade", Identifier.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/grenade.png"));
+        registerSpecialKillIcon("t_incendiary_grenade", Identifier.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/t_incendiary_grenade.png"));
+        registerSpecialKillIcon("flash_bomb", Identifier.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/flash_bomb.png"));
+        registerSpecialKillIcon("smoke_shell", Identifier.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/smoke_shell.png"));
+        registerSpecialKillIcon("fly", Identifier.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/fly.png"));
+        registerSpecialKillIcon("hand", Identifier.tryBuild(BlockOffensive.MODID, "textures/ui/cs/message/hand.png"));
 
-        registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(Items.AIR),"hand");
-        registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(FPSMItemRegister.CT_INCENDIARY_GRENADE.get()),"ct_incendiary_grenade");
-        registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(FPSMItemRegister.T_INCENDIARY_GRENADE.get()),"t_incendiary_grenade");
-        registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(FPSMItemRegister.GRENADE.get()),"grenade");
-        registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(FPSMItemRegister.FLASH_BOMB.get()),"flash_bomb");
-        registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(FPSMItemRegister.SMOKE_SHELL.get()),"smoke_shell");
-        registerSpecialKillIcon(ForgeRegistries.ITEMS.getKey(BOItemRegister.C4.get()),"explode");
+        registerSpecialKillIcon(BuiltInRegistries.ITEM.getKey(Items.AIR),"hand");
+        registerSpecialKillIcon(BuiltInRegistries.ITEM.getKey(FPSMItemRegister.CT_INCENDIARY_GRENADE.get()),"ct_incendiary_grenade");
+        registerSpecialKillIcon(BuiltInRegistries.ITEM.getKey(FPSMItemRegister.T_INCENDIARY_GRENADE.get()),"t_incendiary_grenade");
+        registerSpecialKillIcon(BuiltInRegistries.ITEM.getKey(FPSMItemRegister.GRENADE.get()),"grenade");
+        registerSpecialKillIcon(BuiltInRegistries.ITEM.getKey(FPSMItemRegister.FLASH_BOMB.get()),"flash_bomb");
+        registerSpecialKillIcon(BuiltInRegistries.ITEM.getKey(FPSMItemRegister.SMOKE_SHELL.get()),"smoke_shell");
+        registerSpecialKillIcon(BuiltInRegistries.ITEM.getKey(BOItemRegister.C4.get()),"explode");
 
         if(BOImpl.isCounterStrikeGrenadesLoaded()){
             CSGrenadeCompat.registerKillIcon(itemToIcon);
         }
     }
 
-    public void render(GuiGraphics guiGraphics) {
+    public void render(GuiGraphicsExtractor guiGraphics) {
         if (BOConfig.client.killMessageHudEnabled.get() && !messageQueue.isEmpty()) {
             if (minecraft.player != null) {
                 renderKillTips(guiGraphics);
@@ -71,7 +71,7 @@ public class CSDeathMessageHud{
         }
     }
 
-    private void renderKillTips(GuiGraphics guiGraphics) {
+    private void renderKillTips(GuiGraphicsExtractor guiGraphics) {
         long currentTime = System.currentTimeMillis();
         int yOffset = getHudPositionYOffset();
 
@@ -121,16 +121,16 @@ public class CSDeathMessageHud{
         };
     }
 
-    public void registerSpecialKillIcon(String id, ResourceLocation texture) {
+    public void registerSpecialKillIcon(String id, Identifier texture) {
         specialKillIcons.put(id, texture);
     }
 
-    public void registerSpecialKillIcon(ResourceLocation item, String id) {
+    public void registerSpecialKillIcon(Identifier item, String id) {
         itemToIcon.put(item, id);
     }
 
-    private void renderKillMessage(GuiGraphics guiGraphics, DeathMessage message, int x, int y) {
-        PoseStack poseStack = guiGraphics.pose();
+    private void renderKillMessage(GuiGraphicsExtractor guiGraphics, DeathMessage message, int x, int y) {
+        Matrix3x2fStack poseStack = guiGraphics.pose();
         Font font = minecraft.font;
         UUID local = minecraft.player.getUUID();
         boolean isLocalPlayer = message.getKillerUUID().equals(local) || message.getAssistUUID().equals(local);
@@ -164,26 +164,26 @@ public class CSDeathMessageHud{
             component.append(message.getAssist());
         };
 
-        guiGraphics.drawString(font, component, currentX, y + 4, -1, true);
+        guiGraphics.text(font, component, currentX, y + 4, -1, true);
         currentX += font.width(component) + 2;
 
         if (message.isFlying()) currentX = renderConditionalIcon(guiGraphics, "fly", currentX, y);
 
         if(!isSuicide){
-            ResourceLocation weaponIcon = message.getWeaponIcon();
-            poseStack.pushPose();
-            poseStack.translate(currentX, y + 1, 0);
+            Identifier weaponIcon = message.getWeaponIcon();
+            poseStack.pushMatrix();
+            poseStack.translate(currentX, y + 1);
             if (weaponIcon != null) {
-                poseStack.scale(0.32f, 0.32f, 1.0f);
+                poseStack.scale(0.32f, 0.32f);
                 renderWeaponIcon(guiGraphics, weaponIcon);
                 currentX += 39;
             }else{
                 if(!this.itemToIcon.containsKey(message.getItemRL())){
-                    guiGraphics.renderItem(message.getWeapon(),0,0);
+                    guiGraphics.item(message.getWeapon(),0,0);
                     currentX += 16;
                 }
             }
-            poseStack.popPose();
+            poseStack.popMatrix();
 
             String icon = this.itemToIcon.getOrDefault(message.getItemRL(),null);
             if(icon != null){
@@ -205,19 +205,19 @@ public class CSDeathMessageHud{
 
         int deadNameWidth = font.width(message.getDead());
         currentX = Math.min(currentX, rightPadding - deadNameWidth);
-        guiGraphics.drawString(font, message.getDead(), currentX, y + 4, -1, true);
+        guiGraphics.text(font, message.getDead(), currentX, y + 4, -1, true);
     }
 
-    private int renderConditionalIcon(GuiGraphics guiGraphics, String iconKey, int currentX, int y) {
+    private int renderConditionalIcon(GuiGraphicsExtractor guiGraphics, String iconKey, int currentX, int y) {
         renderIcon(guiGraphics, specialKillIcons.get(iconKey), currentX, y + 2, 12, 12);
         return currentX + 14;
     }
 
-    private void renderIcon(GuiGraphics guiGraphics, ResourceLocation icon, int x, int y, int width, int height) {
+    private void renderIcon(GuiGraphicsExtractor guiGraphics, Identifier icon, int x, int y, int width, int height) {
         guiGraphics.blit(icon, x, y, 0, 0, width, height, width, height);
     }
 
-    private void renderWeaponIcon(GuiGraphics guiGraphics, ResourceLocation icon) {
+    private void renderWeaponIcon(GuiGraphicsExtractor guiGraphics, Identifier icon) {
         RenderUtil.renderReverseTexture(guiGraphics,icon, 0, 0, 117, 44);
     }
 
@@ -238,7 +238,7 @@ public class CSDeathMessageHud{
         width += font.width(killerComponent) + 2;
 
         if(!isSuicide){
-            ResourceLocation weaponIcon = message.getWeaponIcon();
+            Identifier weaponIcon = message.getWeaponIcon();
             if (weaponIcon != null) {
                 width += 39;
             } else {

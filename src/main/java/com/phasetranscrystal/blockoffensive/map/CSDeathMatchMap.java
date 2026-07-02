@@ -26,21 +26,21 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.scores.Team;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.fml.common.EventBusSubscriber;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Function;
 
-@Mod.EventBusSubscriber(modid = BlockOffensive.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = BlockOffensive.MODID)
 public class CSDeathMatchMap extends CSMap {
     /**
      * Codec序列化配置（用于地图数据保存/加载）
@@ -49,7 +49,7 @@ public class CSDeathMatchMap extends CSMap {
             // 基础地图数据
             Codec.STRING.fieldOf("mapName").forGetter(CSDeathMatchMap::getMapName),
             AreaData.CODEC.fieldOf("mapArea").forGetter(CSDeathMatchMap::getMapArea),
-            ResourceLocation.CODEC.fieldOf("serverLevel").forGetter(map -> map.getServerLevel().dimension().location()),
+            Identifier.CODEC.fieldOf("serverLevel").forGetter(map -> map.getServerLevel().dimension().identifier()),
             CapabilityMap.Wrapper.DATA_CODEC.fieldOf("capabilities").forGetter(csGameMap -> csGameMap.getCapabilityMap().getData().data()),
             // 队伍数据
             Codec.unboundedMap(
@@ -86,7 +86,7 @@ public class CSDeathMatchMap extends CSMap {
         super(serverLevel, mapName, areaData, MAP_CAPABILITIES, TEAM_CAPABILITIES);
     }
 
-    private CSDeathMatchMap(String mapName, AreaData areaData, ResourceLocation serverLevel, Map<String, JsonElement> capabilities, Map<String, CapabilityMap.Wrapper> teams) {
+    private CSDeathMatchMap(String mapName, AreaData areaData, Identifier serverLevel, Map<String, JsonElement> capabilities, Map<String, CapabilityMap.Wrapper> teams) {
         this(FPSMCore.getInstance().getServer().getLevel(ResourceKey.create(Registries.DIMENSION,serverLevel)), mapName, areaData);
         this.getCapabilityMap().write(capabilities);
         this.getMapTeams().writeData(teams);

@@ -1,11 +1,11 @@
 package com.phasetranscrystal.blockoffensive.item.test;
 
 import com.phasetranscrystal.blockoffensive.client.screen.CSGameShopScreen;
+import icyllis.modernui.mc.MuiModApi;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,10 +14,10 @@ public class TestItem extends Item {
         super(pProperties);
     }
     @Override
-    public @NotNull InteractionResultHolder<ItemStack> use(Level pLevel, @NotNull Player pPlayer, @NotNull InteractionHand pUsedHand) {
-        if(pLevel.isClientSide){
+    public @NotNull InteractionResult use(Level pLevel, @NotNull Player pPlayer, @NotNull InteractionHand pUsedHand) {
+        if(pLevel.isClientSide()){
             try{
-               icyllis.modernui.mc.forge.MuiForgeApi.openScreen(CSGameShopScreen.getInstance());
+               MuiModApi.openScreen(CSGameShopScreen.getInstance());
             }catch (Exception e){
                 e.fillInStackTrace();
             }

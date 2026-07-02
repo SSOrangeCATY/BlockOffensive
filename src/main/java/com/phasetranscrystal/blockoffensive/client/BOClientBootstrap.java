@@ -14,25 +14,27 @@ import net.minecraft.Optionull;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.world.scores.PlayerTeam;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.EntityRenderersEvent;
-import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT, modid = BlockOffensive.MODID)
+@EventBusSubscriber(modid = BlockOffensive.MODID, value = Dist.CLIENT)
 public class BOClientBootstrap {
     public static final Comparator<PlayerInfo> PLAYER_COMPARATOR = Comparator.<PlayerInfo>comparingInt((playerInfo) -> 0)
             .thenComparing((playerInfo) -> Optionull.mapOrDefault(playerInfo.getTeam(), PlayerTeam::getName, ""))
-            .thenComparing((playerInfo) -> playerInfo.getProfile().getName(), String::compareToIgnoreCase);
+            .thenComparing((playerInfo) -> playerInfo.getProfile().name(), String::compareToIgnoreCase);
     
     @SubscribeEvent
     public static void onClientSetup(RegisterKeyMappingsEvent event) {
         // 注册键位
+        event.registerCategory(OpenShopKey.CATEGORY);
+        event.registerCategory(OpenShopKey.SPEC_CATEGORY);
         event.register(OpenShopKey.OPEN_SHOP_KEY);
         event.register(DismantleBombKey.DISMANTLE_BOMB_KEY);
         event.register(SwitchSpectatorKey.KEY_SPECTATE_NEXT);

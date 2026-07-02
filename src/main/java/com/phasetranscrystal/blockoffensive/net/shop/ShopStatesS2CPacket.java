@@ -5,7 +5,7 @@ import com.phasetranscrystal.blockoffensive.client.screen.CSGameShopScreen;
 import icyllis.modernui.mc.MuiScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.function.Supplier;
 
@@ -32,7 +32,7 @@ public class ShopStatesS2CPacket {
                 buf.readInt());
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             boolean wasOpen = CSClientData.canOpenShop;
             CSClientData.canOpenShop = this.canOpenShop;
@@ -41,8 +41,8 @@ public class ShopStatesS2CPacket {
 
             if (wasOpen && !this.canOpenShop && Minecraft.getInstance().player != null) {
                 Minecraft mc = Minecraft.getInstance();
-                if (mc.screen instanceof MuiScreen muiScreen && muiScreen.getFragment() instanceof CSGameShopScreen) {
-                    mc.setScreen(null);
+                if (mc.gui.screen() instanceof MuiScreen muiScreen && muiScreen.getFragment() instanceof CSGameShopScreen) {
+                    mc.gui.setScreen(null);
                 }
             }
         });

@@ -2,7 +2,7 @@ package com.phasetranscrystal.blockoffensive.net;
 
 import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.function.Supplier;
 
@@ -56,7 +56,7 @@ public record CSGameSettingsS2CPacket(
         );
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             CSClientData.cTWinnerRounds = this.cTWinnerRounds;
             CSClientData.tWinnerRounds = this.tWinnerRounds;

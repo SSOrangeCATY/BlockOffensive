@@ -3,7 +3,7 @@ package com.phasetranscrystal.blockoffensive.net.mvp;
 import com.phasetranscrystal.blockoffensive.client.screen.hud.CSGameHud;
 import com.phasetranscrystal.blockoffensive.client.screen.hud.CSMvpHud;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import com.phasetranscrystal.fpsmatch.common.packet.register.NetworkPacketRegister;
 
 import java.util.function.Supplier;
 
@@ -17,7 +17,7 @@ public class MvpHUDCloseS2CPacket {
         return new MvpHUDCloseS2CPacket();
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
+    public void handle(Supplier<NetworkPacketRegister.Context> ctx) {
         ctx.get().enqueueWork(CSGameHud.getInstance().getMvpHud()::triggerCloseAnimation);
         ctx.get().setPacketHandled(true);
     }
