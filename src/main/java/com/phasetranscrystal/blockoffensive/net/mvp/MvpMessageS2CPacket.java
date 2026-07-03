@@ -17,6 +17,7 @@ public class MvpMessageS2CPacket {
     }
     public static void encode(MvpMessageS2CPacket packet, FriendlyByteBuf buf) {
         buf.writeUUID(packet.mvpReason.uuid);
+        buf.writeBoolean(packet.mvpReason.isCtWinner());
         buf.writeComponent(packet.mvpReason.getTeamName());
         buf.writeComponent(packet.mvpReason.getPlayerName());
         buf.writeComponent(packet.mvpReason.getMvpReason());
@@ -26,6 +27,7 @@ public class MvpMessageS2CPacket {
 
     public static MvpMessageS2CPacket decode(FriendlyByteBuf buf) {
         return new MvpMessageS2CPacket(new MvpReason.Builder(buf.readUUID())
+                .setCtWinner(buf.readBoolean())
                 .setTeamName(buf.readComponent().copy())
                 .setPlayerName(buf.readComponent().copy())
                 .setMvpReason(buf.readComponent().copy())

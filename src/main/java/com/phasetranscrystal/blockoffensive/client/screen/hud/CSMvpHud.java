@@ -57,13 +57,17 @@ public class CSMvpHud {
     private Component extraInfo1 = Component.empty();
     private Component extraInfo2 = Component.empty();
     private Component mvpReason = Component.empty();
+    private boolean currentWinnerCtTeam = true;
+    private int currentBannerWidthPx = 0;
 
     public void triggerAnimation(MvpReason reason) {
         MinecraftForge.EVENT_BUS.post(new CSHUDRenderEvent.RenderMvpHud.TriggeredAnimation(reason));
         this.player = reason.uuid;
-        this.currentTeamName = reason.getTeamName().copy()
-                .append(Component.translatable("cs.game.winner.mvpNameSub"))
-                .withStyle(ChatFormatting.BOLD);
+        boolean isCtTeam = reason.isCtWinner();
+        this.currentWinnerCtTeam = isCtTeam;
+        this.currentTeamName = isCtTeam
+            ? Component.translatable("blockoffensive.map.cs.winner.ct.round.message").withStyle(ChatFormatting.BOLD)
+            : Component.translatable("blockoffensive.map.cs.winner.t.round.message").withStyle(ChatFormatting.BOLD);
         this.currentPlayerName = reason.getPlayerName().withStyle(ChatFormatting.BOLD);
         this.mvpReason = reason.getMvpReason().withStyle(ChatFormatting.BOLD);
         this.extraInfo1 = reason.getExtraInfo1().withStyle(ChatFormatting.BOLD);
@@ -76,7 +80,6 @@ public class CSMvpHud {
         this.mvpColorTransitionStartTime = -1;
         this.animationPlaying = true;
 
-        boolean isCtTeam = reason.getTeamName().getString().equals("CT");
         if (minecraft.level != null && minecraft.player != null) {
             minecraft.level.playLocalSound(
                     minecraft.player.getOnPos().above(2),
@@ -137,7 +140,34 @@ public class CSMvpHud {
      */
     private void renderRoundVictoryBanner(GuiGraphics guiGraphics, PoseStack pose, float bannerProgress,
                                           float scaleFactor, int screenWidth, int screenHeight, long currentTime) {
-        int scaledWidth = (int) (ROUND_BANNER_WIDTH * scaleFactor);
+        Component leftArrow = Component.literal("»").withStyle(ChatFormatting.BOLD);
+        Component rightArrow = Component.literal("«").withStyle(ChatFormatting.BOLD);
+
+        final float ARROW_SCALE = 3.0f;
+        final float TEXT_SCALE = 3.0f;
+        float combinedArrowScale = scaleFactor * ARROW_SCALE;
+        float combinedTextScale = scaleFactor * TEXT_SCALE;
+
+        int sideBarWidth = Math.max(2, (int) (5 * scaleFactor));
+        int outerPadding = Math.max(6, (int) (10 * scaleFactor));
+        int innerGap = Math.max(4, (int) (8 * scaleFactor));
+        int baseTextWidth = font.width(currentTeamName);
+        int textWidth = (int) (baseTextWidth * combinedTextScale);
+        int arrowWidth = (int) (font.width(leftArrow) * combinedArrowScale);
+        int contentWidth = textWidth + arrowWidth * 2 + innerGap * 2;
+        int requiredWidth = contentWidth + sideBarWidth * 2 + outerPadding * 2;
+
+        int baseWidth = (int) (ROUND_BANNER_WIDTH * scaleFactor);
+        int maxWidth = (int) (screenWidth * 0.92f);
+        int scaledWidth = Math.max(baseWidth, Math.min(requiredWidth, maxWidth));
+
+        int maxTextAreaWidth = scaledWidth - sideBarWidth * 2 - outerPadding * 2 - innerGap * 2 - arrowWidth * 2;
+        if (maxTextAreaWidth > 0 && textWidth > maxTextAreaWidth && baseTextWidth > 0) {
+            float fitScale = (float) maxTextAreaWidth / (float) baseTextWidth;
+            combinedTextScale = Math.max(scaleFactor * 1.6f, Math.min(combinedTextScale, fitScale));
+            textWidth = (int) (baseTextWidth * combinedTextScale);
+        }
+        currentBannerWidthPx = scaledWidth;
         int scaledHeight = (int) (ROUND_BANNER_HEIGHT * scaleFactor);
         int animatedWidth = (int) (scaledWidth * bannerProgress);
         int x = (screenWidth - animatedWidth) / 2;
@@ -154,23 +184,13 @@ public class CSMvpHud {
         guiGraphics.fill(x, y, x + animatedWidth, y + scaledHeight, bgColor);
 
         // 绘制队伍颜色侧边条
-        int teamColor = 0xFF3366FF;
-        int sideBarWidth = (int) (5 * scaleFactor);
+        int teamColor = resolveTeamColor();
         guiGraphics.fill(x, y, x + sideBarWidth, y + scaledHeight, teamColor);
         guiGraphics.fill(x + animatedWidth - sideBarWidth, y, x + animatedWidth, y + scaledHeight, teamColor);
 
         // 横幅完全展开后渲染文本
         if (bannerProgress >= 1f) {
-            // 箭头文本添加粗体
-            Component leftArrow = Component.literal("»").withStyle(ChatFormatting.BOLD);
-            Component rightArrow = Component.literal("«").withStyle(ChatFormatting.BOLD);
-
-            final float ARROW_SCALE = 3.0f;
-            final float TEXT_SCALE = 3.0f;
-            float combinedArrowScale = scaleFactor * ARROW_SCALE;
-            float combinedTextScale = scaleFactor * TEXT_SCALE;
-
-            int rightArrowWidth = (int) (font.width(rightArrow) * scaleFactor);
+            int rightArrowWidth = (int) (font.width(rightArrow) * combinedArrowScale);
             int rightX = x + animatedWidth - sideBarWidth - (int) (10 * scaleFactor) - rightArrowWidth;
             int leftX = x + sideBarWidth + (int) (10 * scaleFactor);
 
@@ -257,7 +277,7 @@ public class CSMvpHud {
         guiGraphics.fill(infoStartX, avatarY,
                 infoStartX + colorBarWidth,
                 avatarY + (int) (COLOR_BAR_HEIGHT * scaleFactor),
-                0x773366FF);
+            withAlpha(resolveTeamColor(), 0x77));
 
         // 渲染MVP原因文本
         renderScaledText(guiGraphics, pose, mvpReason,
@@ -336,6 +356,14 @@ public class CSMvpHud {
                 (int) (startB + (endB - startB) * progress);
     }
 
+    private int resolveTeamColor() {
+        return currentWinnerCtTeam ? 0xFF3366FF : 0xFFFFB400;
+    }
+
+    private int withAlpha(int rgbColor, int alpha) {
+        return (alpha << 24) | (rgbColor & 0x00FFFFFF);
+    }
+
     /**
      * 渲染关闭动画（适配MC缩放）
      */
@@ -368,7 +396,8 @@ public class CSMvpHud {
      */
     private void renderClosingBanner(GuiGraphics guiGraphics, int screenWidth, int screenHeight,
                                      float closingRatio, int color, float scaleFactor) {
-        int originalWidth = (int) (ROUND_BANNER_WIDTH * scaleFactor);
+        int fallbackWidth = (int) (ROUND_BANNER_WIDTH * scaleFactor);
+        int originalWidth = currentBannerWidthPx > 0 ? currentBannerWidthPx : fallbackWidth;
         int currentWidth = (int) (originalWidth * (1 - closingRatio));
         int yPos = (int) (190 * ((float) screenHeight / BASE_HEIGHT));
         int centerX = screenWidth / 2;
@@ -478,6 +507,8 @@ public class CSMvpHud {
         extraInfo1 = Component.empty();
         extraInfo2 = Component.empty();
         player = null;
+        currentWinnerCtTeam = true;
+        currentBannerWidthPx = 0;
     }
 
     /**

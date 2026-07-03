@@ -954,6 +954,7 @@ public class CSGameMap extends CSMap{
 
     private MvpReason buildEmptyMvpReason(@NotNull ServerTeam winnerTeam) {
         return new MvpReason.Builder(null)
+                .setCtWinner(isCtWinner(winnerTeam))
                 .setTeamName(Component.literal(winnerTeam.getFixedName()))
                 .setMvpReason(Component.translatable("blockoffensive.mvp.combat"))
                 .build();
@@ -961,12 +962,17 @@ public class CSGameMap extends CSMap{
 
     private MvpReason buildMvpReason(UUID uuid, @NotNull ServerTeam winnerTeam, String playerName, String reasonKey, String infoKey, String musicName) {
         return new MvpReason.Builder(uuid)
+                .setCtWinner(isCtWinner(winnerTeam))
                 .setTeamName(Component.literal(winnerTeam.getFixedName()))
                 .setPlayerName(Component.literal(playerName))
                 .setMvpReason(Component.translatable(reasonKey))
                 .setExtraInfo1(Component.translatable(infoKey, Component.literal(playerName)))
                 .setExtraInfo2(Component.literal(musicName))
                 .build();
+    }
+
+    private boolean isCtWinner(@NotNull ServerTeam winnerTeam) {
+        return winnerTeam.getFixedName().equalsIgnoreCase(getCT().getFixedName());
     }
 
     private String getPlayerName(UUID uuid) {
