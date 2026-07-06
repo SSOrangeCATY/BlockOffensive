@@ -5,6 +5,7 @@ import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.client.data.CSClientData;
 import com.phasetranscrystal.blockoffensive.client.key.OpenShopKey;
 import com.phasetranscrystal.blockoffensive.client.screen.CSGameShopScreen;
+import com.phasetranscrystal.blockoffensive.client.screen.hud.CSGameHud;
 import com.phasetranscrystal.blockoffensive.net.dm.PlayerMoveC2SPacket;
 import com.phasetranscrystal.blockoffensive.util.BOUtil;
 import com.phasetranscrystal.blockoffensive.util.ThrowableType;
@@ -37,12 +38,23 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.MovementInputUpdateEvent;
 import net.minecraftforge.client.event.RenderNameTagEvent;
+import net.minecraftforge.client.event.RenderGuiOverlayEvent;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 
 @Mod.EventBusSubscriber(modid = BlockOffensive.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class BOClientEvent {
+    @SubscribeEvent
+    public static void onRenderGuiOverlayPost(RenderGuiOverlayEvent.Post event) {
+        if (FMLEnvironment.production) return;
+        if (event.getOverlay() != VanillaGuiOverlay.HOTBAR.type()) return;
+        if (FPSMClient.getGlobalData().isInMap()) return;
+        CSGameHud.getInstance().getDeathMessageHud().render(event.getGuiGraphics());
+    }
+
     @SubscribeEvent
     public static void onClientTickEvent(TickEvent.ClientTickEvent event) {
         FPSMClientGlobalData data = FPSMClient.getGlobalData();

@@ -89,7 +89,10 @@ class BlockOffensiveIssueRegressionTest {
     @Test
     void roundResetOnlyRefillsCurrentLivingPlayerAmmo() throws IOException {
         String csGameMap = Files.readString(CS_GAME_MAP);
-        String processJoinedPlayer = csGameMap.substring(csGameMap.indexOf("private void processJoinedPlayer"), csGameMap.indexOf("@Override\n    public void givePlayerKits"));
+        String processJoinedPlayer = csGameMap.substring(
+                csGameMap.indexOf("private void processJoinedPlayer"),
+                csGameMap.indexOf("public void givePlayerKits")
+        );
 
         assertFalse(processJoinedPlayer.contains("resetGunAmmo();"));
         assertTrue(processJoinedPlayer.contains("FPSMUtil.resetAllGunAmmo(player);"));
@@ -98,7 +101,10 @@ class BlockOffensiveIssueRegressionTest {
     @Test
     void roundTimeoutDoesNotEndRoundWhileBombIsPlanted() throws IOException {
         String csGameMap = Files.readString(CS_GAME_MAP);
-        String lifecycle = csGameMap.substring(csGameMap.indexOf("protected RoundLifecycle"), csGameMap.indexOf("@Override\n    protected RoundContext createRoundContext"));
+        String lifecycle = csGameMap.substring(
+                csGameMap.indexOf("protected RoundLifecycle"),
+                csGameMap.indexOf("protected RoundContext createRoundContext")
+        );
 
         assertTrue(lifecycle.contains(".roundTicks(Integer.MAX_VALUE)"));
         assertTrue(lifecycle.contains(".addRule(new CSRoundTimeoutRule(getRoundTimeLimitTicks()))"));

@@ -1,6 +1,7 @@
 package com.phasetranscrystal.blockoffensive;
 
 import com.phasetranscrystal.blockoffensive.command.CSCommand;
+import com.phasetranscrystal.blockoffensive.command.BOCommandRegister;
 import com.phasetranscrystal.blockoffensive.compat.BOImpl;
 import com.phasetranscrystal.blockoffensive.compat.BOMenuIntegration;
 import com.phasetranscrystal.blockoffensive.compat.CSGrenadeCompat;
@@ -68,6 +69,7 @@ public class BlockOffensive {
 
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
+        BOCommandRegister.onRegisterCommands(event);
         CSCommand.onRegisterCommands(event);
     }
 

@@ -1,5 +1,7 @@
 package com.phasetranscrystal.blockoffensive.data;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -17,5 +19,16 @@ public final class DeathMessageRules {
 
     public static boolean isSuicide(UUID deadUUID, UUID killerUUID) {
         return Objects.equals(deadUUID, killerUUID);
+    }
+
+    public static List<String> getPostWeaponIconKeys(boolean flying, boolean headShot, boolean throughSmoke,
+                                                     boolean throughWall, boolean noScope) {
+        List<String> icons = new ArrayList<>();
+        if (flying) icons.add("fly");
+        if (headShot) icons.add("headshot");
+        if (throughSmoke) icons.add("throw_smoke");
+        if (throughWall) icons.add("throw_wall");
+        if (noScope) icons.add("no_zoom");
+        return icons;
     }
 }

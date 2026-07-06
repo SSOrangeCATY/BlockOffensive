@@ -9,7 +9,6 @@ import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import com.phasetranscrystal.blockoffensive.data.DeathMessageRules;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.fpsmatch.common.item.FPSMItemRegister;
-import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.util.RenderUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -21,6 +20,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -201,11 +201,9 @@ public class CSDeathMessageHud{
             currentX += 14;
         }
 
-        if (message.isFlying()) currentX = renderConditionalIcon(guiGraphics, "fly", currentX, y);
-        if (message.isHeadShot()) currentX = renderConditionalIcon(guiGraphics, "headshot", currentX, y);
-        if (message.isThroughSmoke()) currentX = renderConditionalIcon(guiGraphics, "throw_smoke", currentX, y);
-        if (message.isThroughWall()) currentX = renderConditionalIcon(guiGraphics, "throw_wall", currentX, y);
-        if (message.isNoScope()) currentX = renderConditionalIcon(guiGraphics, "no_zoom", currentX, y);
+        for (String iconKey : getPostWeaponIconKeys(message)) {
+            currentX = renderConditionalIcon(guiGraphics, iconKey, currentX, y);
+        }
 
         int deadNameWidth = font.width(message.getDead());
         currentX = Math.min(currentX, rightPadding - deadNameWidth);
@@ -218,6 +216,16 @@ public class CSDeathMessageHud{
             renderIcon(guiGraphics, icon, currentX, y + 2, 12, 12);
         }
         return currentX + 14;
+    }
+
+    private static List<String> getPostWeaponIconKeys(DeathMessage message) {
+        return DeathMessageRules.getPostWeaponIconKeys(
+                message.isFlying(),
+                message.isHeadShot(),
+                message.isThroughSmoke(),
+                message.isThroughWall(),
+                message.isNoScope()
+        );
     }
 
     private void renderIcon(GuiGraphics guiGraphics, ResourceLocation icon, int x, int y, int width, int height) {
@@ -262,11 +270,7 @@ public class CSDeathMessageHud{
             width += 14;
         }
 
-        if (message.isFlying()) width += 14;
-        if (message.isHeadShot()) width += 14;
-        if (message.isThroughSmoke()) width += 14;
-        if (message.isThroughWall()) width += 14;
-        if (message.isNoScope()) width += 14;
+        width += getPostWeaponIconKeys(message).size() * 14;
 
         width += font.width(message.getDead());
 
