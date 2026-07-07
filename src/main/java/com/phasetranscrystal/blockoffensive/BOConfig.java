@@ -12,9 +12,11 @@ public class BOConfig {
 
         public final ForgeConfigSpec.BooleanValue killIconHudEnabled;
 
+        public final ForgeConfigSpec.BooleanValue spectatorBombHudEnabled;
+        public final ForgeConfigSpec.BooleanValue spectatorRosterEnabled;
 
-        private Client(ForgeConfigSpec.Builder builder) {
-            builder.push("kill message");
+
+        private Client(ForgeConfigSpec.Builder builder) {            builder.push("kill message");
             {
                 killMessageHudEnabled = builder.comment("Kill message enabled").define("hudEnabled",true);
                 killMessageHudPosition = builder.comment("Kill message position").defineInRange("hudPosition",2,1,4);
@@ -27,6 +29,20 @@ public class BOConfig {
             builder.push("kill icon");
             {
                 killIconHudEnabled = builder.comment("Kill icon enabled").define("killIconEnabled",true);
+            }
+
+            builder.pop();
+
+            builder.push("spectator");
+            {
+                spectatorBombHudEnabled = builder.comment(
+                        "观战时显示 C4 引信倒计时 HUD",
+                        "Show the C4 fuse countdown HUD while spectating"
+                ).define("spectatorBombHudEnabled", true);
+                spectatorRosterEnabled = builder.comment(
+                        "观战时显示观战者名单侧栏",
+                        "Show the spectator roster side panel while spectating"
+                ).define("spectatorRosterEnabled", true);
             }
 
             builder.pop();
@@ -51,6 +67,16 @@ public class BOConfig {
 
         public final ForgeConfigSpec.BooleanValue webServerEnabled;
         public final ForgeConfigSpec.IntValue webServerPort;
+
+        // 加时赛 / 投票
+        public final ForgeConfigSpec.EnumValue<com.phasetranscrystal.blockoffensive.map.OvertimeMode> overtimeMode;
+        public final ForgeConfigSpec.IntValue overtimeStartMoney;
+        public final ForgeConfigSpec.DoubleValue overtimeVoteThreshold;
+        public final ForgeConfigSpec.IntValue overtimeVoteSeconds;
+        public final ForgeConfigSpec.IntValue overtimeMaxSegments;
+        public final ForgeConfigSpec.EnumValue<com.phasetranscrystal.fpsmatch.core.map.VoteObj.TimeoutPolicy> voteTimeoutPolicy;
+        public final ForgeConfigSpec.EnumValue<com.phasetranscrystal.fpsmatch.core.map.VoteObj.AbstentionPolicy> voteAbstentionPolicy;
+        public final ForgeConfigSpec.DoubleValue unpauseVoteThreshold;
 
         private Common(ForgeConfigSpec.Builder builder) {
             builder.push("step sound");
@@ -98,6 +124,54 @@ public class BOConfig {
             {
                 webServerEnabled = builder.comment("Web server enabled").define("webServerEnabled",false);
                 webServerPort = builder.comment("Web server port").defineInRange("webServerPort",8080,1,65535);
+            }
+            builder.pop();
+
+            builder.push("overtime");
+            {
+                overtimeMode = builder.comment(
+                        "加时赛策略：VOTE=12-12时投票决定(默认/向后兼容)，AUTO=直接进入加时，DISABLED=直接判平局。",
+                        "Overtime strategy: VOTE (legacy default), AUTO (enter overtime directly), DISABLED (12-12 counts as draw)."
+                ).defineEnum("overtimeMode", com.phasetranscrystal.blockoffensive.map.OvertimeMode.VOTE);
+
+                overtimeStartMoney = builder.comment(
+                        "加时赛每段开局起始金钱(原硬编码 10000)。",
+                        "Overtime starting money per segment (was hardcoded 10000)."
+                ).defineInRange("overtimeStartMoney", 10000, 0, 100000);
+
+                overtimeVoteThreshold = builder.comment(
+                        "VOTE 模式加时投票通过门槛(0~1)。",
+                        "Overtime vote pass threshold in VOTE mode."
+                ).defineInRange("overtimeVoteThreshold", 0.6D, 0.0D, 1.0D);
+
+                overtimeVoteSeconds = builder.comment(
+                        "VOTE 模式加时投票时长(秒)。",
+                        "Overtime vote duration in seconds in VOTE mode."
+                ).defineInRange("overtimeVoteSeconds", 20, 5, 120);
+
+                overtimeMaxSegments = builder.comment(
+                        "最多加时段数，0=无限(防止无限加时，达上限则判平局)。",
+                        "Max overtime segments, 0 = unlimited (reaching the cap results in a draw)."
+                ).defineInRange("overtimeMaxSegments", 0, 0, 10);
+            }
+            builder.pop();
+
+            builder.push("vote");
+            {
+                voteTimeoutPolicy = builder.comment(
+                        "投票超时策略：FAIL=一律判失败(默认/向后兼容)，PASS_IF_MAJORITY=超时按已投票的多数决结算。",
+                        "Vote timeout policy: FAIL (legacy) or PASS_IF_MAJORITY (majority of cast votes on timeout)."
+                ).defineEnum("voteTimeoutPolicy", com.phasetranscrystal.fpsmatch.core.map.VoteObj.TimeoutPolicy.FAIL);
+
+                voteAbstentionPolicy = builder.comment(
+                        "弃权策略：COUNT_AS_NO=弃权视为反对(默认)，IGNORE=分母只算已投票人数。",
+                        "Abstention policy: COUNT_AS_NO (legacy) or IGNORE (denominator = voters only)."
+                ).defineEnum("voteAbstentionPolicy", com.phasetranscrystal.fpsmatch.core.map.VoteObj.AbstentionPolicy.COUNT_AS_NO);
+
+                unpauseVoteThreshold = builder.comment(
+                        "取消暂停投票通过门槛(0.5~1.0，原硬编码 1.0 全票)。",
+                        "Unpause vote threshold (was hardcoded 1.0 unanimous)."
+                ).defineInRange("unpauseVoteThreshold", 1.0D, 0.5D, 1.0D);
             }
             builder.pop();
         }

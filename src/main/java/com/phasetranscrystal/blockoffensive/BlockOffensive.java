@@ -18,6 +18,8 @@ import com.phasetranscrystal.blockoffensive.net.mvp.MvpHUDCloseS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.mvp.MvpMessageS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.shop.ShopStatesS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.spec.*;
+import com.phasetranscrystal.blockoffensive.net.vote.VoteCastC2SPacket;
+import com.phasetranscrystal.blockoffensive.net.vote.VoteSyncS2CPacket;
 import com.phasetranscrystal.blockoffensive.sound.BOSoundRegister;
 import com.phasetranscrystal.blockoffensive.util.BOUtil;
 import com.phasetranscrystal.blockoffensive.util.ThrowableType;
@@ -92,6 +94,9 @@ public class BlockOffensive {
         PACKET_REGISTER.registerPacket(RequestAttachTeammateC2SPacket.class);
         PACKET_REGISTER.registerPacket(RequestKillCamFallbackC2SPacket.class);
         PACKET_REGISTER.registerPacket(SwitchSpectateC2SPacket.class);
+        PACKET_REGISTER.registerPacket(SpectatorRosterS2CPacket.class);
+        PACKET_REGISTER.registerPacket(VoteSyncS2CPacket.class);
+        PACKET_REGISTER.registerPacket(VoteCastC2SPacket.class);
 
         event.enqueueWork(() -> {
             ColoredPlayerCapability.register();

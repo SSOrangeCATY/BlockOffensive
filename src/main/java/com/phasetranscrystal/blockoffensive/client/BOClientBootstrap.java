@@ -38,6 +38,8 @@ public class BOClientBootstrap {
         event.register(SwitchSpectatorKey.KEY_SPECTATE_NEXT);
         event.register(SwitchSpectatorKey.KEY_SPECTATE_PREV);
         event.register(com.phasetranscrystal.blockoffensive.client.key.TeamChatKey.TEAM_CHAT_KEY);
+        event.register(com.phasetranscrystal.blockoffensive.client.key.VoteKey.VOTE_AGREE_KEY);
+        event.register(com.phasetranscrystal.blockoffensive.client.key.VoteKey.VOTE_DISAGREE_KEY);
         SpecKeyHandler.registerSwitchKey(SwitchSpectatorKey.KEY_SPECTATE_NEXT);
         SpecKeyHandler.registerSwitchKey(SwitchSpectatorKey.KEY_SPECTATE_PREV);
         // cs: hud | overlay | tab
