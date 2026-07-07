@@ -2,6 +2,7 @@ package com.phasetranscrystal.blockoffensive.map;
 
 import com.phasetranscrystal.blockoffensive.BOConfig;
 import com.phasetranscrystal.blockoffensive.client.data.WeaponData;
+import com.phasetranscrystal.blockoffensive.command.BOTaczLiveFireDebugCommand;
 import com.phasetranscrystal.blockoffensive.compat.BOImpl;
 import com.phasetranscrystal.blockoffensive.compat.CSGrenadeCompat;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
@@ -65,6 +66,7 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Team;
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -285,6 +287,16 @@ public abstract class CSMap extends BaseRoundMap<String, CSRoundResultReason> {
         if (ModList.get().isLoaded("physicsmod")) {
             sendPacketToAllPlayer(new PxRagdollRemovalCompatS2CPacket(uuid));
         }
+    }
+
+    protected void sendPhysicsDeathPacket(ServerPlayer deadPlayer) {
+        if (BOImpl.isPhysicsModLoaded()) {
+            this.sendPacketToAllPlayer(new PxDeathCompatS2CPacket(deadPlayer.getId()));
+        }
+    }
+
+    protected boolean shouldSendPhysicsDeathPacketInBaseDeathHandler(DeathContext context) {
+        return true;
     }
 
     public void sendNewRoundVoice(){
@@ -907,8 +919,8 @@ public abstract class CSMap extends BaseRoundMap<String, CSRoundResultReason> {
         ServerPlayer attacker = context.getAttacker();
         ItemStack deathItem = context.getDeathItem();
 
-        if (BOImpl.isPhysicsModLoaded()) {
-            this.sendPacketToAllPlayer(new PxDeathCompatS2CPacket(deadPlayer.getId()));
+        if (shouldSendPhysicsDeathPacketInBaseDeathHandler(context)) {
+            sendPhysicsDeathPacket(deadPlayer);
         }
 
         if (allowSpecAttach.get()) {
@@ -929,6 +941,9 @@ public abstract class CSMap extends BaseRoundMap<String, CSRoundResultReason> {
 
         boolean passWall = context.isPassWall();
         boolean passSmoke = context.isPassSmoke();
+        if (!FMLEnvironment.production && BOTaczLiveFireDebugCommand.isLiveFireTestMap(getMapName())) {
+            BOTaczLiveFireDebugCommand.handleDeathContext(getMapName(), context);
+        }
 
         DeathMessageS2CPacket killPacket = BOUtil.buildDeathMessagePacket(
                 this,

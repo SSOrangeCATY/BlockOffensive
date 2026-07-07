@@ -3,6 +3,7 @@ package com.phasetranscrystal.blockoffensive.compat;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.phasetranscrystal.blockoffensive.util.BOUtil;
+import com.phasetranscrystal.fpsmatch.FPSMatch;
 import net.diebuddies.config.ConfigMobs;
 import net.diebuddies.math.AABBf;
 import net.diebuddies.physics.*;
@@ -28,6 +29,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.joml.Matrix4d;
 import org.joml.Vector3d;
 import org.joml.Vector3f;
@@ -40,6 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @OnlyIn(Dist.CLIENT)
 public class PhysicsModCompat {
 
+    private static final int RAGDOLL_RETRY_TICKS = 60;
     private static final Map<Integer, Integer> PENDING_DEATHS = new ConcurrentHashMap<>();
     private static final ProxiedRagdollRegistry PROXIED_RAGDOLLS = new ProxiedRagdollRegistry();
 
@@ -50,9 +53,11 @@ public class PhysicsModCompat {
 
     public static void requestHandleDead(int entityId) {
         if (!beginProxiedRagdoll(entityId)) {
+            debugRagdoll("skip duplicate request entity={}", entityId);
             return;
         }
-        PENDING_DEATHS.put(entityId, 5);
+        debugRagdoll("request entity={} retries={}", entityId, RAGDOLL_RETRY_TICKS);
+        PENDING_DEATHS.put(entityId, RAGDOLL_RETRY_TICKS);
         tryHandleDead(entityId);
     }
 
@@ -62,6 +67,12 @@ public class PhysicsModCompat {
 
     static void clearProxiedRagdoll(int entityId) {
         PROXIED_RAGDOLLS.clear(entityId);
+    }
+
+    private static void debugRagdoll(String message, Object... args) {
+        if (!FMLEnvironment.production) {
+            FPSMatch.LOGGER.info("[BO_PHYSICS_RAGDOLL] " + message, args);
+        }
     }
 
     private static boolean tryHandleDead(int entityId) {
@@ -87,6 +98,7 @@ public class PhysicsModCompat {
             if (ConfigMobs.getMobSetting(entity).getType() != MobPhysicsType.OFF) {
                 if (mod.alreadyBlockified.contains(entity.getId())) {
                     PENDING_DEATHS.remove(EntityId);
+                    debugRagdoll("already blockified entity={}", EntityId);
                     return true;
                 }
 
@@ -175,9 +187,10 @@ public class PhysicsModCompat {
                         RenderSystem.enableBlend();
                         RenderSystem.defaultBlendFunc();
                     } else {
-                        clearProxiedRagdoll(EntityId);
+                        return false;
                     }
                     PENDING_DEATHS.remove(EntityId);
+                    debugRagdoll("success entity={} type={} pos={},{},{}", EntityId, entity.getType(), entity.getX(), entity.getY(), entity.getZ());
                     return true;
                 }
             }
@@ -230,6 +243,7 @@ public class PhysicsModCompat {
                     } else if (retries <= 1) {
                         PENDING_DEATHS.remove(entityId);
                         clearProxiedRagdoll(entityId);
+                        debugRagdoll("expired entity={}", entityId);
                     } else {
                         PENDING_DEATHS.put(entityId, retries - 1);
                     }

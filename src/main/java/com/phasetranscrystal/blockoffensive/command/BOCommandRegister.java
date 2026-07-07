@@ -33,6 +33,8 @@ public class BOCommandRegister {
 
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         if (!FMLEnvironment.production) {
+            BOTaczLiveFireDebugCommand.register(event.getDispatcher());
+            BOPhysicsRagdollDebugCommand.register(event.getDispatcher());
             event.getDispatcher().register(Commands.literal("bo_debug_death_icons")
                     .executes(BOCommandRegister::handleDebugDeathIconsSelf)
                     .then(Commands.argument("targets", EntityArgument.players())
@@ -53,6 +55,8 @@ public class BOCommandRegister {
         FPSMHelpManager.getInstance().registerCommandParameters("fpsm mvp", "*targets", "*sound", "[name]");
 
         if (!FMLEnvironment.production) {
+            event.addChild(BOTaczLiveFireDebugCommand.fpsmCommand());
+            event.addChild(BOPhysicsRagdollDebugCommand.fpsmCommand());
             event.addChild(Commands.literal("debug_death_icons")
                     .requires(source -> source.hasPermission(2))
                     .executes(BOCommandRegister::handleDebugDeathIconsSelf)

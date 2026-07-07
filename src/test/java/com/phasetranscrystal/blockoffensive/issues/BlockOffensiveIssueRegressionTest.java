@@ -132,4 +132,24 @@ class BlockOffensiveIssueRegressionTest {
         assertTrue(handleRespawn.contains("data.setLiving(false)"));
         assertTrue(handleRespawn.contains("player.setGameMode(GameType.SPECTATOR)"));
     }
+
+    @Test
+    void classicModeSendsPhysicsDeathBeforeSpectatorStateChange() throws IOException {
+        String csGameMap = Files.readString(CS_GAME_MAP);
+        String handleDeath = csGameMap.substring(
+                csGameMap.indexOf("public void handleDeath(DeathContext context)"),
+                csGameMap.indexOf("private UUID calculatePendingFinalKillAssist")
+        );
+        int sendPhysicsDeath = handleDeath.indexOf("sendPhysicsDeathPacket(dead);");
+        int setSpectator = handleDeath.indexOf("dead.setGameMode(GameType.SPECTATOR);");
+
+        assertTrue(Files.readString(CS_MAP).contains("protected void sendPhysicsDeathPacket(ServerPlayer deadPlayer)"));
+        assertTrue(Files.readString(CS_MAP).contains("protected boolean shouldSendPhysicsDeathPacketInBaseDeathHandler(DeathContext context)"));
+        assertTrue(handleDeath.contains("super.handleDeath(context);"));
+        assertTrue(csGameMap.contains("protected boolean shouldSendPhysicsDeathPacketInBaseDeathHandler(DeathContext context)"));
+        assertTrue(csGameMap.contains("return !this.isStart || this.getMapTeams().getTeamByPlayer(context.getDeadPlayer()).isEmpty();"));
+        assertTrue(sendPhysicsDeath >= 0);
+        assertTrue(setSpectator >= 0);
+        assertTrue(sendPhysicsDeath < setSpectator);
+    }
 }

@@ -1648,12 +1648,18 @@ public class CSGameMap extends CSMap{
     }
 
     @Override
+    protected boolean shouldSendPhysicsDeathPacketInBaseDeathHandler(DeathContext context) {
+        return !this.isStart || this.getMapTeams().getTeamByPlayer(context.getDeadPlayer()).isEmpty();
+    }
+
+    @Override
     public void handleDeath(DeathContext context){
         ServerPlayer dead = context.getDeadPlayer();
         pendingFinalKillAssist = calculatePendingFinalKillAssist(context);
         if(this.isStart){
             MapTeams teams = this.getMapTeams();
             teams.getTeamByPlayer(dead).ifPresent(deadPlayerTeam -> {
+                sendPhysicsDeathPacket(dead);
                 CapabilityMap.getTeamCapability(deadPlayerTeam, ShopCapability.class)
                         .flatMap(ShopCapability::getShopSafe).ifPresent(shop -> shop.getDefaultAndPutData(dead.getUUID()));
 
