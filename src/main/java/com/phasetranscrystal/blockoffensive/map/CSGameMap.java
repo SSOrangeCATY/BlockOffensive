@@ -1169,14 +1169,16 @@ public class CSGameMap extends CSMap{
         VoteObj overtime = new VoteObj(
                 "overtime",
                 message,
-                20,
-                0.6F,
+                BOConfig.common.overtimeVoteSeconds.get(),
+                BOConfig.common.overtimeVoteThreshold.get().floatValue(),
                 this::startOvertime,
                 ()->{
                     handleVictory(null);
                     reset();
                 },
-                this.getMapTeams().getJoinedUUID()
+                this.getMapTeams().getJoinedUUID(),
+                BOConfig.common.voteTimeoutPolicy.get(),
+                BOConfig.common.voteAbstentionPolicy.get()
         );
 
         this.startVote(overtime);
@@ -1186,6 +1188,7 @@ public class CSGameMap extends CSMap{
         this.isOvertime = true;
         this.isWaitingOverTimeVote = false;
 
+        int startMoney = BOConfig.common.overtimeStartMoney.get();
         this.getMapTeams().getNormalTeams().forEach(team-> {
             team.resetCapabilities();
 
@@ -1193,7 +1196,7 @@ public class CSGameMap extends CSMap{
 
             team.getCapabilityMap().get(ShopCapability.class)
                     .flatMap(ShopCapability::getShopSafe).ifPresent(shop -> {
-                        shop.setStartMoney(10000);
+                        shop.setStartMoney(startMoney);
                         shop.resetPlayerData(true);
                     });
         });
@@ -1301,12 +1304,21 @@ public class CSGameMap extends CSMap{
     }
 
     /**
-     * 开始加时赛序列
+     * 开始加时赛序列。根据 {@link OvertimeMode} 决定 12-12 时的处理：
+     * VOTE=发起加时投票；AUTO=直接进入加时；DISABLED=直接判平局。
      */
     private void startOvertimeSequence() {
-        startOvertimeVote();
         setBombEntity(null);
         currentRoundTime = 0;
+        OvertimeMode mode = BOConfig.common.overtimeMode.get();
+        switch (mode) {
+            case AUTO -> startOvertime();
+            case DISABLED -> {
+                handleVictory(null);
+                reset();
+            }
+            default -> startOvertimeVote();
+        }
     }
 
     /**
@@ -1328,6 +1340,12 @@ public class CSGameMap extends CSMap{
             // 检查是否应该增加加时赛轮次
             if (shouldIncreaseOvertimeCount(totalRoundsInOvertime, overtimeRound, ctScore, tScore, maxNormalScore)) {
                 overCount++;
+                // 加时段数上限保护：达到上限则判平局结束，防止无限加时（0=无限）
+                int maxSegments = BOConfig.common.overtimeMaxSegments.get();
+                if (maxSegments > 0 && overCount >= maxSegments) {
+                    handleVictory(null);
+                    reset();
+                }
             }
         }
 
@@ -1493,10 +1511,12 @@ public class CSGameMap extends CSMap{
                     "unpause",
                     Component.translatable("blockoffensive.map.vote.message",serverPlayer.getDisplayName(),translation),
                     15,
-                    1F,
+                    BOConfig.common.unpauseVoteThreshold.get().floatValue(),
                     this::setUnPauseState,
                     ()->{},
-                    this.getMapTeams().getJoinedUUID()
+                    this.getMapTeams().getJoinedUUID(),
+                    BOConfig.common.voteTimeoutPolicy.get(),
+                    BOConfig.common.voteAbstentionPolicy.get()
             );
             this.startVote(unpause);
             this.getVote().processVote(serverPlayer,true);

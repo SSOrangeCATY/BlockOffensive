@@ -113,6 +113,9 @@ public abstract class CSMap extends BaseRoundMap<String, CSRoundResultReason> {
 
     private final Map<UUID, ShopStateSnapshot> lastShopStates = new HashMap<>();
 
+    private int rosterSyncTick = 0;
+    private int lastRosterSig = 0;
+
     private record ShopStateSnapshot(boolean canOpenShop, int nextRoundMoney, int closeTime) {}
 
     public CSMap(ServerLevel serverLevel,
@@ -188,6 +191,44 @@ public abstract class CSMap extends BaseRoundMap<String, CSRoundResultReason> {
     public void tick() {
         super.tick();
         this.voteLogic();
+        this.rosterSyncLogic();
+    }
+
+    /**
+     * 每秒同步一次观战者名单给观战者；仅在名单发生变化时才实际广播，降低带宽开销。
+     */
+    private void rosterSyncLogic() {
+        if (++this.rosterSyncTick < 20) {
+            return;
+        }
+        this.rosterSyncTick = 0;
+
+        Set<UUID> specs = new java.util.HashSet<>(this.getMapTeams().getSpecPlayers());
+        if (specs.isEmpty()) {
+            return;
+        }
+        List<String> names = new ArrayList<>();
+        int sig = 1;
+        for (UUID uuid : specs) {
+            var opt = FPSMCore.getInstance().getPlayerByUUID(uuid);
+            if (opt.isPresent()) {
+                String name = opt.get().getGameProfile().getName();
+                names.add(name);
+                sig = sig * 31 + name.hashCode();
+            }
+        }
+        names.sort(String::compareToIgnoreCase);
+        if (sig == this.lastRosterSig) {
+            return;
+        }
+        this.lastRosterSig = sig;
+
+        com.phasetranscrystal.blockoffensive.net.spec.SpectatorRosterS2CPacket packet =
+                new com.phasetranscrystal.blockoffensive.net.spec.SpectatorRosterS2CPacket(names);
+        for (UUID uuid : specs) {
+            FPSMCore.getInstance().getPlayerByUUID(uuid).ifPresent(player ->
+                    com.phasetranscrystal.fpsmatch.FPSMatch.sendToPlayer(player, packet));
+        }
     }
 
     @Override
@@ -449,6 +490,7 @@ public abstract class CSMap extends BaseRoundMap<String, CSRoundResultReason> {
 
     private void voteLogic() {
         if (this.getVote() != null) {
+            long remainingBefore = this.voteObj.getRemainingTime();
             // 调用 tick 方法自动判断投票状态（会触发回调函数）
             boolean voteEnded = this.voteObj.tick();
 
@@ -459,10 +501,39 @@ public abstract class CSMap extends BaseRoundMap<String, CSRoundResultReason> {
                                 .withStyle(ChatFormatting.DARK_AQUA),
                         true
                 );
+                // 每秒同步一次投票 HUD 状态
+                if (this.voteObj.getRemainingTime() != remainingBefore) {
+                    this.broadcastVoteSync(this.voteObj, 0);
+                }
             } else {
-                // 投票已结束，清理投票对象
+                // 投票已结束，推送最终结果 + 反馈文本，随后清理
+                int result = this.voteObj.getStatus() == VoteObj.VoteStatus.SUCCESS ? 1 : 2;
+                this.broadcastVoteSync(this.voteObj, result);
+                Component subject = Component.translatable("blockoffensive.cs." + this.voteObj.getVoteTitle());
+                this.sendVoteMessage(false, Component.translatable(
+                        result == 1 ? "blockoffensive.map.vote.success" : "blockoffensive.map.vote.fail", subject)
+                        .withStyle(result == 1 ? ChatFormatting.GREEN : ChatFormatting.RED));
                 this.voteObj = null;
             }
+        }
+    }
+
+    /**
+     * 向有资格投票者广播投票 HUD 状态。result: 0=进行中, 1=通过, 2=否决。
+     */
+    private void broadcastVoteSync(VoteObj vote, int result) {
+        int agree = vote.getOnlineAgreeCount();
+        int disagree = vote.getOnlineDisagreeCount();
+        int eligible = vote.getEligiblePlayerCount();
+        int notVoted = Math.max(0, eligible - vote.getOnlineVotedCount());
+        boolean active = result == 0;
+        com.phasetranscrystal.blockoffensive.net.vote.VoteSyncS2CPacket packet =
+                new com.phasetranscrystal.blockoffensive.net.vote.VoteSyncS2CPacket(
+                        active, vote.getVoteTitle(), (int) vote.getRemainingTime(),
+                        agree, disagree, notVoted, eligible, vote.getRequiredPercent(), result);
+        for (UUID uuid : vote.getEligiblePlayers()) {
+            this.getPlayerByUUID(uuid).ifPresent(player ->
+                    com.phasetranscrystal.fpsmatch.FPSMatch.sendToPlayer(player, packet));
         }
     }
 
@@ -472,18 +543,21 @@ public abstract class CSMap extends BaseRoundMap<String, CSRoundResultReason> {
             this.sendVoteMessage(false,
                     voteObj.getMessage(),
                     Component.translatable("blockoffensive.map.vote.help").withStyle(ChatFormatting.GREEN));
+            this.broadcastVoteSync(voteObj, 0);
         }
     }
 
     public final void handleAgreeCommand(ServerPlayer serverPlayer){
         if(this.getVote() != null && this.getVote().processVote(serverPlayer, true)){
             this.sendAllPlayerMessage(Component.translatable("blockoffensive.map.vote.agree",serverPlayer.getDisplayName()).withStyle(ChatFormatting.GREEN),false);
+            this.broadcastVoteSync(this.getVote(), 0);
         }
     }
 
     public final void handleDisagreeCommand(ServerPlayer serverPlayer) {
         if(this.getVote() != null && this.getVote().processVote(serverPlayer, false)){
             this.sendAllPlayerMessage(Component.translatable("blockoffensive.map.vote.disagree",serverPlayer.getDisplayName()).withStyle(ChatFormatting.RED),false);
+            this.broadcastVoteSync(this.getVote(), 0);
         }
     }
 

@@ -107,6 +107,8 @@ public class CSGameHud implements IHudRenderer {
         mvpHud.resetAnimation();
         stopKillAnim();
         deathMessageHud.reset();
+        CSVoteHud.getInstance().reset();
+        CSSpectatorRoster.getInstance().reset();
     }
 
     @Override
@@ -119,6 +121,9 @@ public class CSGameHud implements IHudRenderer {
         deathMessageHud.render(guiGraphics);
         spectatorHudOverlay.render(guiGraphics);
         mvpHud.render(guiGraphics, screenWidth, screenHeight);
+        CSBombFuseHud.getInstance().render(guiGraphics, screenWidth, screenHeight);
+        CSSpectatorRoster.getInstance().render(guiGraphics, screenWidth, screenHeight);
+        CSVoteHud.getInstance().render(guiGraphics, screenWidth, screenHeight);
     }
 
     @Override
@@ -136,6 +141,7 @@ public class CSGameHud implements IHudRenderer {
         renderInfoLine(mc,gui, guiGraphics, screenWidth, screenHeight);
         renderItemBar(mc,gui, guiGraphics, screenWidth, screenHeight);
         mvpHud.render(guiGraphics, screenWidth, screenHeight);
+        CSVoteHud.getInstance().render(guiGraphics, screenWidth, screenHeight);
     }
 
     public void renderInfoLine(Minecraft mc, ForgeGui gui, GuiGraphics guiGraphics, int screenWidth, int screenHeight) {
