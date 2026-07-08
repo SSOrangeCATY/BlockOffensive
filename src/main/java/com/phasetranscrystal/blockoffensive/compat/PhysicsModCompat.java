@@ -103,7 +103,12 @@ public class PhysicsModCompat {
                 }
 
                 if (!mod.alreadyBlockified.contains(entity.getId())) {
-                    if (!entity.isInvisible()) {
+                    boolean wasInvisible = entity.isInvisible();
+                    if (wasInvisible) {
+                        debugRagdoll("temporarily render invisible entity={}", EntityId);
+                        entity.setInvisible(false);
+                    }
+                    try {
                         mod.alreadyBlockified.add(entity.getId());
                         EntityRenderer entityRenderer = Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(entity);
                         EntityRenderer renderer = entityRenderer;
@@ -186,8 +191,10 @@ public class PhysicsModCompat {
                         mod.blockifiedEntity.clear();
                         RenderSystem.enableBlend();
                         RenderSystem.defaultBlendFunc();
-                    } else {
-                        return false;
+                    } finally {
+                        if (wasInvisible) {
+                            entity.setInvisible(true);
+                        }
                     }
                     PENDING_DEATHS.remove(EntityId);
                     debugRagdoll("success entity={} type={} pos={},{},{}", EntityId, entity.getType(), entity.getX(), entity.getY(), entity.getZ());

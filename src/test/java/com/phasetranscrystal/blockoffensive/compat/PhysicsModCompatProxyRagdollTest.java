@@ -41,15 +41,18 @@ class PhysicsModCompatProxyRagdollTest {
     }
 
     @Test
-    void invisibleEntityKeepsProxyRagdollPendingInsteadOfSucceeding() throws IOException {
+    void invisibleEntityIsTemporarilyRenderableForProxyRagdoll() throws IOException {
         String source = Files.readString(Path.of("src/main/java/com/phasetranscrystal/blockoffensive/compat/PhysicsModCompat.java"));
 
         assertTrue(source.contains("private static final int RAGDOLL_RETRY_TICKS = 60;"));
         assertTrue(source.contains("PENDING_DEATHS.put(entityId, RAGDOLL_RETRY_TICKS);"));
-        assertTrue(source.contains("if (!entity.isInvisible()) {"));
-        assertTrue(source.contains("} else {\r\n                        return false;")
-                || source.contains("} else {\n                        return false;"));
+        assertTrue(source.contains("boolean wasInvisible = entity.isInvisible();"));
+        assertTrue(source.contains("entity.setInvisible(false);"));
+        assertTrue(source.contains("entity.setInvisible(true);"));
+        assertTrue(source.contains("finally {"));
         assertFalse(source.contains("} else {\r\n                        clearProxiedRagdoll(EntityId);")
                 || source.contains("} else {\n                        clearProxiedRagdoll(EntityId);"));
+        assertFalse(source.contains("} else {\r\n                        return false;")
+                || source.contains("} else {\n                        return false;"));
     }
 }

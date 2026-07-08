@@ -62,6 +62,21 @@ class BlockOffensiveIssueRegressionTest {
     }
 
     @Test
+    void classicCsModeDoesNotExposeEnemyGlowSetting() throws IOException {
+        String csGameMap = Files.readString(CS_GAME_MAP);
+        String settings = csGameMap.substring(
+                csGameMap.indexOf("public Collection<Setting<?>> settings()"),
+                csGameMap.indexOf("public void configFromJson")
+        );
+
+        assertTrue(csGameMap.contains("private void disableEnemyGlow()"));
+        assertTrue(csGameMap.contains("getEnemyGlowSetting().set(false);"));
+        assertTrue(csGameMap.contains("disableEnemyGlow();"));
+        assertTrue(settings.contains("getTeammateGlowSetting()"));
+        assertFalse(settings.contains("getEnemyGlowSetting()"));
+    }
+
+    @Test
     void droppedC4OutlineIsClientSideAndTTeamOnly() throws IOException {
         String mixin = Files.readString(C4_OUTLINE_MIXIN);
         String mixinsConfig = Files.readString(MIXINS_CONFIG);
@@ -151,5 +166,44 @@ class BlockOffensiveIssueRegressionTest {
         assertTrue(sendPhysicsDeath >= 0);
         assertTrue(setSpectator >= 0);
         assertTrue(sendPhysicsDeath < setSpectator);
+    }
+
+    @Test
+    void taczLiveFireFakeShooterKeepsOldPositionAligned() throws IOException {
+        String command = Files.readString(Path.of("src/main/java/com/phasetranscrystal/blockoffensive/command/BOTaczLiveFireDebugCommand.java"));
+        String moveFakeShooterTo = command.substring(
+                command.indexOf("private void moveFakeShooterTo"),
+                command.indexOf("private void teleportVictimToRange")
+        );
+        String teleportVictimToRange = command.substring(
+                command.indexOf("private void teleportVictimToRange"),
+                command.indexOf("private void aimAtVictimHead")
+        );
+        String placePassThroughWall = command.substring(
+                command.indexOf("private void placePassThroughWall"),
+                command.indexOf("private void spawnSmoke")
+        );
+
+        assertTrue(moveFakeShooterTo.contains("shooter.xOld = pos.x;"));
+        assertTrue(moveFakeShooterTo.contains("shooter.yOld = pos.y;"));
+        assertTrue(moveFakeShooterTo.contains("shooter.zOld = pos.z;"));
+        assertTrue(command.contains("event.setBaseAmount(0.0F);"));
+        assertTrue(command.contains("accepted={}"));
+        assertTrue(placePassThroughWall.contains("for (int x = -2; x <= 2; x++)"));
+        assertTrue(placePassThroughWall.contains("for (int y = -2; y <= 2; y++)"));
+        assertTrue(command.contains("this.shooterFeet = new Vec3(origin.getX() + 0.5D, origin.getY(), origin.getZ() - 6.5D);"));
+        assertTrue(command.contains("this.victimFeet = new Vec3(origin.getX() + 0.5D, origin.getY(), origin.getZ() + 2.5D);"));
+        assertTrue(teleportVictimToRange.contains("victim.xOld = victimFeet.x;"));
+        assertTrue(teleportVictimToRange.contains("victim.yOld = victimFeet.y;"));
+        assertTrue(teleportVictimToRange.contains("victim.zOld = victimFeet.z;"));
+        assertTrue(teleportVictimToRange.contains("victim.fallDistance = 0.0F;"));
+        assertTrue(command.contains("private void steadyTacZAim(IGunOperator operator)"));
+        assertTrue(command.contains("private IGunOperator readyTacZOperatorForShot()"));
+        assertTrue(command.contains("data.drawTimestamp = readyTimestamp;"));
+        assertTrue(command.contains("data.shootTimestamp = -1L;"));
+        assertTrue(command.contains("data.isBolting = false;"));
+        assertTrue(command.contains("data.aimingProgress = 1.0F;"));
+        assertTrue(command.contains("data.sprintTimeS = 0.0F;"));
+        assertTrue(command.contains("aimingProgressBeforeShot"));
     }
 }

@@ -248,6 +248,63 @@ public class CSGameMap extends CSMap{
         aceEconomy = this.addSetting("aceEconomy",3250);
         defuseBombEconomy = this.addSetting("defuseBombEconomy",3500);
         detonateBombEconomy = this.addSetting("detonateBombEconomy",3500);
+        disableEnemyGlow();
+    }
+
+    @Override
+    public Collection<Setting<?>> settings() {
+        return List.of(
+                displayName,
+                iconTexture,
+                backgroundTexture,
+                allowJoinInProgress,
+                autoStart,
+                autoStartTime,
+                readyStartEnabled,
+                readyStartTime,
+                minAssistDamageRatio,
+                getTeammateGlowSetting(),
+                hideEnemyNameTag,
+                allowFriendlyFire,
+                allowSpecAttach,
+                magazineMode,
+                knifeKillEconomy,
+                smgKillEconomy,
+                sniperKillEconomy,
+                shotgunKillEconomy,
+                defaultKillEconomy,
+                ctLimit,
+                tLimit,
+                winnerRound,
+                overtimeRound,
+                pauseTime,
+                winnerWaitingTime,
+                warmUpTime,
+                waitingTime,
+                roundTimeLimit,
+                startMoney,
+                defaultLoserEconomy,
+                defuseBonus,
+                compensationBase,
+                tDeathRewardPer,
+                closeShopTime,
+                knifeSelection,
+                c4InstantKillRadius,
+                timeoutEconomy,
+                aceEconomy,
+                defuseBombEconomy,
+                detonateBombEconomy
+        );
+    }
+
+    @Override
+    public void configFromJson(JsonElement json) {
+        super.configFromJson(json);
+        disableEnemyGlow();
+    }
+
+    private void disableEnemyGlow() {
+        getEnemyGlowSetting().set(false);
     }
 
     @Override

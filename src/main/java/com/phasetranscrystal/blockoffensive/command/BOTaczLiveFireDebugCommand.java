@@ -22,6 +22,7 @@ import com.tacz.guns.api.entity.IGunOperator;
 import com.tacz.guns.api.entity.ShootResult;
 import com.tacz.guns.api.item.builder.GunItemBuilder;
 import com.tacz.guns.api.item.gun.FireMode;
+import com.tacz.guns.entity.shooter.ShooterDataHolder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
@@ -206,8 +207,8 @@ public final class BOTaczLiveFireDebugCommand {
                 FPSMCore.checkAndLeaveTeam(victim);
 
                 BlockPos origin = victim.blockPosition().above(4);
-                this.shooterFeet = new Vec3(origin.getX() + 11.5D, origin.getY() + 7.0D, origin.getZ() - 6.5D);
-                this.victimFeet = new Vec3(origin.getX() + 0.5D, origin.getY(), origin.getZ() + 8.5D);
+                this.shooterFeet = new Vec3(origin.getX() + 0.5D, origin.getY(), origin.getZ() - 6.5D);
+                this.victimFeet = new Vec3(origin.getX() + 0.5D, origin.getY(), origin.getZ() + 2.5D);
 
                 prepareRange(origin);
 
@@ -243,12 +244,7 @@ public final class BOTaczLiveFireDebugCommand {
 
                 placePassThroughWall();
                 spawnSmoke();
-                equipTacZGun();
-
-                IGunOperator operator = IGunOperator.fromLivingEntity(shooter);
-                operator.initialData();
-                operator.draw(shooter::getMainHandItem);
-                operator.aim(true);
+                readyTacZOperatorForShot();
 
                 this.startTick = level.getGameTime();
                 FPSMatch.LOGGER.info("[BO_TACZ_TEST] started shooter={} victim={} gun={} shooterPos={} victimPos={} victimGameMode={} victimInvulnerableAbilities={}",
@@ -305,20 +301,27 @@ public final class BOTaczLiveFireDebugCommand {
             teleportVictimToRange(false);
             aimAtVictimHead();
 
-            IGunOperator operator = IGunOperator.fromLivingEntity(shooter);
-            operator.aim(true);
+            IGunOperator operator = readyTacZOperatorForShot();
             long timestamp = System.currentTimeMillis() - operator.getDataHolder().baseTimestamp;
             float pitch = shooter.getXRot();
             float yaw = shooter.getYRot();
+            float aimingProgressBeforeShot = operator.getDataHolder().aimingProgress;
+            boolean isAimingBeforeShot = operator.getDataHolder().isAiming;
+            float sprintTimeBeforeShot = operator.getDataHolder().sprintTimeS;
+            float walkDeltaBeforeShot = Math.abs(shooter.walkDist - shooter.walkDistO);
             ShootResult result = operator.shoot(() -> pitch, () -> yaw, timestamp);
             Vec3 shooterEye = shooter.getEyePosition();
             Vec3 targetHead = victimHead();
-            FPSMatch.LOGGER.info("[BO_TACZ_TEST] shoot attempt={} result={} timestamp={} pitch={} yaw={} shooterEye={} targetHead={} delta={} victimHealth={}",
+            FPSMatch.LOGGER.info("[BO_TACZ_TEST] shoot attempt={} result={} timestamp={} pitch={} yaw={} aimingProgressBefore={} isAimingBefore={} sprintTimeBefore={} walkDeltaBefore={} shooterEye={} targetHead={} delta={} victimHealth={}",
                     attempts,
                     result,
                     timestamp,
                     pitch,
                     yaw,
+                    aimingProgressBeforeShot,
+                    isAimingBeforeShot,
+                    sprintTimeBeforeShot,
+                    walkDeltaBeforeShot,
                     shooterEye,
                     targetHead,
                     targetHead.subtract(shooterEye),
@@ -338,13 +341,20 @@ public final class BOTaczLiveFireDebugCommand {
             if (!matches(event.getAttacker(), event.getHurtEntity())) {
                 return;
             }
-            gunDamageSeen = true;
             boolean passWall = event.getBullet() instanceof com.phasetranscrystal.fpsmatch.compat.IPassThroughEntity passThrough
                     && passThrough.fpsmatch$isWall();
             boolean passSmoke = event.getBullet() instanceof com.phasetranscrystal.fpsmatch.compat.IPassThroughEntity passThrough
                     && passThrough.fpsmatch$isSmoke();
-            FPSMatch.LOGGER.info("[BO_TACZ_TEST] FPSMGunDamageEvent amount={} headShot={} passWall={} passSmoke={} victimHealth={}",
-                    event.getBaseAmount(), event.isHeadShot(), passWall, passSmoke, victim.getHealth());
+            boolean accepted = event.isHeadShot() && passWall && passSmoke;
+            if (accepted) {
+                gunDamageSeen = true;
+            } else {
+                event.setBaseAmount(0.0F);
+                event.setHeadshotMultiplier(0.0F);
+                teleportVictimToRange(true);
+            }
+            FPSMatch.LOGGER.info("[BO_TACZ_TEST] FPSMGunDamageEvent amount={} headShot={} passWall={} passSmoke={} accepted={} victimHealth={}",
+                    event.getBaseAmount(), event.isHeadShot(), passWall, passSmoke, accepted, victim.getHealth());
         }
 
         private void onGunKill(FPSMGunKillEvent event) {
@@ -458,7 +468,12 @@ public final class BOTaczLiveFireDebugCommand {
 
         private void placePassThroughWall() {
             Vec3 wallPos = shooter.getEyePosition().lerp(victimHead(), 0.52D);
-            rememberAndSet(BlockPos.containing(wallPos), Blocks.OAK_LEAVES.defaultBlockState());
+            BlockPos center = BlockPos.containing(wallPos);
+            for (int x = -2; x <= 2; x++) {
+                for (int y = -2; y <= 2; y++) {
+                    rememberAndSet(center.offset(x, y, 0), Blocks.OAK_LEAVES.defaultBlockState());
+                }
+            }
         }
 
         private void spawnSmoke() {
@@ -481,15 +496,49 @@ public final class BOTaczLiveFireDebugCommand {
             shooter.getInventory().setChanged();
         }
 
+        private IGunOperator readyTacZOperatorForShot() {
+            equipTacZGun();
+            IGunOperator operator = IGunOperator.fromLivingEntity(shooter);
+            operator.initialData();
+            operator.draw(shooter::getMainHandItem);
+            ShooterDataHolder data = operator.getDataHolder();
+            long readyTimestamp = System.currentTimeMillis() - 10_000L;
+            data.currentGunItem = shooter::getMainHandItem;
+            data.drawTimestamp = readyTimestamp;
+            data.shootTimestamp = -1L;
+            data.lastShootTimestamp = -1L;
+            data.boltTimestamp = -1L;
+            data.isBolting = false;
+            data.reloadTimestamp = -1L;
+            data.isCrawling = false;
+            steadyTacZAim(operator);
+            return operator;
+        }
+
         private void teleportShooterToRange() {
             moveFakeShooterTo(shooterFeet, 0.0F, 0.0F);
             aimAtVictimHead();
             shooter.setOnGround(true);
         }
 
+        private void steadyTacZAim(IGunOperator operator) {
+            operator.aim(true);
+            ShooterDataHolder data = operator.getDataHolder();
+            data.isAiming = true;
+            data.aimingProgress = 1.0F;
+            data.aimingTimestamp = System.currentTimeMillis();
+            data.sprintTimeS = 0.0F;
+            data.sprintTimestamp = System.currentTimeMillis();
+            shooter.setSprinting(false);
+            shooter.walkDistO = shooter.walkDist;
+        }
+
         private void moveFakeShooterTo(Vec3 pos, float yaw, float pitch) {
             shooter.moveTo(pos.x, pos.y, pos.z, yaw, pitch);
             shooter.setPos(pos.x, pos.y, pos.z);
+            shooter.xOld = pos.x;
+            shooter.yOld = pos.y;
+            shooter.zOld = pos.z;
             shooter.setYRot(yaw);
             shooter.setXRot(pitch);
             shooter.setYHeadRot(yaw);
@@ -499,12 +548,16 @@ public final class BOTaczLiveFireDebugCommand {
 
         private void teleportVictimToRange(boolean resetHealth) {
             victim.teleportTo(level, victimFeet.x, victimFeet.y, victimFeet.z, 180.0F, 0.0F);
+            victim.xOld = victimFeet.x;
+            victim.yOld = victimFeet.y;
+            victim.zOld = victimFeet.z;
             victim.setYRot(180.0F);
             victim.setXRot(0.0F);
             victim.setYHeadRot(180.0F);
             victim.setYBodyRot(180.0F);
             victim.setOnGround(true);
             victim.setDeltaMovement(Vec3.ZERO);
+            victim.fallDistance = 0.0F;
             victim.getAbilities().invulnerable = false;
             victim.setInvulnerable(false);
             victim.setGameMode(GameType.ADVENTURE);
