@@ -55,4 +55,33 @@ class PhysicsModCompatProxyRagdollTest {
         assertFalse(source.contains("} else {\r\n                        return false;")
                 || source.contains("} else {\n                        return false;"));
     }
+
+    @Test
+    void proxyRagdollOnlyCompletesAfterCorpseIsGenerated() throws IOException {
+        String source = Files.readString(Path.of("src/main/java/com/phasetranscrystal/blockoffensive/compat/PhysicsModCompat.java"));
+
+        assertTrue(source.contains("hasUsableMappedPlayerRagdoll(entity, EntityId)"));
+        assertTrue(source.contains("mod.alreadyBlockified.remove(entity.getId());"));
+        assertTrue(source.contains("debugRagdoll(\"retry stale already-blockified player entity={}\""));
+        assertTrue(source.contains("boolean corpseGenerated = false;"));
+        assertTrue(source.contains("corpseGenerated = blockifiedPartCount > 0;"));
+        assertTrue(source.contains("corpseGenerated = isGeneratedRagdollUsable(entity, EntityId, ragdoll);"));
+        assertTrue(source.contains("if (corpseGenerated) {"));
+        assertTrue(source.contains("rollbackFailedDeadAttempt(mod, entity, EntityId, createdRagdoll);"));
+        assertTrue(source.contains("debugRagdoll(\"retry no corpse entity={}"));
+    }
+
+    @Test
+    void failedProxyRagdollAttemptRollsBackPhysicsModStateForRetry() throws IOException {
+        String source = Files.readString(Path.of("src/main/java/com/phasetranscrystal/blockoffensive/compat/PhysicsModCompat.java"));
+
+        assertTrue(source.contains("private static boolean isGeneratedRagdollUsable"));
+        assertTrue(source.contains("private static boolean isUsableRagdoll"));
+        assertTrue(source.contains("return ragdoll != null;"));
+        assertTrue(source.contains("private static boolean hasMappedPlayerRagdoll"));
+        assertTrue(source.contains("private static void rollbackFailedDeadAttempt"));
+        assertFalse(source.contains("PhysicsModCompat.remove(createdRagdoll);"));
+        assertTrue(source.contains("removeUnmappedPlayerRagdoll(entity, entityId);"));
+        assertTrue(source.contains("BORagdollHook.RAGDOLL_MAP.remove(player.getUUID());"));
+    }
 }

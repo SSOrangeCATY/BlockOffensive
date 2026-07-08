@@ -18,6 +18,10 @@ public class DeathMessageS2CPacket {
         this.deathMessage = deathMessage;
     }
 
+    public DeathMessage deathMessage() {
+        return deathMessage;
+    }
+
     public static void encode(DeathMessageS2CPacket packet, FriendlyByteBuf buf) {
         buf.writeComponent(packet.deathMessage.getKiller());
         buf.writeUUID(packet.deathMessage.getKillerUUID());

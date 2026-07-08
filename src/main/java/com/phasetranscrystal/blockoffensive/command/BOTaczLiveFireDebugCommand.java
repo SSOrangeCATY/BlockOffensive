@@ -6,6 +6,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
+import com.phasetranscrystal.blockoffensive.data.DeathMessage;
 import com.phasetranscrystal.blockoffensive.map.CSDeathMatchMap;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.entity.throwable.SmokeShellEntity;
@@ -84,6 +85,14 @@ public final class BOTaczLiveFireDebugCommand {
         RUNS.values().forEach(run -> {
             if (run.matchesMap(mapName)) {
                 run.onDeathContext(context);
+            }
+        });
+    }
+
+    public static void handleDeathMessage(String mapName, DeathMessage message) {
+        RUNS.values().forEach(run -> {
+            if (run.matchesMap(mapName)) {
+                run.onDeathMessage(message);
             }
         });
     }
@@ -187,6 +196,7 @@ public final class BOTaczLiveFireDebugCommand {
         private int cleanupCountdown = -1;
         private boolean shotSucceeded;
         private boolean deathContextSeen;
+        private boolean deathMessageSeen;
         private boolean gunDamageSeen;
         private boolean gunKillSeen;
         private boolean cleaned;
@@ -278,7 +288,7 @@ public final class BOTaczLiveFireDebugCommand {
                 return false;
             }
 
-            if (deathContextSeen) {
+            if (deathContextSeen && deathMessageSeen) {
                 cleanupCountdown = CLEANUP_DELAY_TICKS;
                 return false;
             }
@@ -414,10 +424,28 @@ public final class BOTaczLiveFireDebugCommand {
                     context.isScopedKill(),
                     context.getDeathItem().getHoverName().getString(),
                     ok);
-            if (ok) {
-                source.sendSuccess(() -> Component.literal("BO TacZ live-fire test passed: headshot + wall + smoke flags reached DeathContext."), true);
-            } else {
+            if (!ok) {
                 source.sendFailure(Component.literal("BO TacZ live-fire test reached DeathContext but flags were incomplete. See latest.log."));
+            }
+        }
+
+        private void onDeathMessage(DeathMessage message) {
+            if (!message.getDeadUUID().equals(victim.getUUID())) {
+                return;
+            }
+            deathMessageSeen = true;
+            boolean ok = message.isHeadShot() && message.isThroughWall() && message.isThroughSmoke();
+            FPSMatch.LOGGER.info("[BO_TACZ_TEST] DeathMessage headShot={} passWall={} passSmoke={} noScope={} flying={} ok={}",
+                    message.isHeadShot(),
+                    message.isThroughWall(),
+                    message.isThroughSmoke(),
+                    message.isNoScope(),
+                    message.isFlying(),
+                    ok);
+            if (ok && deathContextSeen) {
+                source.sendSuccess(() -> Component.literal("BO TacZ live-fire test passed: wall + smoke + headshot flags reached DeathMessage packet."), true);
+            } else if (!ok) {
+                source.sendFailure(Component.literal("BO TacZ live-fire test built DeathMessage without complete wall/smoke/headshot flags. See latest.log."));
             }
         }
 

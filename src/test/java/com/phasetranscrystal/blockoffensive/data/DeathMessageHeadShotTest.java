@@ -118,11 +118,13 @@ class DeathMessageHeadShotTest {
         assertTrue(handleDeath.contains("context.isHeadShot(),"));
         assertTrue(handleDeath.contains("passWall,"));
         assertTrue(handleDeath.contains("passSmoke,"));
+        assertTrue(handleDeath.contains("BOTaczLiveFireDebugCommand.handleDeathMessage(getMapName(), killPacket.deathMessage());"));
     }
 
     @Test
     void packetAndHudPreserveSpecialIconFlags() throws IOException {
         String packet = Files.readString(Path.of("src/main/java/com/phasetranscrystal/blockoffensive/net/DeathMessageS2CPacket.java"));
+        assertTrue(packet.contains("public DeathMessage deathMessage()"));
         assertTrue(packet.contains("isHeadShot() ? 1 : 0"));
         assertTrue(packet.contains("isThroughSmoke() ? 4 : 0"));
         assertTrue(packet.contains("isThroughWall() ? 8 : 0"));

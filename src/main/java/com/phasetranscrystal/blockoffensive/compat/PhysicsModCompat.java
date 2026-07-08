@@ -97,13 +97,21 @@ public class PhysicsModCompat {
             PhysicsMod mod = PhysicsMod.getInstance(level);
             if (ConfigMobs.getMobSetting(entity).getType() != MobPhysicsType.OFF) {
                 if (mod.alreadyBlockified.contains(entity.getId())) {
-                    PENDING_DEATHS.remove(EntityId);
-                    debugRagdoll("already blockified entity={}", EntityId);
-                    return true;
+                    if (!(entity instanceof Player) || hasUsableMappedPlayerRagdoll(entity, EntityId)) {
+                        PENDING_DEATHS.remove(EntityId);
+                        debugRagdoll("already blockified entity={}", EntityId);
+                        return true;
+                    }
+                    mod.alreadyBlockified.remove(entity.getId());
+                    debugRagdoll("retry stale already-blockified player entity={}", EntityId);
+                    return false;
                 }
 
                 if (!mod.alreadyBlockified.contains(entity.getId())) {
                     boolean wasInvisible = entity.isInvisible();
+                    boolean corpseGenerated = false;
+                    int blockifiedPartCount = 0;
+                    Ragdoll createdRagdoll = null;
                     if (wasInvisible) {
                         debugRagdoll("temporarily render invisible entity={}", EntityId);
                         entity.setInvisible(false);
@@ -160,8 +168,10 @@ public class PhysicsModCompat {
                         }
 
                         MobPhysicsType type = ConfigMobs.getMobSetting(entity).getType();
+                        blockifiedPartCount = mod.blockifiedEntity.size();
                         if (type != MobPhysicsType.RAGDOLL && type != MobPhysicsType.RAGDOLL_BREAK && type != MobPhysicsType.RAGDOLL_BREAK_BLOOD) {
                             mod.entityBlocks.addAll(mod.blockifiedEntity);
+                            corpseGenerated = blockifiedPartCount > 0;
                         } else {
                             Ragdoll ragdoll = null;
 
@@ -172,8 +182,10 @@ public class PhysicsModCompat {
                                 e.printStackTrace();
                             }
 
+                            createdRagdoll = ragdoll;
                             if (ragdoll == null) {
                                 mod.entityBlocks.addAll(mod.blockifiedEntity);
+                                corpseGenerated = blockifiedPartCount > 0;
                             } else {
                                 mod.ragdolls.add(ragdoll);
                                 if (level instanceof ClientLevel) {
@@ -185,6 +197,7 @@ public class PhysicsModCompat {
                                 }
 
                                 ragdoll.velocity.add(entity.getDeltaMovement().x * (double) 10.0F, entity.getDeltaMovement().y * (double) 10.0F, entity.getDeltaMovement().z * (double) 10.0F);
+                                corpseGenerated = isGeneratedRagdollUsable(entity, EntityId, ragdoll);
                             }
                         }
 
@@ -196,13 +209,67 @@ public class PhysicsModCompat {
                             entity.setInvisible(true);
                         }
                     }
-                    PENDING_DEATHS.remove(EntityId);
-                    debugRagdoll("success entity={} type={} pos={},{},{}", EntityId, entity.getType(), entity.getX(), entity.getY(), entity.getZ());
-                    return true;
+
+                    if (corpseGenerated) {
+                        PENDING_DEATHS.remove(EntityId);
+                        debugRagdoll("success entity={} type={} parts={} pos={},{},{}",
+                                EntityId, entity.getType(), blockifiedPartCount, entity.getX(), entity.getY(), entity.getZ());
+                        return true;
+                    }
+
+                    rollbackFailedDeadAttempt(mod, entity, EntityId, createdRagdoll);
+                    debugRagdoll("retry no corpse entity={} type={} parts={} pos={},{},{}",
+                            EntityId, entity.getType(), blockifiedPartCount, entity.getX(), entity.getY(), entity.getZ());
+                    return false;
                 }
             }
         }
         return false;
+    }
+
+    private static boolean isGeneratedRagdollUsable(Entity entity, int entityId, Ragdoll ragdoll) {
+        if (entity instanceof Player) {
+            return hasMappedPlayerRagdoll(entity, entityId, ragdoll);
+        }
+        return isUsableRagdoll(ragdoll);
+    }
+
+    private static boolean hasUsableMappedPlayerRagdoll(Entity entity, int entityId) {
+        if (!(entity instanceof Player player)) {
+            return false;
+        }
+        BORagdollHook.HookData data = BORagdollHook.RAGDOLL_MAP.get(player.getUUID());
+        return data != null
+                && data.getEntityId() == entityId
+                && isUsableRagdoll(data.getRagdoll());
+    }
+
+    private static boolean hasMappedPlayerRagdoll(Entity entity, int entityId, Ragdoll ragdoll) {
+        if (!(entity instanceof Player player)) {
+            return false;
+        }
+        BORagdollHook.HookData data = BORagdollHook.RAGDOLL_MAP.get(player.getUUID());
+        return data != null
+                && data.getEntityId() == entityId
+                && data.getRagdoll() == ragdoll;
+    }
+
+    private static boolean isUsableRagdoll(Ragdoll ragdoll) {
+        return ragdoll != null;
+    }
+
+    private static void rollbackFailedDeadAttempt(PhysicsMod mod, Entity entity, int entityId, Ragdoll createdRagdoll) {
+        mod.alreadyBlockified.remove(entity.getId());
+        if (createdRagdoll == null) {
+            removeUnmappedPlayerRagdoll(entity, entityId);
+        }
+    }
+
+    private static void removeUnmappedPlayerRagdoll(Entity entity, int entityId) {
+        if (!(entity instanceof Player player)) return;
+        BORagdollHook.HookData data = BORagdollHook.RAGDOLL_MAP.get(player.getUUID());
+        if (data == null || data.getEntityId() != entityId) return;
+        BORagdollHook.RAGDOLL_MAP.remove(player.getUUID());
     }
 
     public static void frozenAll() {

@@ -956,6 +956,9 @@ public abstract class CSMap extends BaseRoundMap<String, CSRoundResultReason> {
                 context.isScopedKill(),
                 minAssistDamageRatio.get()
         );
+        if (!FMLEnvironment.production && BOTaczLiveFireDebugCommand.isLiveFireTestMap(getMapName())) {
+            BOTaczLiveFireDebugCommand.handleDeathMessage(getMapName(), killPacket.deathMessage());
+        }
         sendPacketToAllPlayer(killPacket);
     }
 

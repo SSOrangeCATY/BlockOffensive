@@ -205,5 +205,11 @@ class BlockOffensiveIssueRegressionTest {
         assertTrue(command.contains("data.aimingProgress = 1.0F;"));
         assertTrue(command.contains("data.sprintTimeS = 0.0F;"));
         assertTrue(command.contains("aimingProgressBeforeShot"));
+        assertTrue(command.contains("public static void handleDeathMessage"));
+        assertTrue(command.contains("private boolean deathMessageSeen;"));
+        assertTrue(command.contains("if (deathContextSeen && deathMessageSeen)"));
+        assertTrue(command.contains("message.isThroughWall()"));
+        assertTrue(command.contains("[BO_TACZ_TEST] DeathMessage headShot={} passWall={} passSmoke={}"));
+        assertTrue(command.contains("wall + smoke + headshot flags reached DeathMessage packet"));
     }
 }
