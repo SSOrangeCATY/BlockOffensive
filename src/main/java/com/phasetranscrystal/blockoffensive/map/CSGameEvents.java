@@ -4,6 +4,7 @@ import com.phasetranscrystal.blockoffensive.event.CSGameMapEvent;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.item.BombDisposalKit;
+import com.phasetranscrystal.blockoffensive.item.CompositionC4;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.fpsmatch.common.attributes.ammo.BulletproofArmorAttribute;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
@@ -16,9 +17,12 @@ import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.util.FPSMUtil;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -115,7 +119,19 @@ public class CSGameEvents {
     public static void onPlayerLoggedOutEvent(FPSMapEvent.PlayerEvent.LoggedOutEvent event){
         if(event.getMap() instanceof CSMap){
             ServerPlayer player = event.getPlayer();
-            CSMap.dropC4(player);
+            ItemEntity dropped = CSMap.dropC4(player);
+            if (dropped != null && event.getMap() instanceof CSGameMap gameMap) {
+                gameMap.objectiveTracker().carrierDisconnectedOrDied(
+                        dropped.getId(),
+                        dropped.getUUID(),
+                        player.level().getGameTime(),
+                        dropped.getX(),
+                        dropped.getY(),
+                        dropped.getZ(),
+                        dropped.getYRot(),
+                        java.util.Optional.empty()
+                );
+            }
             player.getInventory().clearContent();
             BulletproofArmorAttribute.removePlayer(player);
             event.setCanceled(true);
@@ -147,6 +163,22 @@ public class CSGameEvents {
             if(itemStack.getItem() instanceof BombDisposalKit){
                 event.setCanceled(true);
                 event.getPlayer().getInventory().add(new ItemStack(BOItemRegister.BOMB_DISPOSAL_KIT.get(),1));
+            }
+
+            if (!event.isCanceled()
+                    && itemStack.getItem() instanceof CompositionC4
+                    && cs instanceof CSGameMap gameMap) {
+                ItemEntity itemEntity = event.getItemEntity();
+                gameMap.objectiveTracker().manualDrop(
+                        itemEntity.getId(),
+                        itemEntity.getUUID(),
+                        player.level().getGameTime(),
+                        itemEntity.getX(),
+                        itemEntity.getY(),
+                        itemEntity.getZ(),
+                        itemEntity.getYRot(),
+                        java.util.Optional.empty()
+                );
             }
 
             if(!event.isCanceled()){
@@ -213,6 +245,26 @@ public class CSGameEvents {
 
         int magazineCount = Math.round((float) dummyAmmo / maxAmmo);
         GunCompatManager.findProvider(stack).setDummyAmmo(stack, magazineCount * maxAmmo);
+    }
+
+
+    @SubscribeEvent
+    public static void onPlacedC4(CSGameMapEvent.PlayerEvent.PlacedC4Event event) {
+        CompositionC4Entity c4 = event.getC4Entity();
+        if (c4 == null) {
+            return;
+        }
+        event.getMap().objectiveTracker().planted(
+                c4.getId(),
+                c4.getUUID(),
+                c4.level().getGameTime(),
+                c4.getX(),
+                c4.getY(),
+                c4.getZ(),
+                c4.getYRot(),
+                java.util.Optional.empty(),
+                java.util.Optional.empty()
+        );
     }
 
 }

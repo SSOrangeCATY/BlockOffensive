@@ -1,5 +1,7 @@
 package com.phasetranscrystal.blockoffensive;
 
+import com.phasetranscrystal.blockoffensive.minimap.BlockOffensiveMinimapExtension;
+
 import com.phasetranscrystal.blockoffensive.command.CSCommand;
 import com.phasetranscrystal.blockoffensive.command.BOCommandRegister;
 import com.phasetranscrystal.blockoffensive.compat.BOImpl;
@@ -76,6 +78,8 @@ public class BlockOffensive {
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
+
+        BlockOffensiveMinimapExtension.register();
         PACKET_REGISTER.registerPacket(BombActionC2SPacket.class);
         PACKET_REGISTER.registerPacket(BombActionS2CPacket.class);
         PACKET_REGISTER.registerPacket(BombDemolitionProgressS2CPacket.class);

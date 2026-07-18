@@ -720,12 +720,19 @@ public abstract class CSMap extends BaseRoundMap<String, CSRoundResultReason> {
         this.setBystander(player);
     }
 
-    public static void dropC4(ServerPlayer player) {
+    /**
+     * Force-drop C4 from a player inventory and retain the spawned ItemEntity identity
+     * for minimap objective tracking. Returns null when the player held no C4.
+     */
+    @Nullable
+    public static ItemEntity dropC4(ServerPlayer player) {
         int im = player.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof CompositionC4, -1, player.inventoryMenu.getCraftSlots());
         if (im > 0) {
-            player.drop(new ItemStack(BOItemRegister.C4.get(), 1), false, false);
+            ItemEntity dropped = player.drop(new ItemStack(BOItemRegister.C4.get(), 1), false, false);
             player.getInventory().setChanged();
+            return dropped;
         }
+        return null;
     }
 
     public void setBystander(ServerPlayer player) {

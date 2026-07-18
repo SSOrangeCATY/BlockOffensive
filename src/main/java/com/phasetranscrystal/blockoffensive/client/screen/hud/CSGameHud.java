@@ -60,6 +60,15 @@ public class CSGameHud implements IHudRenderer {
     private KillAnimator killAnimator = new EnderKillAnimator();
     private boolean isStarted = false;
 
+    /** Scoreboard overlay is drawn whenever CSGameHud is the active game HUD. */
+    public boolean isScoreboardOccupying() {
+        return true;
+    }
+
+    public CSDeathMessageHud deathMessageHud() {
+        return deathMessageHud;
+    }
+
     public static CSGameHud getInstance(){
         return INSTANCE;
     }

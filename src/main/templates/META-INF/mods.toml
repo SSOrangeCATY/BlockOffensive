@@ -37,3 +37,10 @@ mandatory=true
 versionRange="${fpsm_version_range}"
 ordering="NONE"
 side="BOTH"
+
+[[dependencies."${mod_id}"]]
+modId="ldlib2"
+mandatory=true
+versionRange="${ldlib2_version_range}"
+ordering="AFTER"
+side="BOTH"

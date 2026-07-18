@@ -130,12 +130,10 @@
   "message.damage.remain": "剩",
   "blockoffensive.kill.message.suicide": "你因为 %s 的自杀得到了 %s 补偿",
   "blockoffensive.hurt.message.teammate": "%s 伤害了一名队友",
-  "blockoffensive.place.message.c4" : "炸弹安放中！",
+  "blockoffensive.place.message.c4": "炸弹安放中！",
   "blockoffensive.demolish.message.c4": "正在拆除炸弹！",
   "blockoffensive.map.cs.winner.draw.message": "平局",
-
   "config.blockoffensive.title": "BlockOffensive 配置",
-
   "config.blockoffensive.client": "客户端设置",
   "config.blockoffensive.client.kill_message": "击杀信息设置",
   "config.blockoffensive.client.kill_message.hud_enabled": "启用击杀信息HUD",
@@ -146,11 +144,9 @@
   "config.blockoffensive.client.kill_message.show_time.tooltip": "每条信息在屏幕上显示的时间（秒）",
   "config.blockoffensive.client.kill_message.max_count": "最大显示数量",
   "config.blockoffensive.client.kill_message.max_count.tooltip": "同时显示的最大信息数量",
-
   "config.blockoffensive.client.kill_icon": "击杀图标设置",
   "config.blockoffensive.client.kill_icon.enabled": "启用击杀图标",
   "config.blockoffensive.client.kill_icon.enabled.tooltip": "在屏幕上显示击杀图标",
-
   "config.blockoffensive.common.step_sound": "脚步声设置",
   "config.blockoffensive.common.step_sound.teammate_muffled": "队友潜行脚步声",
   "config.blockoffensive.common.step_sound.teammate_muffled.tooltip": "队友潜行时的脚步声音量",
@@ -160,11 +156,9 @@
   "config.blockoffensive.common.step_sound.enemy_muffled.tooltip": "敌人潜行时的脚步声音量",
   "config.blockoffensive.common.step_sound.enemy_normal": "敌人正常脚步声",
   "config.blockoffensive.common.step_sound.enemy_normal.tooltip": "敌人正常行走时的脚步声音量",
-
   "config.blockoffensive.common.c4": "C4 设置",
   "config.blockoffensive.common.c4.fuse_time": "引信时间",
   "config.blockoffensive.common.c4.fuse_time.tooltip": "C4 爆炸前的延迟时间（tick，20 tick = 1秒）",
-
   "config.blockoffensive.common.game_rules": "游戏规则",
   "config.blockoffensive.common.game_rules.keep_inventory": "死亡保留物品",
   "config.blockoffensive.common.game_rules.keep_inventory.tooltip": "玩家死亡后保留背包物品",
@@ -180,14 +174,12 @@
   "config.blockoffensive.common.game_rules.natural_regeneration.tooltip": "玩家是否自然恢复生命值",
   "config.blockoffensive.common.game_rules.hard_difficulty": "困难难度",
   "config.blockoffensive.common.game_rules.hard_difficulty.tooltip": "将游戏难度设置为困难",
-
   "config.blockoffensive.common.web_server": "Web服务器设置",
   "config.blockoffensive.common.web_server.enabled": "启用Web服务器",
   "config.blockoffensive.common.web_server.enabled.tooltip": "启动内置Web服务器",
   "config.blockoffensive.common.web_server.port": "Web服务器端口",
   "config.blockoffensive.common.web_server.port.tooltip": "Web服务器的端口号（1-65535）",
   "xuplus.c4.timer": "炸弹将在 %s 秒后爆炸",
-
   "setting.cs.autoStart": "自动开始",
   "setting.cs.autoStart.desc": "双方队伍均有玩家时是否自动倒计时开始游戏",
   "setting.cs.autoStartTime": "自动开始时间",
@@ -250,7 +242,6 @@
   "setting.cs.defuseBombEconomy.desc": "成功拆除炸弹后队伍获得的金钱奖励",
   "setting.cs.detonateBombEconomy": "引爆奖励经济",
   "setting.cs.detonateBombEconomy.desc": "成功引爆炸弹后队伍获得的金钱奖励",
-
   "setting.csdm.autoStart": "自动开始",
   "setting.csdm.autoStart.desc": "双方队伍均有玩家时是否自动倒计时开始游戏",
   "setting.csdm.autoStartTime": "自动开始时间",
@@ -281,10 +272,26 @@
   "setting.csdm.matchTimeLimit.desc": "死斗模式比赛的最大时长（tick）",
   "setting.csdm.spawnProtectionTime": "出生保护时间",
   "setting.csdm.spawnProtectionTime.desc": "玩家重生后的无敌保护时间（tick）",
-
   "fpsm.game_type.cs": "CS爆破模式",
   "fpsm.game_type.csdm": "CS死斗模式",
   "fpsm.dimension.minecraft.overworld": "主世界",
   "fpsm.dimension.minecraft.the_nether": "地狱",
-  "fpsm.dimension.minecraft.the_end": "末地"
+  "fpsm.dimension.minecraft.the_end": "末地",
+  "blockoffensive.minimap.marker.self": "自己",
+  "blockoffensive.minimap.marker.ally": "队友",
+  "blockoffensive.minimap.marker.enemy": "敌人",
+  "blockoffensive.minimap.marker.death": "死亡",
+  "blockoffensive.minimap.marker.c4_carried": "C4（携带）",
+  "blockoffensive.minimap.marker.c4_dropped": "C4（掉落）",
+  "blockoffensive.minimap.marker.c4_planted": "C4（已安装）",
+  "blockoffensive.minimap.marker.c4_defusing": "C4（拆除中）",
+  "blockoffensive.minimap.marker.site": "爆破点",
+  "blockoffensive.minimap.marker.spawn": "出生点",
+  "blockoffensive.minimap.marker.shop": "商店",
+  "blockoffensive.minimap.region.map_boundary": "地图边界",
+  "blockoffensive.minimap.region.bomb_site": "爆破区",
+  "blockoffensive.minimap.region.spawn": "出生区",
+  "blockoffensive.minimap.region.shop": "购买区",
+  "blockoffensive.minimap.hud.tactical": "战术地图",
+  "blockoffensive.minimap.hud.minimap": "小地图"
 }

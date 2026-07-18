@@ -39,6 +39,17 @@ public final class CSSpectatorRoster {
         this.names = new ArrayList<>();
     }
 
+    public boolean isRendering() {
+        if (!com.phasetranscrystal.blockoffensive.BOConfig.client.spectatorRosterEnabled.get()) {
+            return false;
+        }
+        return !this.names.isEmpty();
+    }
+
+    public int visibleRowCount() {
+        return this.names.size();
+    }
+
     public void render(GuiGraphics graphics, int screenWidth, int screenHeight) {
         if (!com.phasetranscrystal.blockoffensive.BOConfig.client.spectatorRosterEnabled.get()) {
             return;

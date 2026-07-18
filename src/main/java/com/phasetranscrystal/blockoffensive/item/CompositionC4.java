@@ -263,7 +263,7 @@ public class CompositionC4 extends Item implements BlastBombItem {
         );
 
 		map.getMapTeams().getTeamByPlayer(player).ifPresent(team -> {
-			MinecraftForge.EVENT_BUS.post(new CSGameMapEvent.PlayerEvent.PlacedC4Event(map,team,player));
+			MinecraftForge.EVENT_BUS.post(new CSGameMapEvent.PlayerEvent.PlacedC4Event(map, team, player, c4));
 		});
 
 		return ItemStack.EMPTY;

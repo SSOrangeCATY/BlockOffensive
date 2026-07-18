@@ -131,11 +131,9 @@
   "message.damage.received": "Received",
   "message.damage.remain": "Remaining",
   "blockoffensive.hurt.message.teammate": "%s hurt a teammate",
-  "blockoffensive.place.message.c4" : "The bomb is being planted!",
+  "blockoffensive.place.message.c4": "The bomb is being planted!",
   "blockoffensive.demolish.message.c4": "Dismantling the bomb!",
-
   "config.blockoffensive.title": "BlockOffensive Configuration",
-
   "config.blockoffensive.client": "Client Settings",
   "config.blockoffensive.client.kill_message": "Kill Message Settings",
   "config.blockoffensive.client.kill_message.hud_enabled": "Enable Kill Message HUD",
@@ -146,11 +144,9 @@
   "config.blockoffensive.client.kill_message.show_time.tooltip": "How long each message stays on screen (seconds)",
   "config.blockoffensive.client.kill_message.max_count": "Maximum Messages",
   "config.blockoffensive.client.kill_message.max_count.tooltip": "Maximum number of messages shown at once",
-
   "config.blockoffensive.client.kill_icon": "Kill Icon Settings",
   "config.blockoffensive.client.kill_icon.enabled": "Enable Kill Icons",
   "config.blockoffensive.client.kill_icon.enabled.tooltip": "Show kill icons on screen",
-
   "config.blockoffensive.common.step_sound": "Step Sound Settings",
   "config.blockoffensive.common.step_sound.teammate_muffled": "Teammate Muffled Step Volume",
   "config.blockoffensive.common.step_sound.teammate_muffled.tooltip": "Volume of muffled footsteps for teammates",
@@ -160,11 +156,9 @@
   "config.blockoffensive.common.step_sound.enemy_muffled.tooltip": "Volume of muffled footsteps for enemies",
   "config.blockoffensive.common.step_sound.enemy_normal": "Enemy Normal Step Volume",
   "config.blockoffensive.common.step_sound.enemy_normal.tooltip": "Volume of normal footsteps for enemies",
-
   "config.blockoffensive.common.c4": "C4 Settings",
   "config.blockoffensive.common.c4.fuse_time": "Fuse Time",
   "config.blockoffensive.common.c4.fuse_time.tooltip": "Time before C4 detonates (ticks, 20 ticks = 1 second)",
-
   "config.blockoffensive.common.game_rules": "Game Rules",
   "config.blockoffensive.common.game_rules.keep_inventory": "Keep Inventory",
   "config.blockoffensive.common.game_rules.keep_inventory.tooltip": "Players keep their inventory after death",
@@ -180,14 +174,12 @@
   "config.blockoffensive.common.game_rules.natural_regeneration.tooltip": "Players regenerate health naturally",
   "config.blockoffensive.common.game_rules.hard_difficulty": "Hard Difficulty",
   "config.blockoffensive.common.game_rules.hard_difficulty.tooltip": "Set game difficulty to Hard",
-
   "config.blockoffensive.common.web_server": "Web Server Settings",
   "config.blockoffensive.common.web_server.enabled": "Enable Web Server",
   "config.blockoffensive.common.web_server.enabled.tooltip": "Start embedded web server",
   "config.blockoffensive.common.web_server.port": "Web Server Port",
   "config.blockoffensive.common.web_server.port.tooltip": "Port for web server (1-65535)",
   "xuplus.c4.timer": "Bomb explodes in %s seconds",
-
   "setting.cs.autoStart": "Auto Start",
   "setting.cs.autoStart.desc": "Auto start countdown when both teams have players",
   "setting.cs.autoStartTime": "Auto Start Time",
@@ -250,7 +242,6 @@
   "setting.cs.defuseBombEconomy.desc": "Team money reward for successful bomb defuse",
   "setting.cs.detonateBombEconomy": "Detonate Bomb Economy",
   "setting.cs.detonateBombEconomy.desc": "Team money reward for successful bomb detonation",
-
   "setting.csdm.autoStart": "Auto Start",
   "setting.csdm.autoStart.desc": "Auto start countdown when both teams have players",
   "setting.csdm.autoStartTime": "Auto Start Time",
@@ -281,10 +272,26 @@
   "setting.csdm.matchTimeLimit.desc": "Maximum match duration in deathmatch (ticks)",
   "setting.csdm.spawnProtectionTime": "Spawn Protection Time",
   "setting.csdm.spawnProtectionTime.desc": "Invulnerability duration after respawn (ticks)",
-
   "fpsm.game_type.cs": "CS Bomb Defusal",
   "fpsm.game_type.csdm": "CS Deathmatch",
   "fpsm.dimension.minecraft.overworld": "Overworld",
   "fpsm.dimension.minecraft.the_nether": "The Nether",
-  "fpsm.dimension.minecraft.the_end": "The End"
+  "fpsm.dimension.minecraft.the_end": "The End",
+  "blockoffensive.minimap.marker.self": "You",
+  "blockoffensive.minimap.marker.ally": "Ally",
+  "blockoffensive.minimap.marker.enemy": "Enemy",
+  "blockoffensive.minimap.marker.death": "Death",
+  "blockoffensive.minimap.marker.c4_carried": "C4 (Carried)",
+  "blockoffensive.minimap.marker.c4_dropped": "C4 (Dropped)",
+  "blockoffensive.minimap.marker.c4_planted": "C4 (Planted)",
+  "blockoffensive.minimap.marker.c4_defusing": "C4 (Defusing)",
+  "blockoffensive.minimap.marker.site": "Bomb Site",
+  "blockoffensive.minimap.marker.spawn": "Spawn",
+  "blockoffensive.minimap.marker.shop": "Shop",
+  "blockoffensive.minimap.region.map_boundary": "Map Boundary",
+  "blockoffensive.minimap.region.bomb_site": "Bomb Site",
+  "blockoffensive.minimap.region.spawn": "Spawn Area",
+  "blockoffensive.minimap.region.shop": "Buy Zone",
+  "blockoffensive.minimap.hud.tactical": "Tactical Map",
+  "blockoffensive.minimap.hud.minimap": "Minimap"
 }

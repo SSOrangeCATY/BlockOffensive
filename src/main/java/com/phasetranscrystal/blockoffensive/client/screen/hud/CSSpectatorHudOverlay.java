@@ -117,6 +117,15 @@ public final class CSSpectatorHudOverlay {
      * 渲染HUD元素
      * @param guiGraphics 渲染工具类
      */
+    /** True when the name card has non-negligible visibility this frame. */
+    public static boolean isOccupyingScreen() {
+        return visibilityAlpha > 0.01f && lastTargetUuid != null;
+    }
+
+    public static float currentSlideYPixels() {
+        return slideYPixels;
+    }
+
     public void render(GuiGraphics guiGraphics) {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer localPlayer = minecraft.player;

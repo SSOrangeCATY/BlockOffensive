@@ -89,7 +89,46 @@ mixin {
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
+def fpsmatchPinnedProperties = new Properties()
+file('FPSMatch/gradle.properties').withInputStream { input ->
+    fpsmatchPinnedProperties.load(input)
+}
+def fpsmatchLdlib2ApiArtifact = file(
+        "FPSMatch/build/ldlib2/${fpsmatchPinnedProperties.getProperty('ldlib2_api_jar')}"
+)
+def fpsmatchLdlib2RuntimeArtifact = file(
+        "FPSMatch/build/ldlib2/${fpsmatchPinnedProperties.getProperty('ldlib2_runtime_jar')}"
+)
+def verifyFpsmatchLdlib2Artifacts =
+        gradle.includedBuild('FPSMatch').task(':verifyLdlib2ReleaseArtifacts')
+def prepareBlockOffensiveGameTestStructures = tasks.register(
+        'prepareBlockOffensiveGameTestStructures',
+        Copy
+) {
+    from('src/main/resources/data/blockoffensive/gameteststructures')
+    into('run/gameteststructures')
+    include('**/*.snbt')
+}
+
+tasks.named('prepareGameTestServerRun') {
+    dependsOn prepareBlockOffensiveGameTestStructures
+}
+
+tasks.configureEach {
+    if (name in [
+            'prepareClientRun',
+            'prepareServerRun',
+            'prepareGameTestServerRun'
+    ]) {
+        dependsOn verifyFpsmatchLdlib2Artifacts
+    }
+}
+
 repositories {
+    flatDir {
+        name = 'FPSMatchPinnedLdlib2'
+        dirs(file('FPSMatch/build/ldlib2'))
+    }
     mavenLocal()
     mavenCentral()
 
@@ -133,6 +172,17 @@ repositories {
 }
 
 dependencies {
+    def ldlib2Coordinates =
+            'pinned.ldlib2:ldlib2-forge-1.20.1:2.2.27+forge.1.20.1'
+    modImplementation(ldlib2Coordinates) {
+        transitive = false
+        artifact {
+            classifier = 'all'
+            type = 'jar'
+            extension = 'jar'
+        }
+    }
+
     additionalRuntimeClasspath(implementation("icyllis.modernui:ModernUI-Core:${modernui_core_version}")) {
         exclude group: "org.apache.logging.log4j", module: "log4j-core"
         exclude group: "org.apache.logging.log4j", module: "log4j-api"
@@ -192,6 +242,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
             forge_version_range    : forge_version_range,
             loader_version_range   : loader_version_range,
             fpsm_version_range     : fpsm_version_range,
+            ldlib2_version_range   : ldlib2_version_range,
             mod_id                 : mod_id,
             mod_name               : mod_name,
             mod_license            : mod_license,
@@ -242,9 +293,27 @@ tasks.named('createMinecraftArtifacts').configure {
 }
 
 tasks.withType(JavaCompile).configureEach {
+    dependsOn verifyFpsmatchLdlib2Artifacts
     options.encoding = 'UTF-8'
 }
 
 tasks.withType(Test).configureEach {
     useJUnitPlatform()
+}
+
+def fpsmatchHeadlessClientAcceptance =
+        gradle.includedBuild('FPSMatch').task(':headlessClientAcceptance')
+
+tasks.register('headlessClientAcceptance', Test) {
+    group = 'verification'
+    description = 'Runs FPSMatch and BlockOffensive minimap acceptance without OpenGL or Vulkan.'
+    dependsOn fpsmatchHeadlessClientAcceptance
+    dependsOn tasks.named('testClasses')
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform()
+    systemProperty 'java.awt.headless', 'true'
+    filter {
+        includeTestsMatching 'com.phasetranscrystal.blockoffensive.minimap.*'
+    }
 }
