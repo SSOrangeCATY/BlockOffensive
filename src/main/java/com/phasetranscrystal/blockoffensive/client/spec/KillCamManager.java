@@ -34,7 +34,9 @@ import net.minecraft.world.scores.Team;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiEvent;
 import net.minecraftforge.client.event.ViewportEvent;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
@@ -344,11 +346,7 @@ public final class KillCamManager {
         if (isSpec) {
             Entity camEnt = mc.getCameraEntity();
             if (camEnt != null && camEnt != pl && camEnt != ghostCam) {
-                holdBlack = false;
-                disableGray();
-                hudOn = false;
-                phase = Phase.NONE;
-                tickIn = 0;
+                resetForLifecycleBoundary();
             }
         }
 
@@ -461,6 +459,22 @@ public final class KillCamManager {
             forceRestoreCameraToPlayer();
             reset();
         }
+    }
+
+    @SubscribeEvent
+    public static void onClientLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        resetForLifecycleBoundary();
+    }
+
+    @SubscribeEvent
+    public static void onLevelUnload(LevelEvent.Unload event) {
+        if (event.getLevel().isClientSide()) {
+            resetForLifecycleBoundary();
+        }
+    }
+
+    public static void resetForLifecycleBoundary() {
+        reset();
     }
 
     private static void renderUiVeil(GuiGraphics gg, int sw, int sh, float dt) {

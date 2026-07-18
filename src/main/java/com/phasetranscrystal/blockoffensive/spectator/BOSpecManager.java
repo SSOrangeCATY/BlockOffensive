@@ -46,6 +46,8 @@ public final class BOSpecManager {
     private static final Logger LOG = LogUtils.getLogger();
 
     private static final Map<UUID, SpectateMode> SPECTATE_MODE = new ConcurrentHashMap<>();
+    private static final Map<UUID, KillCamDeathContext> DEATH_CONTEXTS = new ConcurrentHashMap<>();
+    private static final long KILLCAM_CONTEXT_TTL_TICKS = 200L;
     private static final Map<UUID, Long> LAST_SENT_NS = new ConcurrentHashMap<>();
     private static final long DEDUP_NS = 250_000_000L; // 0.25s
 
@@ -66,10 +68,36 @@ public final class BOSpecManager {
                                             ItemStack weapon) {
         if (dead == null || killer == null) return;
 
+        recordKillCamContext(dead, killer, FPSMCore.getInstance().getMapByPlayer(dead).orElse(null));
+
         Vec3 kEye = killer.getEyePosition(1.0F);
         Vec3 dEye = DamagePosTracker.consumeVictimEye(dead).orElseGet(() -> dead.getEyePosition(1.0F));
 
         sendKillCamAndAttach(dead, killer, weapon, kEye, dEye);
+    }
+
+    public static void recordKillCamContext(ServerPlayer dead, ServerPlayer killer, BaseMap map) {
+        if (dead == null || killer == null || map == null) return;
+        DEATH_CONTEXTS.put(dead.getUUID(), new KillCamDeathContext(
+                killer.getUUID(), map.getGameType(), map.getMapName(), dead.serverLevel().getGameTime()));
+    }
+
+    public static Optional<ServerPlayer> getRecordedKiller(UUID victimId) {
+        KillCamDeathContext context = victimId == null ? null : DEATH_CONTEXTS.get(victimId);
+        if (context == null) return Optional.empty();
+        ServerPlayer victim = FPSMCore.getInstance().getPlayerByUUID(victimId).orElse(null);
+        if (victim == null || victim.serverLevel().getGameTime() - context.createdTick() > KILLCAM_CONTEXT_TTL_TICKS) {
+            DEATH_CONTEXTS.remove(victimId);
+            return Optional.empty();
+        }
+        return FPSMCore.getInstance().getPlayerByUUID(context.killerId());
+    }
+
+    public static boolean matchesRecordedMap(UUID victimId, BaseMap map) {
+        KillCamDeathContext context = victimId == null ? null : DEATH_CONTEXTS.get(victimId);
+        return context != null && map != null
+                && context.gameType().equals(map.getGameType())
+                && context.mapName().equals(map.getMapName());
     }
 
     public static void sendKillCamAndAttach(ServerPlayer dead,
@@ -210,6 +238,9 @@ public final class BOSpecManager {
     @OnlyIn(Dist.CLIENT)
     public static void requestKillCamFallback(@NotNull UUID killer){
         BlockOffensive.INSTANCE.sendToServer(new RequestKillCamFallbackC2SPacket(killer));
+    }
+
+    private record KillCamDeathContext(UUID killerId, String gameType, String mapName, long createdTick) {
     }
 
     @OnlyIn(Dist.CLIENT)

@@ -215,4 +215,82 @@ class BlockOffensiveIssueRegressionTest {
         assertTrue(command.contains("[BO_TACZ_TEST] DeathMessage headShot={} passWall={} passSmoke={}"));
         assertTrue(command.contains("wall + smoke + headshot flags reached DeathMessage packet"));
     }
+
+    @Test
+    void killCamFallbackUsesAuthoritativeDeathContextAndSameMapChecks() throws IOException {
+        String packet = Files.readString(Path.of("src/main/java/com/phasetranscrystal/blockoffensive/net/spec/RequestKillCamFallbackC2SPacket.java"));
+        String manager = Files.readString(Path.of("src/main/java/com/phasetranscrystal/blockoffensive/spectator/BOSpecManager.java"));
+
+        assertTrue(packet.contains("BOSpecManager.getRecordedKiller(victim.getUUID())"));
+        assertTrue(packet.contains("killerId.equals(recordedKiller.get().getUUID())"));
+        assertTrue(packet.contains("killerMap.get() != mapOpt.get()"));
+        assertFalse(packet.contains("getPlayerByUUID(killerId).orElse(null)"));
+        assertTrue(manager.contains("private static final Map<UUID, KillCamDeathContext> DEATH_CONTEXTS"));
+        assertTrue(manager.contains("recordKillCamContext"));
+    }
+
+    @Test
+    void killCamResetsOnLevelAndExternalCameraTransitions() throws IOException {
+        String manager = Files.readString(Path.of("src/main/java/com/phasetranscrystal/blockoffensive/client/spec/KillCamManager.java"));
+
+        assertTrue(manager.contains("public static void resetForLifecycleBoundary()"));
+        assertTrue(manager.contains("ClientPlayerNetworkEvent.LoggingOut"));
+        assertTrue(manager.contains("LevelEvent.Unload"));
+        assertTrue(manager.contains("camEnt != pl && camEnt != ghostCam"));
+        assertTrue(manager.contains("holdBlack = false;"));
+        assertTrue(manager.contains("phase = Phase.NONE;"));
+    }
+
+    @Test
+    void teammateEconomySyncIsTargetedToTheSameTeam() throws IOException {
+        String shop = Files.readString(Path.of("FPSMatch/src/main/java/com/phasetranscrystal/fpsmatch/core/shop/FPSMShop.java"));
+
+        assertTrue(shop.contains("syncShopMoneyData(Collection<ServerPlayer> viewers)"));
+        String capability = Files.readString(Path.of("FPSMatch/src/main/java/com/phasetranscrystal/fpsmatch/common/capability/team/ShopCapability.java"));
+        assertTrue(capability.contains("shop.syncShopMoneyData(serverTeam.getOnline())"));
+        assertTrue(shop.contains("ShopMoneyS2CPacket(uuid, shopData.getMoney())"));
+    }
+
+    @Test
+    void magazineReloadCommitsOnlyAfterSuccessfulCompletion() throws IOException {
+        String events = Files.readString(CS_GAME_EVENTS);
+
+        assertTrue(events.contains("pendingMagazineReloads"));
+        assertTrue(events.contains("commitMagazineReload"));
+        assertTrue(events.contains("cancelMagazineReload"));
+        assertFalse(events.contains("applyMagazineReload(stack);"));
+    }
+
+    @Test
+    void physicsProxyFailureNeverLosesTheOriginalEntity() throws IOException {
+        String compat = Files.readString(Path.of("src/main/java/com/phasetranscrystal/blockoffensive/compat/PhysicsModCompat.java"));
+
+        assertTrue(compat.contains("restoreVisibleEntityAfterFailedProxy"));
+        assertTrue(compat.contains("entity.setInvisible(false)"));
+    }
+
+    @Test
+    void passThroughContextIsPreservedIntoDeathMessage() throws IOException {
+        String pipeline = Files.readString(Path.of("FPSMatch/src/main/java/com/phasetranscrystal/fpsmatch/common/event/FPSMDeathPipelineEventHook.java"));
+        String map = Files.readString(CS_MAP);
+
+        assertTrue(pipeline.contains("recentGunHits"));
+        assertTrue(pipeline.contains("context.setPassWall(context.isPassWall() || recentGunHit.passWall())"));
+        assertTrue(map.contains("boolean passWall = context.isPassWall();"));
+        assertTrue(map.contains("passWall,"));
+    }
+
+    @Test
+    void blockOffensiveRunsTestsBuildAndCoverageInGithubActions() throws IOException {
+        String build = Files.readString(Path.of("build.gradle"));
+        Path workflowPath = Path.of(".github/workflows/build.yml");
+        assertTrue(Files.exists(workflowPath));
+        String workflow = Files.exists(workflowPath) ? Files.readString(workflowPath) : "";
+
+        assertTrue(build.contains("id 'jacoco'"));
+        assertTrue(build.contains("jacocoTestReport"));
+        assertTrue(workflow.contains("./gradlew test build jacocoTestReport"));
+        assertTrue(workflow.contains("build/libs/*.jar"));
+        assertTrue(workflow.contains("FPSMatch"));
+    }
 }

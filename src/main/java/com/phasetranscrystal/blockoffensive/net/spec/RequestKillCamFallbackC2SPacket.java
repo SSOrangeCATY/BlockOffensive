@@ -35,8 +35,12 @@ public class RequestKillCamFallbackC2SPacket {
             var mapOpt = FPSMCore.getInstance().getMapByPlayer(victim);
             if (mapOpt.isEmpty() || !victim.isSpectator()) return;
 
-            ServerPlayer killer = FPSMCore.getInstance().getPlayerByUUID(killerId).orElse(null);
-            if (killer == null) return;
+            Optional<ServerPlayer> recordedKiller = BOSpecManager.getRecordedKiller(victim.getUUID());
+            if (recordedKiller.isEmpty() || !killerId.equals(recordedKiller.get().getUUID())) return;
+            ServerPlayer killer = recordedKiller.get();
+            var killerMap = FPSMCore.getInstance().getMapByPlayer(killer);
+            if (killerMap.isEmpty() || killerMap.get() != mapOpt.get()
+                    || !BOSpecManager.matchesRecordedMap(victim.getUUID(), mapOpt.get())) return;
 
             Vec3 kEye = killer.getEyePosition(1.0F);
             Vec3 vEye = DamagePosTracker.consumeVictimEye(victim).orElseGet(() -> victim.getEyePosition(1.0F));

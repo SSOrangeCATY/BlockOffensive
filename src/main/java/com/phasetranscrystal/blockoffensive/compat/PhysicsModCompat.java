@@ -218,6 +218,7 @@ public class PhysicsModCompat {
                     }
 
                     rollbackFailedDeadAttempt(mod, entity, EntityId, createdRagdoll);
+                    restoreVisibleEntityAfterFailedProxy(entity);
                     debugRagdoll("retry no corpse entity={} type={} parts={} pos={},{},{}",
                             EntityId, entity.getType(), blockifiedPartCount, entity.getX(), entity.getY(), entity.getZ());
                     return false;
@@ -262,6 +263,12 @@ public class PhysicsModCompat {
         mod.alreadyBlockified.remove(entity.getId());
         if (createdRagdoll == null) {
             removeUnmappedPlayerRagdoll(entity, entityId);
+        }
+    }
+
+    private static void restoreVisibleEntityAfterFailedProxy(Entity entity) {
+        if (entity instanceof LivingEntity) {
+            entity.setInvisible(false);
         }
     }
 

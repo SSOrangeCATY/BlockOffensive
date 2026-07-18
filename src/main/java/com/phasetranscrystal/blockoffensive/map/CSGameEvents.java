@@ -27,9 +27,13 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.Optional;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Mod.EventBusSubscriber(modid = BlockOffensive.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CSGameEvents {
+    private static final Map<UUID, PendingMagazineReload> pendingMagazineReloads = new ConcurrentHashMap<>();
 
     @SubscribeEvent
     public static void onPlayerHurt(FPSMapEvent.PlayerEvent.HurtEvent event) {
@@ -209,7 +213,7 @@ public class CSGameEvents {
                 .ifPresent(cs -> {
                     ItemStack stack = event.getGunItemStack();
                     if (stack != null && GunCompatManager.isGun(stack)) {
-                        applyMagazineReload(stack);
+                        beginMagazineReload(player, stack);
                     }
                 });
     }
@@ -232,6 +236,23 @@ public class CSGameEvents {
 
         int magazineCount = dummyAmmo / maxAmmo;
         GunCompatManager.findProvider(stack).setDummyAmmo(stack, (magazineCount - 1) * maxAmmo);
+    }
+
+    private static void beginMagazineReload(ServerPlayer player, ItemStack stack) {
+        int before = GunCompatManager.findProvider(stack).getDummyAmmo(stack);
+        pendingMagazineReloads.put(player.getUUID(), new PendingMagazineReload(stack, before));
+    }
+
+    public static void commitMagazineReload(UUID playerId) {
+        PendingMagazineReload pending = pendingMagazineReloads.remove(playerId);
+        if (pending != null) applyMagazineReload(pending.stack());
+    }
+
+    public static void cancelMagazineReload(UUID playerId) {
+        pendingMagazineReloads.remove(playerId);
+    }
+
+    private record PendingMagazineReload(ItemStack stack, int previousAmmo) {
     }
 
     private static void applyMagazineObtainAmmo(ItemStack stack) {
