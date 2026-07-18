@@ -10,7 +10,7 @@ public final class DeathMessageRules {
     }
 
     public static boolean resolveNoScopeFlag(boolean isScopedKill, boolean attackerIsDeadPlayer) {
-        return isScopedKill && !attackerIsDeadPlayer;
+        return !isScopedKill && !attackerIsDeadPlayer;
     }
 
     public static boolean hasDistinctAssist(UUID assistUUID, UUID killerUUID) {

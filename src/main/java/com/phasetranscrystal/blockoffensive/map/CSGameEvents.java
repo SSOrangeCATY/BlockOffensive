@@ -24,6 +24,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.Optional;
@@ -34,6 +35,21 @@ import java.util.concurrent.ConcurrentHashMap;
 @Mod.EventBusSubscriber(modid = BlockOffensive.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CSGameEvents {
     private static final Map<UUID, PendingMagazineReload> pendingMagazineReloads = new ConcurrentHashMap<>();
+
+    @SubscribeEvent
+    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide()) return;
+        if (!(event.player instanceof ServerPlayer player)) return;
+        PendingMagazineReload pending = pendingMagazineReloads.get(player.getUUID());
+        if (pending == null) return;
+        if (!player.getMainHandItem().equals(pending.stack()) && !player.getOffhandItem().equals(pending.stack())) {
+            cancelMagazineReload(player.getUUID());
+            return;
+        }
+        if (player.tickCount - pending.startedTick() >= 20) {
+            commitMagazineReload(player.getUUID());
+        }
+    }
 
     @SubscribeEvent
     public static void onPlayerHurt(FPSMapEvent.PlayerEvent.HurtEvent event) {
@@ -240,7 +256,7 @@ public class CSGameEvents {
 
     private static void beginMagazineReload(ServerPlayer player, ItemStack stack) {
         int before = GunCompatManager.findProvider(stack).getDummyAmmo(stack);
-        pendingMagazineReloads.put(player.getUUID(), new PendingMagazineReload(stack, before));
+        pendingMagazineReloads.put(player.getUUID(), new PendingMagazineReload(stack.copy(), before, player.tickCount));
     }
 
     public static void commitMagazineReload(UUID playerId) {
@@ -252,7 +268,7 @@ public class CSGameEvents {
         pendingMagazineReloads.remove(playerId);
     }
 
-    private record PendingMagazineReload(ItemStack stack, int previousAmmo) {
+    private record PendingMagazineReload(ItemStack stack, int previousAmmo, int startedTick) {
     }
 
     private static void applyMagazineObtainAmmo(ItemStack stack) {

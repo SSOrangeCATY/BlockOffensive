@@ -3,6 +3,22 @@ plugins {
     id 'idea'
     id 'net.neoforged.moddev.legacyforge' version '2.0.140'
     id 'maven-publish'
+    id 'jacoco'
+}
+
+tasks.named('test') {
+    finalizedBy(tasks.named('jacocoTestReport'))
+}
+
+tasks.named('jacocoTestReport', JacocoReport) {
+    dependsOn(tasks.named('test'))
+    reports {
+        xml.required = true
+        html.required = true
+    }
+    sourceDirectories.from(files('src/main/java'))
+    classDirectories.from(files('build/classes/java/main'))
+    executionData.from(fileTree(buildDir).include('jacoco/test.exec'))
 }
 
 group = mod_group_id

@@ -258,7 +258,8 @@ class BlockOffensiveIssueRegressionTest {
         assertTrue(events.contains("pendingMagazineReloads"));
         assertTrue(events.contains("commitMagazineReload"));
         assertTrue(events.contains("cancelMagazineReload"));
-        assertFalse(events.contains("applyMagazineReload(stack);"));
+        assertTrue(events.contains("startedTick"));
+        assertTrue(events.contains("player.tickCount - pending.startedTick()"));
     }
 
     @Test

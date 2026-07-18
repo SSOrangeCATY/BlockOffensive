@@ -51,9 +51,9 @@ class DeathMessageHeadShotTest {
     }
 
     @Test
-    void scopedKillFlagBecomesNoScopeFlagForRealKill() {
-        assertTrue(DeathMessageRules.resolveNoScopeFlag(true, false));
-        assertFalse(DeathMessageRules.resolveNoScopeFlag(false, false));
+    void scopedKillFlagDoesNotBecomeNoScopeFlagForRealKill() {
+        assertFalse(DeathMessageRules.resolveNoScopeFlag(true, false));
+        assertTrue(DeathMessageRules.resolveNoScopeFlag(false, false));
     }
 
     @Test
