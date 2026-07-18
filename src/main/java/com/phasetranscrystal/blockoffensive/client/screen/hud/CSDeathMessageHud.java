@@ -94,6 +94,30 @@ public class CSDeathMessageHud{
         }
     }
 
+    public boolean isRendering() {
+        return BOConfig.client.killMessageHudEnabled.get() && !messageQueue.isEmpty();
+    }
+
+    public int visibleMessageCount() {
+        synchronized (queueLock) {
+            return messageQueue.size();
+        }
+    }
+
+    public int maxVisibleMessageWidth() {
+        synchronized (queueLock) {
+            int max = 1;
+            for (MessageData data : messageQueue) {
+                max = Math.max(max, calculateMessageWidth(data.message));
+            }
+            return max;
+        }
+    }
+
+    public int configuredPosition() {
+        return BOConfig.client.killMessageHudPosition.get();
+    }
+
     public void addKillMessage(DeathMessage message) {
         synchronized(queueLock) {
             long currentTime = System.currentTimeMillis();

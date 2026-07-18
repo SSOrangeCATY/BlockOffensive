@@ -3,6 +3,10 @@ package com.phasetranscrystal.blockoffensive.client;
 import com.phasetranscrystal.blockoffensive.client.key.SwitchSpectatorKey;
 import com.phasetranscrystal.blockoffensive.client.renderer.C4Renderer;
 import com.phasetranscrystal.blockoffensive.client.screen.hud.*;
+import com.phasetranscrystal.blockoffensive.minimap.CSHudSafeAreaContributors;
+import com.phasetranscrystal.blockoffensive.minimap.CSHudSafeAreaLayouts;
+import com.phasetranscrystal.fpsmatch.common.client.minimap.hud.HudRenderContext;
+import com.phasetranscrystal.fpsmatch.core.minimap.hud.HudSafeAreaRegistry;
 import com.phasetranscrystal.blockoffensive.entity.BOEntityRegister;
 import com.phasetranscrystal.fpsmatch.common.client.FPSMGameHudManager;
 import com.phasetranscrystal.fpsmatch.common.client.spec.SpecKeyHandler;
@@ -48,6 +52,51 @@ public class BOClientBootstrap {
 
         FPSMGameHudManager.INSTANCE.registerHud("cs", CSGameHud.getInstance());
         FPSMGameHudManager.INSTANCE.registerHud("csdm", CSGameHud.getInstance());
+        registerSafeAreaContributors();
+    }
+
+    private static void registerSafeAreaContributors() {
+        Minecraft mc = Minecraft.getInstance();
+        CSHudSafeAreaContributors contributors = new CSHudSafeAreaContributors(
+                new CSHudSafeAreaContributors.ScoreboardSource(
+                        () -> FPSMGameHudManager.shouldRender() && CSGameHud.getInstance().isScoreboardOccupying(),
+                        () -> mc.getWindow().getGuiScaledWidth(),
+                        () -> mc.getWindow().getGuiScaledHeight()
+                ),
+                new CSHudSafeAreaContributors.SimpleTopSource(
+                        () -> CSVoteHud.getInstance().isRendering(),
+                        () -> mc.getWindow().getGuiScaledWidth()
+                ),
+                new CSHudSafeAreaContributors.SimpleTopSource(
+                        () -> CSBombFuseHud.getInstance().isRendering(),
+                        () -> mc.getWindow().getGuiScaledWidth()
+                ),
+                new CSHudSafeAreaContributors.RosterSource(
+                        () -> CSSpectatorRoster.getInstance().isRendering(),
+                        () -> mc.getWindow().getGuiScaledWidth(),
+                        () -> CSSpectatorRoster.getInstance().visibleRowCount()
+                ),
+                new CSHudSafeAreaContributors.KillFeedSource(
+                        () -> CSGameHud.getInstance().deathMessageHud().isRendering(),
+                        () -> mc.getWindow().getGuiScaledWidth(),
+                        () -> mc.getWindow().getGuiScaledHeight(),
+                        () -> CSGameHud.getInstance().deathMessageHud().configuredPosition(),
+                        () -> CSGameHud.getInstance().deathMessageHud().visibleMessageCount(),
+                        () -> CSGameHud.getInstance().deathMessageHud().maxVisibleMessageWidth()
+                ),
+                new CSHudSafeAreaContributors.SpectatorCardSource(
+                        CSSpectatorHudOverlay::isOccupyingScreen,
+                        () -> mc.getWindow().getGuiScaledWidth(),
+                        () -> mc.getWindow().getGuiScaledHeight(),
+                        CSSpectatorHudOverlay::currentSlideYPixels
+                )
+        );
+
+        FPSMGameHudManager.INSTANCE.registerSafeAreaContributor(
+                "blockoffensive:hud_safe_areas",
+                CSHudSafeAreaLayouts.PRIORITY,
+                (HudSafeAreaRegistry registry, HudRenderContext ctx) -> contributors.contributeAll(registry)
+        );
     }
 
     @SubscribeEvent

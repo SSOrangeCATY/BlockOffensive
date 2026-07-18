@@ -67,6 +67,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -85,6 +86,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Function;
+import com.phasetranscrystal.blockoffensive.minimap.CSDeathMarkerCapture;
+import com.phasetranscrystal.blockoffensive.minimap.CSGameObjectiveTracker;
+import com.phasetranscrystal.blockoffensive.minimap.CSMapMinimapMarkerProvider;
+import com.phasetranscrystal.fpsmatch.core.minimap.marker.DeathMarkerLedger;
+import com.phasetranscrystal.fpsmatch.common.capability.map.MinimapCapability;
 
 /**
  * 反恐精英（CS）模式地图核心逻辑类
@@ -116,7 +122,7 @@ public class CSGameMap extends CSMap{
                     manager.saveData(map,map.getMapName(),false);
                 }));
     }
-    private static final List<Class<? extends MapCapability>> MAP_CAPABILITIES = List.of(DemolitionModeCapability.class, GameEndTeleportCapability.class);
+    private static final List<Class<? extends MapCapability>> MAP_CAPABILITIES = List.of(DemolitionModeCapability.class, GameEndTeleportCapability.class, MinimapCapability.class);
     private static final List<Class<? extends TeamCapability>> TEAM_CAPABILITIES = List.of(PauseCapability.class, CompensationCapability.class, TeamSwitchRestrictionCapability.class, ShopCapability.class, StartKitsCapability.class, ColoredPlayerCapability.class);
 
     private Setting<Integer> winnerRound;
@@ -132,6 +138,8 @@ public class CSGameMap extends CSMap{
     private Setting<Integer> compensationBase;
     private Setting<Integer> tDeathRewardPer;
     private Setting<Integer> closeShopTime;
+    private final DeathMarkerLedger deathMarkerLedger = new DeathMarkerLedger();
+    private final CSGameObjectiveTracker objectiveTracker = new CSGameObjectiveTracker();
     private Setting<Boolean> knifeSelection;
     private Setting<Integer> c4InstantKillRadius;
 
@@ -1264,6 +1272,7 @@ public class CSGameMap extends CSMap{
         if (!super.cleanupMap()) {
             return false;
         }
+        this.objectiveTracker.roundReset();
 
         MapTeams mapTeams = getMapTeams();
         int ctScore = getCT().getScores();
@@ -1535,6 +1544,15 @@ public class CSGameMap extends CSMap{
                         team.sendMessage(Component.translatable("blockoffensive.map.cs.team.giveBomb", player.getDisplayName()).withStyle(ChatFormatting.GREEN));
                         FPSMUtil.sortPlayerInventory(player);
                         this.syncInventory(player);
+                        this.objectiveTracker.assignCarrier(
+                                player.getUUID(),
+                                player.level().getGameTime(),
+                                player.getX(),
+                                player.getY(),
+                                player.getZ(),
+                                player.getYRot(),
+                                java.util.Optional.empty()
+                        );
                     });
                 });
 
@@ -1709,9 +1727,33 @@ public class CSGameMap extends CSMap{
         return !this.isStart || this.getMapTeams().getTeamByPlayer(context.getDeadPlayer()).isEmpty();
     }
 
+    public DeathMarkerLedger deathMarkerLedger() {
+        return deathMarkerLedger;
+    }
+
+    public CSGameObjectiveTracker objectiveTracker() {
+        return objectiveTracker;
+    }
+
     @Override
     public void handleDeath(DeathContext context){
         ServerPlayer dead = context.getDeadPlayer();
+        // Capture authoritative death pose before spectator/camera transition.
+        String teamId = this.getMapTeams().getTeamByPlayer(dead)
+                .map(t -> t.getFixedName())
+                .orElse("spectator");
+        CSDeathMarkerCapture.captureFromWorldPose(
+                deathMarkerLedger,
+                dead.getUUID(),
+                teamId,
+                dead.getX(),
+                dead.getY(),
+                dead.getZ(),
+                dead.getYRot(),
+                context.getCreatedTick(),
+                CSMapMinimapMarkerProvider.CS_DEATH_TTL_TICKS,
+                java.util.Optional.empty()
+        );
         pendingFinalKillAssist = calculatePendingFinalKillAssist(context);
         if(this.isStart){
             MapTeams teams = this.getMapTeams();
@@ -1721,7 +1763,19 @@ public class CSGameMap extends CSMap{
                         .flatMap(ShopCapability::getShopSafe).ifPresent(shop -> shop.getDefaultAndPutData(dead.getUUID()));
 
                 this.sendPacketToJoinedPlayer(dead, new ShopStatesS2CPacket(false, 0, 0), true);
-                dropC4(dead);
+                ItemEntity droppedC4 = dropC4(dead);
+                if (droppedC4 != null) {
+                    this.objectiveTracker.carrierDisconnectedOrDied(
+                            droppedC4.getId(),
+                            droppedC4.getUUID(),
+                            dead.level().getGameTime(),
+                            droppedC4.getX(),
+                            droppedC4.getY(),
+                            droppedC4.getZ(),
+                            droppedC4.getYRot(),
+                            java.util.Optional.empty()
+                    );
+                }
                 discardAmmo(dead.getUUID());
                 int ik = dead.getInventory().clearOrCountMatchingItems((i) -> i.getItem() instanceof BombDisposalKit, -1, dead.inventoryMenu.getCraftSlots());
                 if (ik > 0) {

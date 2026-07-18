@@ -1,5 +1,6 @@
 package com.phasetranscrystal.blockoffensive.event;
 
+import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
 import com.phasetranscrystal.blockoffensive.map.CSGameMap;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
 import net.minecraft.server.level.ServerPlayer;
@@ -40,8 +41,15 @@ public class CSGameMapEvent extends Event {
         }
 
         public static class PlacedC4Event extends PlayerEvent {
-            public PlacedC4Event(CSGameMap map, ServerTeam team, ServerPlayer player) {
+            private final CompositionC4Entity c4Entity;
+
+            public PlacedC4Event(CSGameMap map, ServerTeam team, ServerPlayer player, CompositionC4Entity c4Entity) {
                 super(map, team, player);
+                this.c4Entity = c4Entity;
+            }
+
+            public CompositionC4Entity getC4Entity() {
+                return c4Entity;
             }
         }
     }

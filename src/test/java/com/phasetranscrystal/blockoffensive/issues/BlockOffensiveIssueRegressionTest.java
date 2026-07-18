@@ -139,7 +139,10 @@ class BlockOffensiveIssueRegressionTest {
     @Test
     void csRespawnKeepsClassicModeDeadButLetsDeathmatchRespawn() throws IOException {
         String csMap = Files.readString(CS_MAP);
-        String handleRespawn = csMap.substring(csMap.indexOf("public void handleRespawn"), csMap.indexOf("public static void dropC4"));
+        int respawnStart = csMap.indexOf("public void handleRespawn");
+        int dropStart = csMap.indexOf("dropC4(ServerPlayer");
+        assertTrue(respawnStart >= 0 && dropStart > respawnStart);
+        String handleRespawn = csMap.substring(respawnStart, dropStart);
 
         assertTrue(csMap.contains("extends BaseRoundMap<String, CSRoundResultReason>"));
         assertTrue(handleRespawn.contains("CSDeathMatchMap deathMatchMap"));

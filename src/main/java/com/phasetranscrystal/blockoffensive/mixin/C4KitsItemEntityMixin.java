@@ -7,6 +7,7 @@ import com.phasetranscrystal.blockoffensive.map.CSGameMap;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -64,5 +65,40 @@ public abstract class C4KitsItemEntityMixin {
                 }
             }
         }
+    }
+
+    /**
+     * After vanilla playerTouch proceeds, notify CS objective tracker of successful C4 pickup.
+     * HEAD cancel paths never reach this inject.
+     */
+    @Inject(at = @At("RETURN"), method = "playerTouch")
+    public void blockoffensive$playerTouch$NotifyC4Pickup(Player player, CallbackInfo ci) {
+        if (player.level().isClientSide || player.isCreative()) {
+            return;
+        }
+        if (!(this.getItem().getItem() instanceof CompositionC4)) {
+            return;
+        }
+        if (!(player instanceof ServerPlayer serverPlayer)) {
+            return;
+        }
+        // Item already collected by playerTouch when stack is empty / removed
+        ItemEntity self = (ItemEntity) (Object) this;
+        if (!self.isRemoved() && !this.getItem().isEmpty()) {
+            return;
+        }
+        FPSMCore.getInstance().getMapByPlayer(serverPlayer).ifPresent(map -> {
+            if (map instanceof CSGameMap gameMap) {
+                gameMap.objectiveTracker().successfulPickup(
+                        serverPlayer.getUUID(),
+                        serverPlayer.level().getGameTime(),
+                        serverPlayer.getX(),
+                        serverPlayer.getY(),
+                        serverPlayer.getZ(),
+                        serverPlayer.getYRot(),
+                        java.util.Optional.empty()
+                );
+            }
+        });
     }
 }

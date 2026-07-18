@@ -26,6 +26,15 @@ public final class CSBombFuseHud {
         return INSTANCE;
     }
 
+    public boolean isRendering() {
+        if (!com.phasetranscrystal.blockoffensive.BOConfig.client.spectatorBombHudEnabled.get()) {
+            return false;
+        }
+        int fuse = CSClientData.bombFuse;
+        int total = CSClientData.bombTotalFuse;
+        return fuse > 0 && total > 0;
+    }
+
     public void render(GuiGraphics graphics, int screenWidth, int screenHeight) {
         if (!com.phasetranscrystal.blockoffensive.BOConfig.client.spectatorBombHudEnabled.get()) {
             return;

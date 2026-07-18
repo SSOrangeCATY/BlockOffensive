@@ -76,6 +76,11 @@ public final class CSVoteHud {
         this.resultAtMs = 0L;
     }
 
+    /** True when the vote panel occupies screen space this frame. */
+    public boolean isRendering() {
+        return shouldRender();
+    }
+
     private boolean shouldRender() {
         if (active) {
             return true;

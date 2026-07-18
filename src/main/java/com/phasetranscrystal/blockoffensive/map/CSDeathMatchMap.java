@@ -42,6 +42,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Function;
+import com.phasetranscrystal.blockoffensive.minimap.CSDeathMarkerCapture;
+import com.phasetranscrystal.blockoffensive.minimap.CSMapMinimapMarkerProvider;
+import com.phasetranscrystal.fpsmatch.core.minimap.marker.DeathMarkerLedger;
+import com.phasetranscrystal.fpsmatch.common.capability.map.MinimapCapability;
 
 @Mod.EventBusSubscriber(modid = BlockOffensive.MODID,bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CSDeathMatchMap extends CSMap {
@@ -62,10 +66,11 @@ public class CSDeathMatchMap extends CSMap {
     ).apply(instance, CSDeathMatchMap::new));
 
     public static final String TYPE = "csdm";
-    private static final List<Class<? extends MapCapability>> MAP_CAPABILITIES = List.of(GameEndTeleportCapability.class);
+    private static final List<Class<? extends MapCapability>> MAP_CAPABILITIES = List.of(GameEndTeleportCapability.class, MinimapCapability.class);
     private static final List<Class<? extends TeamCapability>> TEAM_CAPABILITIES = List.of(ShopCapability.class, StartKitsCapability.class, SpawnPointCapability.class);
     
     // 死斗模式设置
+    private final DeathMarkerLedger deathMarkerLedger = new DeathMarkerLedger();
     private Setting<Boolean> isTDM;
     private Setting<Integer> matchTimeLimit;
     private Setting<Integer> spawnProtectionTime;
@@ -123,6 +128,7 @@ public class CSDeathMatchMap extends CSMap {
     @Override
     public Collection<Setting<?>> settings() {
         return List.of(
+                isTDM,
                 displayName,
                 iconTexture,
                 backgroundTexture,
@@ -316,8 +322,29 @@ public class CSDeathMatchMap extends CSMap {
         this.victory();
     }
     
+    public DeathMarkerLedger deathMarkerLedger() {
+        return deathMarkerLedger;
+    }
+
     @Override
     public void handleDeath(DeathContext context) {
+        ServerPlayer dead = context.getDeadPlayer();
+        // Capture death pose before immediate CSDM respawn.
+        String teamId = this.getMapTeams().getTeamByPlayer(dead)
+                .map(t -> t.getFixedName())
+                .orElse("spectator");
+        CSDeathMarkerCapture.captureFromWorldPose(
+                deathMarkerLedger,
+                dead.getUUID(),
+                teamId,
+                dead.getX(),
+                dead.getY(),
+                dead.getZ(),
+                dead.getYRot(),
+                context.getCreatedTick(),
+                CSMapMinimapMarkerProvider.CSDM_DEATH_TTL_TICKS,
+                java.util.Optional.empty()
+        );
         super.handleDeath(context);
         // 立即重生玩家
         respawnPlayer(context.getDeadPlayer());
@@ -526,7 +553,7 @@ public class CSDeathMatchMap extends CSMap {
     }
 
     public boolean isTDM() {
-        return false;
+        return isTDM != null && Boolean.TRUE.equals(isTDM.get());
     }
 
     private boolean isDeathmatchTeamName(String teamName) {
