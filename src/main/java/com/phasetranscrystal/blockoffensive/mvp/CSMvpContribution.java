@@ -13,6 +13,7 @@ public record CSMvpContribution(
         float incendiaryDamage,
         float explosiveDamage,
         boolean defusedBomb,
-        boolean plantedBomb
+        boolean plantedBomb,
+        boolean survivedUnderFire
 ) {
 }

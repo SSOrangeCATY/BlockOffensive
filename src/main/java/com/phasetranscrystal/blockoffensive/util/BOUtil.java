@@ -16,6 +16,8 @@ import com.phasetranscrystal.fpsmatch.common.packet.FPSMSoundPlayC2SPacket;
 import com.phasetranscrystal.fpsmatch.compat.CounterStrikeGrenadesCompat;
 import com.phasetranscrystal.fpsmatch.compat.LrtacticalCompat;
 import com.phasetranscrystal.fpsmatch.compat.impl.FPSMImpl;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunCompatManager;
+import com.phasetranscrystal.fpsmatch.compat.gun.GunTabTypeEnum;
 import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.team.BaseTeam;
@@ -229,8 +231,10 @@ public class BOUtil {
                         .flatMap(team -> team.getPlayerData(entry.getKey())));
     }
 
-    public static boolean resolveNoScopeFlag(boolean isScopedKill, boolean attackerIsDeadPlayer) {
-        return DeathMessageRules.resolveNoScopeFlag(isScopedKill, attackerIsDeadPlayer);
+    public static boolean resolveNoScopeFlag(ItemStack weapon, boolean isScopedKill, boolean attackerIsDeadPlayer) {
+        boolean isSniper = GunCompatManager.isGun(weapon)
+                && GunCompatManager.findProvider(weapon).getGunTabType(weapon) == GunTabTypeEnum.SNIPER;
+        return DeathMessageRules.resolveNoScopeFlag(isSniper, isScopedKill, attackerIsDeadPlayer);
     }
 
 
@@ -257,7 +261,7 @@ public class BOUtil {
 
         if(!attacker.is(deadPlayer)) {
             builder.setFlying(!attacker.equals(deadPlayer) && !attacker.onGround());
-            builder.setNoScope(resolveNoScopeFlag(isScopedKill, attacker.is(deadPlayer)));
+            builder.setNoScope(resolveNoScopeFlag(deathItem, isScopedKill, attacker.is(deadPlayer)));
 
             calculateAssistPlayer(map, deadPlayer, minAssistDamageRatio).ifPresent(assistData -> {
                 if (!attacker.getUUID().equals(assistData.getOwner())) {

@@ -8,6 +8,7 @@ import com.phasetranscrystal.fpsmatch.common.client.screen.texture.NamecardResol
 import com.phasetranscrystal.fpsmatch.common.client.screen.texture.NameCardTexture;
 import com.phasetranscrystal.fpsmatch.core.team.ClientTeam;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.player.LocalPlayer;
@@ -103,12 +104,9 @@ public final class CSSpectatorHudOverlay {
     private static final int TEAM_COLOR_DEFAULT = 0xFF707070;
 
     // 字符串常量
-    private static final String FORMAT_HEADSHOT_RATE = "爆头率: %.0f%%";
-    private static final String FORMAT_KILLS = "击杀: %d";
     private static final String FORMAT_HEALTH = "%.0f/%.0f";
     private static final String TEAM_NONE = "none";
     private static final String TEAM_SPECTATOR = "spectator";
-    private static final String ITEM_EMPTY_CN = "空手";
     private static final String ITEM_EMPTY_EN = "Empty";
 
 
@@ -471,7 +469,7 @@ public final class CSSpectatorHudOverlay {
      * 渲染物品信息
      */
     private void renderItemInfo(GuiGraphics g, Minecraft mc, int leftX, int centerY, float alpha) {
-        String itemNameCn = ITEM_EMPTY_CN;
+        String itemNameCn = I18n.get("blockoffensive.spectator.item.empty");
         String itemNameEn = ITEM_EMPTY_EN;
 
         if (lastTargetPlayer != null) {
@@ -504,13 +502,13 @@ public final class CSSpectatorHudOverlay {
         int startY = centerY - (lineHeight * 3 - 4) / 2;
 
         // 渲染爆头率
-        String headshotText = String.format(FORMAT_HEADSHOT_RATE, clamp(shownHeadshotRate,0, 1f) * 100f);
+        String headshotText = I18n.get("blockoffensive.spectator.stat.headshot", clamp(shownHeadshotRate,0, 1f) * 100f);
         g.drawString(mc.font, headshotText, rightX, startY,
                 mulAlpha(TEXT_COLOR_HEADSHOT, alpha), false);
 
         // 渲染击杀数
         int kills = Math.round(shownKills);
-        g.drawString(mc.font, String.format(FORMAT_KILLS, kills), rightX, startY + lineHeight,
+        g.drawString(mc.font, I18n.get("blockoffensive.spectator.stat.kills", kills), rightX, startY + lineHeight,
                 mulAlpha(TEXT_COLOR_KILLS, alpha), false);
 
         // 渲染生命值条

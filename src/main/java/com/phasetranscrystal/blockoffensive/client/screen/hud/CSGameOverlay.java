@@ -100,7 +100,7 @@ public class CSGameOverlay {
 
         // CT "存活" 文字
         float smallScale = numberScale * 0.5f; // 恢复为数字大小的一半
-        Component livingText = Component.literal("存活").withStyle(ChatFormatting.BOLD);
+        Component livingText = Component.translatable("blockoffensive.hud.living").withStyle(ChatFormatting.BOLD);
         int smallTextWidth = font.width(livingText);
 
         guiGraphics.pose().pushPose();
@@ -254,7 +254,7 @@ public class CSGameOverlay {
 
     private Component getRoundTimeString() {
         if(CSClientData.time == -1 && !CSClientData.isWaitingWinner) {
-            return Component.literal("——:——").withStyle(ChatFormatting.BOLD);
+            return Component.translatable("blockoffensive.hud.time_placeholder").withStyle(ChatFormatting.BOLD);
         }
         return getCSGameTime();
     }

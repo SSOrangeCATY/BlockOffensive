@@ -139,7 +139,7 @@ public class CSDMOverlay {
 
     private Component getRoundTimeString() {
         if (CSClientData.time == -1 && !CSClientData.isWaitingWinner) {
-            return Component.literal("——:——").withStyle(net.minecraft.ChatFormatting.BOLD);
+            return Component.translatable("blockoffensive.hud.time_placeholder").withStyle(net.minecraft.ChatFormatting.BOLD);
         }
         return getCSGameTime();
     }

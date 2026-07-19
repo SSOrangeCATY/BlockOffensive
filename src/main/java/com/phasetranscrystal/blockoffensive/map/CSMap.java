@@ -736,18 +736,7 @@ public abstract class CSMap extends BaseRoundMap<String, CSRoundResultReason> {
     }
 
     public void setBystander(ServerPlayer player) {
-        List<UUID> uuids = this.getMapTeams().getSameTeamPlayerUUIDs(player);
-        Entity entity = null;
-        if (uuids.size() > 1) {
-            Random random = new Random();
-            entity = this.getServerLevel().getEntity(uuids.get(random.nextInt(0, uuids.size())));
-        } else if (!uuids.isEmpty()) {
-            entity = this.getServerLevel().getEntity(uuids.get(0));
-        }
-        if (entity != null) {
-            player.teleportTo(entity.getX(), entity.getY() + 1, entity.getZ());
-            player.setCamera(entity);
-        }
+        BOSpecManager.startSpectating(player);
     }
 
     public void resetPlayerClientData(ServerPlayer serverPlayer){

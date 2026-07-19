@@ -21,9 +21,32 @@ public final class DamagePosTracker {
     private static final Logger LOG = LogUtils.getLogger();
     private static final Map<UUID, Vec3> LAST_VICTIM_EYE = new ConcurrentHashMap<>();
     private static final Map<UUID, Long> LAST_TIME_NS    = new ConcurrentHashMap<>();
+    private static final Map<UUID, Vec3> DEATH_POSES = new ConcurrentHashMap<>();
+    private static final Map<UUID, Float> DEATH_YAWS = new ConcurrentHashMap<>();
+    private static final Map<UUID, Float> DEATH_PITCHES = new ConcurrentHashMap<>();
     private static final long TTL_NS = 10_000_000_000L; // 10s
 
     private DamagePosTracker(){}
+
+    public static void recordDeathPose(ServerPlayer player) {
+        if (player != null) {
+            DEATH_POSES.put(player.getUUID(), player.getEyePosition(1.0F));
+            DEATH_YAWS.put(player.getUUID(), player.getYRot());
+            DEATH_PITCHES.put(player.getUUID(), player.getXRot());
+        }
+    }
+
+    public static Optional<Vec3> getDeathPose(ServerPlayer player) {
+        return player == null ? Optional.empty() : Optional.ofNullable(DEATH_POSES.get(player.getUUID()));
+    }
+
+    public static float getDeathYaw(ServerPlayer player) {
+        return player == null ? 0.0F : DEATH_YAWS.getOrDefault(player.getUUID(), player.getYRot());
+    }
+
+    public static float getDeathPitch(ServerPlayer player) {
+        return player == null ? 0.0F : DEATH_PITCHES.getOrDefault(player.getUUID(), player.getXRot());
+    }
 
     @SubscribeEvent
     public static void onLivingHurt(LivingHurtEvent e){

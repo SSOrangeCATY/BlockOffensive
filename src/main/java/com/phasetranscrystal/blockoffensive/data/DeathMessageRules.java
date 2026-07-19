@@ -9,6 +9,11 @@ public final class DeathMessageRules {
     private DeathMessageRules() {
     }
 
+    public static boolean resolveNoScopeFlag(boolean isSniper, boolean isScopedKill, boolean attackerIsDeadPlayer) {
+        return isSniper && !isScopedKill && !attackerIsDeadPlayer;
+    }
+
+    /** Compatibility overload for older callers; new code must provide weapon category explicitly. */
     public static boolean resolveNoScopeFlag(boolean isScopedKill, boolean attackerIsDeadPlayer) {
         return !isScopedKill && !attackerIsDeadPlayer;
     }

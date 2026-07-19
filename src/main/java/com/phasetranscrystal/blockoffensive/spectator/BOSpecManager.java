@@ -3,15 +3,18 @@ package com.phasetranscrystal.blockoffensive.spectator;
 import com.mojang.logging.LogUtils;
 import com.phasetranscrystal.blockoffensive.BlockOffensive;
 import com.phasetranscrystal.blockoffensive.entity.CompositionC4Entity;
+import com.phasetranscrystal.blockoffensive.item.BOItemRegister;
 import com.phasetranscrystal.blockoffensive.net.spec.KillCamS2CPacket;
 import com.phasetranscrystal.blockoffensive.net.spec.RequestKillCamFallbackC2SPacket;
 import com.phasetranscrystal.blockoffensive.net.spec.SwitchSpectateC2SPacket;
 import com.phasetranscrystal.fpsmatch.FPSMatch;
 import com.phasetranscrystal.fpsmatch.common.client.spec.SpectateMode;
+import com.phasetranscrystal.fpsmatch.common.client.spec.SpectateTarget;
+import com.phasetranscrystal.fpsmatch.common.client.spec.SpectatorSwitchDirection;
+import com.phasetranscrystal.fpsmatch.common.client.spec.SpectatorSwitchInputEvent;
 import com.phasetranscrystal.fpsmatch.common.entity.MatchDropEntity;
-import com.phasetranscrystal.fpsmatch.common.packet.spec.SpectateModeS2CPacket;
+import com.phasetranscrystal.fpsmatch.common.packet.spec.SpectatorTargetS2CPacket;
 import com.phasetranscrystal.fpsmatch.core.FPSMCore;
-import com.phasetranscrystal.fpsmatch.core.data.PlayerData;
 import com.phasetranscrystal.fpsmatch.core.map.BaseMap;
 import com.phasetranscrystal.fpsmatch.core.team.MapTeams;
 import com.phasetranscrystal.fpsmatch.core.team.ServerTeam;
@@ -20,9 +23,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.targeting.TargetingConditions;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -31,49 +32,33 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static com.phasetranscrystal.fpsmatch.util.FPSMFormatUtil.fmt2;
 
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class BOSpecManager {
-
     private static final Logger LOG = LogUtils.getLogger();
-
-    private static final Map<UUID, SpectateMode> SPECTATE_MODE = new ConcurrentHashMap<>();
-    private static final Map<UUID, KillCamDeathContext> DEATH_CONTEXTS = new ConcurrentHashMap<>();
+    private static final float ORBIT_RADIUS = 4.0F;
+    private static final long DEDUP_NS = 250_000_000L;
     private static final long KILLCAM_CONTEXT_TTL_TICKS = 200L;
-    private static final Map<UUID, Long> LAST_SENT_NS = new ConcurrentHashMap<>();
-    private static final long DEDUP_NS = 250_000_000L; // 0.25s
+    private static final Map<UUID, SpectateMode> MODES = new ConcurrentHashMap<>();
+    private static final Map<UUID, Long> LAST_KILLCAM_NS = new ConcurrentHashMap<>();
+    private static final Map<UUID, KillCamDeathContext> DEATH_CONTEXTS = new ConcurrentHashMap<>();
 
-    public static void sendKillCamAndAttach(ServerPlayer dead, DamageSource source) {
-        ServerPlayer killer = FPSMUtil.getKiller(dead,source);
-        if(killer == null) return;
-
-        Vec3 kEye = killer.getEyePosition(1.0F);
-        Vec3 dEye = DamagePosTracker.consumeVictimEye(dead).orElseGet(() -> dead.getEyePosition(1.0F));
-
-        ItemStack weapon = FPSMUtil.getKillerWeapon(source);
-
-        sendKillCamAndAttach(dead,killer,weapon,kEye,dEye);
+    private BOSpecManager() {
     }
 
-    public static void sendKillCamAndAttach(ServerPlayer dead,
-                                            ServerPlayer killer,
-                                            ItemStack weapon) {
-        if (dead == null || killer == null) return;
-
-        recordKillCamContext(dead, killer, FPSMCore.getInstance().getMapByPlayer(dead).orElse(null));
-
-        Vec3 kEye = killer.getEyePosition(1.0F);
-        Vec3 dEye = DamagePosTracker.consumeVictimEye(dead).orElseGet(() -> dead.getEyePosition(1.0F));
-
-        sendKillCamAndAttach(dead, killer, weapon, kEye, dEye);
+    public static void startSpectating(ServerPlayer spectator) {
+        if (spectator == null || !spectator.isSpectator()) return;
+        DamagePosTracker.recordDeathPose(spectator);
+        selectAndApplyTarget(spectator);
     }
 
     public static void recordKillCamContext(ServerPlayer dead, ServerPlayer killer, BaseMap map) {
@@ -100,143 +85,147 @@ public final class BOSpecManager {
                 && context.mapName().equals(map.getMapName());
     }
 
-    public static void sendKillCamAndAttach(ServerPlayer dead,
-                                                 ServerPlayer killer,
-                                                 ItemStack weapon,
-                                                 Vec3 kEye, Vec3 dEye) {
+    public static void sendKillCamAndAttach(ServerPlayer dead, DamageSource source) {
+        ServerPlayer killer = FPSMUtil.getKiller(dead, source);
+        if (killer == null) return;
+        sendKillCamAndAttach(dead, killer, FPSMUtil.getKillerWeapon(source));
+    }
+
+    public static void sendKillCamAndAttach(ServerPlayer dead, ServerPlayer killer, ItemStack weapon) {
         if (dead == null || killer == null) return;
+        recordKillCamContext(dead, killer, FPSMCore.getInstance().getMapByPlayer(dead).orElse(null));
+        Vec3 killerEye = killer.getEyePosition(1.0F);
+        Vec3 victimEye = DamagePosTracker.consumeVictimEye(dead).orElseGet(() -> dead.getEyePosition(1.0F));
+        sendKillCamAndAttach(dead, killer, weapon, killerEye, victimEye);
+    }
 
+    public static void sendKillCamAndAttach(ServerPlayer dead, ServerPlayer killer, ItemStack weapon,
+                                            Vec3 killerEye, Vec3 victimEye) {
+        if (dead == null || killer == null) return;
         long now = System.nanoTime();
-        Long prev = LAST_SENT_NS.get(dead.getUUID());
-        if (prev != null && now - prev < DEDUP_NS) return;
-        LAST_SENT_NS.put(dead.getUUID(), now);
-
-        ItemStack weaponForSend = (weapon == null) ? ItemStack.EMPTY : weapon.copy();
-        if (!weaponForSend.isEmpty() && weaponForSend.getCount() != 1) weaponForSend.setCount(1);
-
-        LOG.info("[KillCamS] SEND packet to '{}'  killer='{}'  A(victimEye)=({},{},{})  B(killerEye)=({},{},{})  item='{}'",
-                dead.getGameProfile().getName(), killer.getGameProfile().getName(),
-                fmt2(dEye.x), fmt2(dEye.y), fmt2(dEye.z),
-                fmt2(kEye.x), fmt2(kEye.y), fmt2(kEye.z),
-                weaponForSend.isEmpty() ? "EMPTY" : weaponForSend.getHoverName().getString());
-
-        FPSMatch.sendToPlayer(dead,new KillCamS2CPacket(
-                killer.getUUID(), killer.getName().getString(), weaponForSend,
-                kEye.x, kEye.y, kEye.z,
-                dEye.x, dEye.y, dEye.z));
-
-        // KillCam 播放阶段：保持 FREE（客户端黑屏完后再主动请求附身）
-        SPECTATE_MODE.put(dead.getUUID(), SpectateMode.FREE);
-        FPSMatch.sendToPlayer(dead, new SpectateModeS2CPacket(SpectateMode.FREE));
+        Long previous = LAST_KILLCAM_NS.put(dead.getUUID(), now);
+        if (previous != null && now - previous < DEDUP_NS) return;
+        ItemStack copy = weapon == null ? ItemStack.EMPTY : weapon.copy();
+        if (!copy.isEmpty()) copy.setCount(1);
+        LOG.debug("Sending killcam to {} from {}", dead.getGameProfile().getName(), killer.getGameProfile().getName());
+        FPSMatch.sendToPlayer(dead, new KillCamS2CPacket(
+                killer.getUUID(), killer.getName().getString(), copy,
+                killerEye.x, killerEye.y, killerEye.z,
+                victimEye.x, victimEye.y, victimEye.z));
     }
 
     @SubscribeEvent
-    public static void onPlayerTick(TickEvent.PlayerTickEvent e) {
-        if (e.side.isClient() || e.phase != TickEvent.Phase.END) return;
-        if (!(e.player instanceof ServerPlayer sp)) return;
-
-        UUID id = sp.getUUID();
-        SpectateMode mode = SPECTATE_MODE.getOrDefault(id, SpectateMode.FREE);
-
-        // 玩家不是观战：清理为 FREE
-        if (!sp.isSpectator()) {
-            if (mode != SpectateMode.FREE) {
-                SPECTATE_MODE.remove(id);
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> sp),
-                        new SpectateModeS2CPacket(SpectateMode.FREE));
-            }
+    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (event.side.isClient() || event.phase != TickEvent.Phase.END) return;
+        if (!(event.player instanceof ServerPlayer spectator)) return;
+        if (!spectator.isSpectator()) {
+            MODES.remove(spectator.getUUID());
             return;
         }
-
-        // 仅在 ATTACH 下进行续切守护
-        if (mode == SpectateMode.ATTACH && !isCameraOnTeammate(sp)) {
-            boolean ok = forceAttachToNearestTeammate(sp);
-            if (!ok) {
-                SPECTATE_MODE.put(id, SpectateMode.FREE);
-                FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> sp),
-                        new SpectateModeS2CPacket(SpectateMode.FREE));
-            }
+        SpectateMode mode = MODES.get(spectator.getUUID());
+        if (mode == null) {
+            selectAndApplyTarget(spectator);
+        } else if (mode == SpectateMode.TEAMMATE && !isCameraOnTeammate(spectator)) {
+            selectAndApplyTarget(spectator);
+        } else if (mode == SpectateMode.C4_ORBIT && !hasC4(spectator)) {
+            selectAndApplyTarget(spectator);
         }
     }
 
-    public static void requestAttachTeammate(ServerPlayer sp){
-        if (sp == null || !sp.isSpectator()) return;
-        boolean ok = forceAttachToNearestTeammate(sp);
-        if (ok) {
-            markAttach(sp);
+    @SubscribeEvent
+    public static void onSpectatorSwitch(SpectatorSwitchInputEvent event) {
+        switchTeammate(event.player(), event.direction() == SpectatorSwitchDirection.NEXT
+                ? SwitchSpectateC2SPacket.SwitchDirection.NEXT
+                : SwitchSpectateC2SPacket.SwitchDirection.PREV);
+    }
+
+    public static void requestAttachTeammate(ServerPlayer spectator) {
+        startSpectating(spectator);
+    }
+
+    public static void switchTeammate(ServerPlayer spectator, SwitchSpectateC2SPacket.SwitchDirection direction) {
+        if (spectator == null || !spectator.isSpectator()) return;
+        Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayer(spectator);
+        if (map.isEmpty()) return;
+        ServerTeam team = map.get().getMapTeams().getTeamByPlayer(spectator).orElse(null);
+        if (team == null) return;
+        List<ServerPlayer> teammates = livingTeammates(spectator, team);
+        if (teammates.isEmpty()) return;
+        int current = teammates.indexOf(spectator.getCamera());
+        if (current < 0) current = direction == SwitchSpectateC2SPacket.SwitchDirection.NEXT ? -1 : 0;
+        int next = direction == SwitchSpectateC2SPacket.SwitchDirection.NEXT
+                ? (current + 1) % teammates.size()
+                : (current - 1 + teammates.size()) % teammates.size();
+        applyTeammate(spectator, teammates.get(next));
+    }
+
+    private static void selectAndApplyTarget(ServerPlayer spectator) {
+        Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayer(spectator);
+        if (map.isEmpty()) return;
+        ServerTeam team = map.get().getMapTeams().getTeamByPlayer(spectator).orElse(null);
+        if (team == null) return;
+        List<ServerPlayer> teammates = livingTeammates(spectator, team);
+        if (!teammates.isEmpty()) {
+            applyTeammate(spectator, teammates.get(0));
+            return;
         }
-    }
-
-    private static void markAttach(ServerPlayer sp){
-        SPECTATE_MODE.put(sp.getUUID(), SpectateMode.ATTACH);
-        FPSMatch.INSTANCE.send(PacketDistributor.PLAYER.with(() -> sp),
-                new SpectateModeS2CPacket(SpectateMode.ATTACH));
-    }
-
-    private static boolean isCameraOnTeammate(ServerPlayer sp){
-        Optional<BaseMap> mapOpt = FPSMCore.getInstance().getMapByPlayer(sp);
-        if (mapOpt.isEmpty()) return false;
-        MapTeams teams = mapOpt.get().getMapTeams();
-        if (teams == null) return false;
-
-        var myTeamOpt = teams.getTeamByPlayer(sp.getUUID());
-        if (myTeamOpt.isEmpty()) return false;
-
-        Entity cam = sp.getCamera();
-        if (!(cam instanceof ServerPlayer cp)) return false;
-        if (!cp.isAlive() || cp.isSpectator()) return false;
-
-        var camTeamOpt = teams.getTeamByPlayer(cp.getUUID());
-        return camTeamOpt.isPresent() && camTeamOpt.get() == myTeamOpt.get();
-    }
-
-    private static boolean forceAttachToNearestTeammate(ServerPlayer sp) {
-        Optional<BaseMap> mapOpt = FPSMCore.getInstance().getMapByPlayer(sp);
-        if (mapOpt.isEmpty()) return false;
-        BaseMap map = mapOpt.get();
-        MapTeams teams = map.getMapTeams();
-        if (teams == null) return false;
-
-        var myTeamOpt = teams.getTeamByPlayer(sp.getUUID());
-        if (myTeamOpt.isEmpty()) return false;
-
-        Entity tgt = getOtherEntity(teams,sp,map.mapArea.aabb());
-
-        if (tgt != null) {
-            sp.setCamera(tgt);
-            return true;
+        AABB bounds = map.get().mapArea.aabb();
+        ServerLevel level = spectator.serverLevel();
+        Entity c4 = findC4(level, bounds);
+        if (c4 != null) {
+            applyTarget(spectator, new SpectateTarget(SpectateMode.C4_ORBIT, c4.getId(), c4.position(), spectator.getYRot(), 0.0F, ORBIT_RADIUS));
+            return;
         }
-        return false;
+        Vec3 death = DamagePosTracker.getDeathPose(spectator).orElse(spectator.getEyePosition(1.0F));
+        applyTarget(spectator, new SpectateTarget(SpectateMode.DEATH_SPOT, spectator.getId(), death,
+                DamagePosTracker.getDeathYaw(spectator), DamagePosTracker.getDeathPitch(spectator), ORBIT_RADIUS));
     }
 
-    private static Entity getOtherEntity(MapTeams teams, ServerPlayer player, AABB aabb){
-        ServerLevel level = player.serverLevel();
-        Optional<ServerTeam> teamOpt = teams.getTeamByPlayer(player);
-        if (teamOpt.isEmpty()) return null;
-        ServerTeam team = teamOpt.get();
-        TargetingConditions conditions = TargetingConditions.forNonCombat().ignoreInvisibilityTesting().ignoreLineOfSight().selector(entity-> selector(entity, team));
-        List<Player> teammate = level.getNearbyPlayers(conditions,player,aabb);
-        if(!teammate.isEmpty()) return teammate.get(0);
-
-        List<CompositionC4Entity> c4 = level.getEntitiesOfClass(CompositionC4Entity.class,aabb);
-        if(!c4.isEmpty()) return c4.get(0);
-
-        List<MatchDropEntity> drops = level.getEntitiesOfClass(MatchDropEntity.class,aabb);
-        if(!drops.isEmpty()) return drops.get(0);
-
-        return null;
+    private static List<ServerPlayer> livingTeammates(ServerPlayer spectator, ServerTeam team) {
+        return team.getPlayerList().stream()
+                .map(uuid -> spectator.server.getPlayerList().getPlayer(uuid))
+                .filter(player -> player != null && player != spectator && player.isAlive() && !player.isSpectator())
+                .sorted(Comparator.comparing(player -> player.getUUID().toString()))
+                .toList();
     }
 
-    private static boolean selector(LivingEntity entity, ServerTeam team){
-        if(entity instanceof ServerPlayer player){
-            return team.getPlayerData(player.getUUID()).map(PlayerData::isLiving).orElse(false);
-        }
-        return false;
+    private static void applyTeammate(ServerPlayer spectator, ServerPlayer teammate) {
+        spectator.setCamera(teammate);
+        applyTarget(spectator, new SpectateTarget(SpectateMode.TEAMMATE, teammate.getId(), teammate.position(), teammate.getYRot(), teammate.getXRot(), ORBIT_RADIUS));
     }
 
+    private static void applyTarget(ServerPlayer spectator, SpectateTarget target) {
+        MODES.put(spectator.getUUID(), target.mode());
+        if (target.mode() != SpectateMode.TEAMMATE) spectator.setCamera(spectator);
+        FPSMatch.sendToPlayer(spectator, new SpectatorTargetS2CPacket(
+                target.mode(), target.entityId(), target.anchor(), target.yaw(), target.pitch(), target.orbitRadius()));
+    }
+
+    private static boolean isCameraOnTeammate(ServerPlayer spectator) {
+        Entity camera = spectator.getCamera();
+        if (!(camera instanceof ServerPlayer player) || !player.isAlive() || player.isSpectator()) return false;
+        Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayer(spectator);
+        return map.isPresent() && map.get().getMapTeams().isSameTeam(spectator, player);
+    }
+
+    private static boolean hasC4(ServerPlayer spectator) {
+        Optional<BaseMap> map = FPSMCore.getInstance().getMapByPlayer(spectator);
+        return map.isPresent() && findC4(spectator.serverLevel(), map.get().mapArea.aabb()) != null;
+    }
+
+    private static Entity findC4(ServerLevel level, AABB bounds) {
+        Entity placed = level.getEntitiesOfClass(CompositionC4Entity.class, bounds).stream()
+                .filter(entity -> !entity.isRemoved()).findFirst().orElse(null);
+        if (placed != null) return placed;
+        Entity matchDrop = level.getEntitiesOfClass(MatchDropEntity.class, bounds).stream()
+                .filter(entity -> entity.getItem().is(BOItemRegister.C4.get())).findFirst().orElse(null);
+        if (matchDrop != null) return matchDrop;
+        return level.getEntitiesOfClass(ItemEntity.class, bounds).stream()
+                .filter(entity -> entity.getItem().is(BOItemRegister.C4.get())).findFirst().orElse(null);
+    }
 
     @OnlyIn(Dist.CLIENT)
-    public static void requestKillCamFallback(@NotNull UUID killer){
+    public static void requestKillCamFallback(@NotNull UUID killer) {
         BlockOffensive.INSTANCE.sendToServer(new RequestKillCamFallbackC2SPacket(killer));
     }
 
@@ -244,7 +233,7 @@ public final class BOSpecManager {
     }
 
     @OnlyIn(Dist.CLIENT)
-    public static void sendSwitchSpectate(SwitchSpectateC2SPacket.SwitchDirection dir){
-        BlockOffensive.INSTANCE.sendToServer(new SwitchSpectateC2SPacket(dir));
+    public static void sendSwitchSpectate(SwitchSpectateC2SPacket.SwitchDirection direction) {
+        BlockOffensive.INSTANCE.sendToServer(new SwitchSpectateC2SPacket(direction));
     }
 }

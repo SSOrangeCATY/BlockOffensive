@@ -169,6 +169,8 @@ public class CSGameMap extends CSMap{
     private final Map<UUID,Integer> knifeCache = new HashMap<>();
     private final Map<UUID, Float> roundIncendiaryDamage = new HashMap<>();
     private final Map<UUID, Float> roundExplosiveDamage = new HashMap<>();
+    /** Players who became sole living teammate while facing 2+ living enemies this round. */
+    private final Set<UUID> roundClutchCandidates = new HashSet<>();
 
     /**
      * 构造函数：创建CS地图实例
@@ -603,6 +605,7 @@ public class CSGameMap extends CSMap{
     @Override
     protected void onRoundStart() {
         this.pendingFinalKillAssist = null;
+        this.roundClutchCandidates.clear();
         this.roundStarted = true;
         this.isWaiting = false;
         this.onRoundStarted();
@@ -871,7 +874,8 @@ public class CSGameMap extends CSMap{
                         roundIncendiaryDamage.getOrDefault(data.getOwner(), 0.0F),
                         roundExplosiveDamage.getOrDefault(data.getOwner(), 0.0F),
                         reason == WinnerReason.DEFUSE_BOMB && data.getOwner().equals(lastBombDefuser),
-                        reason == WinnerReason.DETONATE_BOMB && data.getOwner().equals(lastBombPlanter)
+                        reason == WinnerReason.DETONATE_BOMB && data.getOwner().equals(lastBombPlanter),
+                        data.isLivingOnServer() && roundClutchCandidates.contains(data.getOwner())
                 ))
                 .toList();
         CSMvpResult result = CSMvpScorer.selectRoundMvp(contributions);
@@ -1061,6 +1065,7 @@ public class CSGameMap extends CSMap{
             case "blockoffensive.mvp.incendiary_damage" -> "blockoffensive.mvp.info.incendiary_damage";
             case "blockoffensive.mvp.explosive_damage" -> "blockoffensive.mvp.info.explosive_damage";
             case "blockoffensive.mvp.high_damage" -> "blockoffensive.mvp.info.high_damage";
+            case "blockoffensive.mvp.survive_under_fire" -> "blockoffensive.mvp.info.survive_under_fire";
             default -> "blockoffensive.mvp.info.combat";
         };
     }
@@ -1107,6 +1112,7 @@ public class CSGameMap extends CSMap{
             this.lastBombDefuser = null;
             this.roundIncendiaryDamage.clear();
             this.roundExplosiveDamage.clear();
+            this.roundClutchCandidates.clear();
             this.cleanupMap();
             this.sendRoundDamageMessage();
             this.getMapTeams().getJoinedPlayers().forEach((data -> data.getPlayer().ifPresentOrElse(player->{
@@ -1793,6 +1799,33 @@ public class CSGameMap extends CSMap{
         }
 
         super.handleDeath(context);
+        if (this.isStart && this.roundStarted) {
+            updateClutchSurviveCandidates();
+        }
+    }
+
+    /**
+     * Mark clutch candidates: sole living teammate while 2+ enemies remain alive.
+     * Called after living flags are updated by the base death handler.
+     */
+    private void updateClutchSurviveCandidates() {
+        MapTeams teams = this.getMapTeams();
+        for (ServerTeam team : teams.getNormalTeams()) {
+            List<UUID> living = team.getLivingPlayers();
+            if (living.size() != 1) {
+                continue;
+            }
+            int enemyLiving = 0;
+            for (ServerTeam other : teams.getNormalTeams()) {
+                if (other.equals(team)) {
+                    continue;
+                }
+                enemyLiving += other.getLivingPlayers().size();
+            }
+            if (enemyLiving >= 2) {
+                roundClutchCandidates.add(living.get(0));
+            }
+        }
     }
 
     private UUID calculatePendingFinalKillAssist(@NotNull DeathContext context) {

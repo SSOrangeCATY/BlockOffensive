@@ -47,11 +47,17 @@ class BlockOffensiveIssueRegressionTest {
     @Test
     void mvpScorerTestsUseProductionPossibleTypedDamage() throws IOException {
         String scorerTest = Files.readString(Path.of("src/test/java/com/phasetranscrystal/blockoffensive/mvp/CSMvpScorerTest.java"));
+        String scorer = Files.readString(Path.of("src/main/java/com/phasetranscrystal/blockoffensive/mvp/CSMvpScorer.java"));
+        String csGameMap = Files.readString(CS_GAME_MAP);
 
-        assertFalse(scorerTest.contains("new CSMvpContribution(incendiary, 0, 0, 0.0F"));
-        assertFalse(scorerTest.contains("new CSMvpContribution(explosive, 0, 0, 0.0F"));
-        assertTrue(scorerTest.contains("80.0F, 0, 0, 0, 80.0F"));
-        assertTrue(scorerTest.contains("120.0F, 0, 0, 0, 0.0F, 120.0F"));
+        // Typed utility damage must be non-zero when asserting utility MVP reasons.
+        assertTrue(scorerTest.contains("contrib(incendiary, 0, 0, 80.0F, 0, 80.0F, 0, false, false, false)"));
+        assertTrue(scorerTest.contains("contrib(explosive, 0, 0, 120.0F, 0, 0, 120.0F, false, false, false)"));
+        assertTrue(scorerTest.contains("clutchSurviveBeatsPureDamageAndUsesSurviveReason"));
+        assertTrue(scorer.contains("survivedUnderFire"));
+        assertTrue(scorer.contains("blockoffensive.mvp.survive_under_fire"));
+        assertTrue(csGameMap.contains("roundClutchCandidates"));
+        assertTrue(csGameMap.contains("updateClutchSurviveCandidates"));
     }
 
     @Test

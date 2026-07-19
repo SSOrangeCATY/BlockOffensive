@@ -219,6 +219,7 @@ public class CSGameEvents {
 
     @SubscribeEvent
     public static void onGunReload(FPSMGunReloadEvent event) {
+        if (event.isCanceled()) return;
         if (event.getEntity().level().isClientSide()) return;
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
 
