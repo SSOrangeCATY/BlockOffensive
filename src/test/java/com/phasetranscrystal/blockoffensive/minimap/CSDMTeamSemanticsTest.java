@@ -48,7 +48,7 @@ class CSDMTeamSemanticsTest {
         String source = java.nio.file.Files.readString(
                 java.nio.file.Path.of("src/main/java/com/phasetranscrystal/blockoffensive/map/CSDeathMatchMap.java")
         );
-        assertTrue(source.contains("isTDM = this.addSetting(\"isTDM\", false);"));
+        assertTrue(source.contains("isTDM = this.addSetting(\"team\", \"isTDM\", false);"));
         // settings() must include the isTDM setting for persistence/round-trip
         assertTrue(source.contains("isTDM,") || source.matches("(?s).*settings\\(\\)[^{]*\\{[^}]*isTDM.*"));
         // isTDM() must not hardcode false

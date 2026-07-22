@@ -118,9 +118,9 @@ public class CSDeathMatchMap extends CSMap {
 
     @Override
     public void setup() {
-        isTDM = this.addSetting("isTDM", false);
-        matchTimeLimit = this.addSetting("matchTimeLimit", 18000);
-        spawnProtectionTime = this.addSetting("spawnProtectionTime", 10);
+        isTDM = this.addSetting("team", "isTDM", false);
+        matchTimeLimit = this.addSetting("match", "matchTimeLimit", 18000);
+        spawnProtectionTime = this.addSetting("player", "spawnProtectionTime", 10);
         // 死斗模式默认关闭敌方发光
         getEnemyGlowSetting().set(false);
     }

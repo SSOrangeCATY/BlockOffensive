@@ -239,25 +239,25 @@ public class CSGameMap extends CSMap{
 
     @Override
     public void setup() {
-        winnerRound = this.addSetting("winnerRound",13); // 13回合
-        overtimeRound = this.addSetting("overtimeRound",3); // 3回合
-        pauseTime = this.addSetting("pauseTime",1200); // 60秒
-        winnerWaitingTime = this.addSetting("winnerWaitingTime",160);
-        warmUpTime = this.addSetting("warmUpTime",1200);
-        waitingTime = this.addSetting("waitingTime",300);
-        roundTimeLimit = this.addSetting("roundTimeLimit",2300);
-        startMoney = this.addSetting("startEconomy",800);
-        defaultLoserEconomy = this.addSetting("defaultLoserEconomy",1400);
-        defuseBonus = this.addSetting("defuseEconomy",600);
-        compensationBase = this.addSetting("compensationBase",500);
-        tDeathRewardPer = this.addSetting("tDeathRewardPer",50);
-        closeShopTime = this.addSetting("closeShopTime",200);
-        knifeSelection = this.addSetting("knifeSelection",false);
-        c4InstantKillRadius = this.addSetting("c4InstantKillRadius",20);
-        timeoutEconomy = this.addSetting("timeoutEconomy",3250);
-        aceEconomy = this.addSetting("aceEconomy",3250);
-        defuseBombEconomy = this.addSetting("defuseBombEconomy",3500);
-        detonateBombEconomy = this.addSetting("detonateBombEconomy",3500);
+        winnerRound = this.addSetting("match", "winnerRound", 13); // 13回合
+        overtimeRound = this.addSetting("match", "overtimeRound", 3); // 3回合
+        pauseTime = this.addSetting("match", "pauseTime", 1200); // 60秒
+        winnerWaitingTime = this.addSetting("match", "winnerWaitingTime", 160);
+        warmUpTime = this.addSetting("match", "warmUpTime", 1200);
+        waitingTime = this.addSetting("match", "waitingTime", 300);
+        roundTimeLimit = this.addSetting("match", "roundTimeLimit", 2300);
+        startMoney = this.addSetting("eco", "startEconomy", 800);
+        defaultLoserEconomy = this.addSetting("eco", "defaultLoserEconomy", 1400);
+        defuseBonus = this.addSetting("eco", "defuseEconomy", 600);
+        compensationBase = this.addSetting("eco", "compensationBase", 500);
+        tDeathRewardPer = this.addSetting("eco", "tDeathRewardPer", 50);
+        closeShopTime = this.addSetting("eco", "closeShopTime", 200);
+        knifeSelection = this.addSetting("match", "knifeSelection", false);
+        c4InstantKillRadius = this.addSetting("bomb", "c4InstantKillRadius", 20);
+        timeoutEconomy = this.addSetting("eco", "timeoutEconomy", 3250);
+        aceEconomy = this.addSetting("eco", "aceEconomy", 3250);
+        defuseBombEconomy = this.addSetting("eco", "defuseBombEconomy", 3500);
+        detonateBombEconomy = this.addSetting("eco", "detonateBombEconomy", 3500);
         disableEnemyGlow();
     }
 

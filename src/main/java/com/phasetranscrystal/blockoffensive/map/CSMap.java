@@ -83,8 +83,8 @@ public abstract class CSMap extends BaseRoundMap<String, CSRoundResultReason> {
     private static final Vector3f CT_COLOR = new Vector3f(0.25f, 0.55f, 1);
 
     private final Map<String, CSCommand> commands = new ConcurrentHashMap<>();
-    protected final Setting<Boolean> allowFriendlyFire = this.addSetting("allowFriendlyFire",false);
-    protected final Setting<Boolean> allowSpecAttach = this.addSetting("allowSpecAttach", true);
+    protected final Setting<Boolean> allowFriendlyFire = this.addSetting("team", "allowFriendlyFire", false);
+    protected final Setting<Boolean> allowSpecAttach = this.addSetting("player", "allowSpecAttach", true);
 
     /**
      * 弹夹模式：启用后枪械弹药以整弹夹为单位进行管理。
@@ -97,16 +97,16 @@ public abstract class CSMap extends BaseRoundMap<String, CSRoundResultReason> {
      * </ul>
      * 默认为 {@code false}，即保持 TACZ 原版弹药逻辑。
      */
-    protected final Setting<Boolean> magazineMode = this.addSetting("magazineMode", false);
+    protected final Setting<Boolean> magazineMode = this.addSetting("player", "magazineMode", false);
 
-    protected final Setting<Integer> knifeKillEconomy = this.addSetting("knifeKillEconomy", 1500);
-    protected final Setting<Integer> smgKillEconomy = this.addSetting("smgKillEconomy", 600);
-    protected final Setting<Integer> sniperKillEconomy = this.addSetting("sniperKillEconomy", 100);
-    protected final Setting<Integer> shotgunKillEconomy = this.addSetting("shotgunKillEconomy", 900);
-    protected final Setting<Integer> defaultKillEconomy = this.addSetting("defaultKillEconomy", 300);
+    protected final Setting<Integer> knifeKillEconomy = this.addSetting("eco", "knifeKillEconomy", 1500);
+    protected final Setting<Integer> smgKillEconomy = this.addSetting("eco", "smgKillEconomy", 600);
+    protected final Setting<Integer> sniperKillEconomy = this.addSetting("eco", "sniperKillEconomy", 100);
+    protected final Setting<Integer> shotgunKillEconomy = this.addSetting("eco", "shotgunKillEconomy", 900);
+    protected final Setting<Integer> defaultKillEconomy = this.addSetting("eco", "defaultKillEconomy", 300);
 
-    protected final Setting<Integer> ctLimit = this.addSetting("ctLimit",5);
-    protected final Setting<Integer> tLimit = this.addSetting("tLimit",5);
+    protected final Setting<Integer> ctLimit = this.addSetting("team", "ctLimit", 5);
+    protected final Setting<Integer> tLimit = this.addSetting("team", "tLimit", 5);
 
     private final ServerTeam ctTeam;
     private final ServerTeam tTeam;
